@@ -215,20 +215,6 @@ export function isBoosterSafe(
   )
 }
 
-/**
- * @deprecated Prefer isBoosterSafe — path corridor only (no assembly/pad).
- * Kept for call sites that only care about the road.
- */
-export function isBoosterOnPath(
-  center: Point,
-  rotation: number,
-  path: Point[] = HAUL_PATH,
-): boolean {
-  return boosterFootprintSamples(center, rotation).every((s) =>
-    isPointOnSafePath(s, path),
-  )
-}
-
 export function boosterTouchesPad(center: Point, rotation: number): boolean {
   const points = [center, ...boosterCorners(center, rotation)]
   return points.some((p) => pointInRect(p, LAUNCH_PAD))

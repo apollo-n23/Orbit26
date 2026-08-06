@@ -119,7 +119,7 @@ export function SimulationView({
     }
     if (step?.kind === 'haul') {
       if (run.status === 'running') {
-        return 'Use arrow keys to move the booster along the road from Assembly to the Launch Pad. Stay on the corridor — leave it and you explode and reset. Use re-orient controls at corners (drag optional).'
+        return 'Use arrow keys to move the booster along the road from Assembly to the Launch Pad. Stay on the road (assembly and pad are safe); pure grass explodes and resets. Use re-orient controls at corners (drag optional).'
       }
       if (run.status === 'awaiting_reorient') {
         return 'Booster is on the pad. Click Reorient to seat it correctly and finish this step.'

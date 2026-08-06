@@ -36,7 +36,7 @@ The Execute phase is a **hands-on floor simulation**. The learner operates the p
 2. **Integrate payload** (`kind: haul`)
    - Accessible only after manufacture is complete and the learner proceeds.
    - Learner moves the booster from Assembly to the Launch Pad along a **winding outdoor road** (**arrow keys** primary; drag optional).
-   - Path corridor is **50% wider than the booster** (short side × 1.5). Full-footprint off-path → **explosion**, then reset to Assembly start.
+   - Path corridor is **50% wider than the booster** (short side × 1.5), plus a small grass margin. Assembly apron and launch pad are also safe. Pure grass (outside path/assembly/pad) → **explosion**, then reset to Assembly start.
    - On-screen **re-orient** controls (90° turns / fixed headings) help navigate corners; long axis should follow the corridor.
    - When the booster **touches the pad**, a **Reorient** button appears; confirming seats the booster correctly on the pad and completes the step → **Proceed to next step** (haul is not the final step in baseline).
 
