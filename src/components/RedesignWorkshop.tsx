@@ -91,14 +91,21 @@ export function RedesignWorkshop({
 
   function handleConfirm() {
     const path = pathFromRoadTiles(roadTiles)
-    if (!path) {
+    if (!path || path.length < 2) {
       setRoadError(
         'Road must connect Assembly to the Launch Pad. Paint a continuous path (or use Straight road).',
       )
       setTab('haul')
       return
     }
-    const withRoad = applyHaulPath(draft, path)
+    // Always start from a fresh clone of the manufacture draft, then stamp the road.
+    const withRoad = applyHaulPath(structuredClone(draft), path)
+    const stored = withRoad.haulPathOverride ?? getHaulStep(withRoad)?.haulPath
+    if (!stored || stored.length < 2) {
+      setRoadError('Could not save road layout. Try Straight road, then confirm again.')
+      setTab('haul')
+      return
+    }
     onConfirm(withRoad)
   }
 

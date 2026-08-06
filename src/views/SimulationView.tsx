@@ -18,6 +18,7 @@ import {
   getStepMachines,
   hasNextStep,
 } from '../lib/simulation'
+import { resolveHaulPath } from '../lib/processEdit'
 
 interface SimulationViewProps {
   process: ProcessVersion
@@ -60,6 +61,12 @@ export function SimulationView({
   const step = getActiveStep(process, run)
   const machines = useMemo(() => getStepMachines(step), [step])
   const required = machines[run.nextMachineIndex]
+  /** Redesigned or default haul centerline for this process version. */
+  const haulPath = useMemo(() => resolveHaulPath(process), [process])
+  const haulPathKey = useMemo(
+    () => haulPath.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join('|'),
+    [haulPath],
+  )
   const inActiveRun =
     sessionActive &&
     run.status !== 'idle' &&
@@ -242,10 +249,9 @@ export function SimulationView({
 
             {showHaul && (
               <IntegratePayloadScene
+                key={`haul-path-${process.id}-${haulPathKey.slice(0, 64)}`}
                 run={run}
-                haulPath={
-                  process.steps.find((s) => s.kind === 'haul')?.haulPath
-                }
+                haulPath={haulPath}
                 onReachedPad={onReachedPad}
                 onMountToPad={onHaulMountToPad}
               />

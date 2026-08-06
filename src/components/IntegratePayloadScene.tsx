@@ -83,7 +83,11 @@ export function IntegratePayloadScene({
   const canMoveRef = useRef(false)
   /** Only reset local haul state when (re)entering this step, not every render. */
   const haulEpochRef = useRef<string | null>(null)
-  const activePath = haulPath && haulPath.length >= 2 ? haulPath : HAUL_PATH
+  // Prefer explicit redesigned path from process; only fall back to baseline winding road.
+  const activePath =
+    Array.isArray(haulPath) && haulPath.length >= 2
+      ? haulPath.map((p) => ({ x: p.x, y: p.y }))
+      : HAUL_PATH
   const pathRef = useRef(activePath)
   pathRef.current = activePath
 

@@ -1,5 +1,10 @@
-import type { ProcessMachine, ProcessStep, ProcessVersion } from '../types/process'
-import type { Point } from './pathGeometry'
+import type {
+  HaulPathPoint,
+  ProcessMachine,
+  ProcessStep,
+  ProcessVersion,
+} from '../types/process'
+import { HAUL_PATH, type Point } from './pathGeometry'
 
 export function getManufactureStep(
   process: ProcessVersion,
@@ -9,6 +14,25 @@ export function getManufactureStep(
 
 export function getHaulStep(process: ProcessVersion): ProcessStep | undefined {
   return process.steps.find((s) => s.kind === 'haul')
+}
+
+function clonePath(path: Point[] | HaulPathPoint[]): HaulPathPoint[] {
+  return path.map((p) => ({ x: Number(p.x), y: Number(p.y) }))
+}
+
+/**
+ * Resolve the haul centerline for play: redesign override → step.haulPath → default.
+ */
+export function resolveHaulPath(process: ProcessVersion): Point[] {
+  const fromVersion = process.haulPathOverride
+  if (Array.isArray(fromVersion) && fromVersion.length >= 2) {
+    return clonePath(fromVersion)
+  }
+  const fromStep = getHaulStep(process)?.haulPath
+  if (Array.isArray(fromStep) && fromStep.length >= 2) {
+    return clonePath(fromStep)
+  }
+  return clonePath(HAUL_PATH)
 }
 
 /** Reassign linePosition 0..n-1 from left-to-right ordered machine ids. */
@@ -25,7 +49,6 @@ export function applyMachineLineOrder(
     const m = byId.get(id)
     if (m) nextMachines.push({ ...m, linePosition })
   })
-  // Append any missing (should not happen)
   for (const m of mfg.machines) {
     if (!orderedMachineIds.includes(m.id)) {
       nextMachines.push({ ...m, linePosition: nextMachines.length })
@@ -56,19 +79,24 @@ function updateManufactureMachines(
   return {
     ...process,
     steps: process.steps.map((s) =>
-      s.kind === 'manufacture' ? { ...s, machines } : s,
+      s.kind === 'manufacture' ? { ...s, machines: machines.map((m) => ({ ...m })) } : s,
     ),
   }
 }
 
+/** Persist a redesigned haul centerline on the process (step + version override). */
 export function applyHaulPath(
   process: ProcessVersion,
   haulPath: Point[],
 ): ProcessVersion {
+  const path = clonePath(haulPath)
+  if (path.length < 2) return process
+
   return {
     ...process,
+    haulPathOverride: path,
     steps: process.steps.map((s) =>
-      s.kind === 'haul' ? { ...s, haulPath: haulPath.map((p) => ({ ...p })) } : s,
+      s.kind === 'haul' ? { ...s, haulPath: clonePath(path) } : s,
     ),
   }
 }

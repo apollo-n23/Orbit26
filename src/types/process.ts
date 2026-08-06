@@ -60,6 +60,12 @@ export interface ProcessVersion {
   name: string
   version: number
   steps: ProcessStep[]
+  /**
+   * Optional round-redesign haul centerline (scene units).
+   * Preferred over step.haulPath when resolving the road for play.
+   * Set when the learner confirms a painted road in Round 2 redesign.
+   */
+  haulPathOverride?: HaulPathPoint[]
 }
 
 export interface SessionMetrics {
