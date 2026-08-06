@@ -51,9 +51,20 @@ function MachineVisual({ kind }: { kind: ProcessMachine['kind'] }) {
   )
 }
 
+/** Center of a station slot as % of the belt width (stops live on the belt). */
 function linePosPercent(linePosition: number, count: number): number {
   if (count <= 0) return 50
   return ((linePosition + 0.5) / count) * 100
+}
+
+/**
+ * Carrier is positioned on `.production-line` while stops sit on
+ * `.production-line__belt` (left/right 2%). Map belt-relative % into line %.
+ */
+function carrierLeftOnLine(linePosition: number, count: number): number {
+  const BELT_INSET = 2
+  const BELT_SPAN = 96
+  return BELT_INSET + (linePosPercent(linePosition, count) / 100) * BELT_SPAN
 }
 
 export function ManufactureScene({
@@ -226,9 +237,7 @@ export function ManufactureScene({
   }
 
   const boosterLeft =
-    boosterLinePos < 0
-      ? -8
-      : linePosPercent(boosterLinePos, stationCount)
+    boosterLinePos < 0 ? -6 : carrierLeftOnLine(boosterLinePos, stationCount)
 
   return (
     <div
