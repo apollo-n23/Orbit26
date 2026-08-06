@@ -2,8 +2,10 @@ import type { LeadTimeEntry } from '../types/process'
 import { formatLeadTime } from '../lib/simulation'
 import {
   averageLeadTimeMs,
+  launchDurationsMs,
   leadTimeImprovementMs,
 } from '../lib/roundMetrics'
+import { RoundLeadTimeCompare } from '../components/RoundLeadTimeCompare'
 
 interface DataViewProps {
   entries: LeadTimeEntry[]
@@ -16,6 +18,8 @@ interface DataViewProps {
    * Shown on Round 2 Data tab; used for post–Round-2 comparison.
    */
   round1AverageMs?: number | null
+  /** Round 1 per-rocket lead times (ms) for side-by-side bars when Round 2 is complete. */
+  round1LaunchesMs?: number[] | null
 }
 
 function formatRoadCost(cost: number | undefined): string {
@@ -29,6 +33,7 @@ export function DataView({
   roundLabel,
   roundId = 1,
   round1AverageMs = null,
+  round1LaunchesMs = null,
 }: DataViewProps) {
   const bestMs =
     entries.length > 0
@@ -37,20 +42,22 @@ export function DataView({
 
   const ordered = [...entries].sort((a, b) => b.runNumber - a.runNumber)
   const thisRoundAvgMs = averageLeadTimeMs(entries)
+  const round2LaunchesMs = launchDurationsMs(entries)
   const roundComplete = entries.length >= rocketsGoal
 
   const hasAnyRoadCost = entries.some((e) => e.roadCost != null)
   const roadCostSample = entries.find((e) => e.roadCost != null)?.roadCost
 
   const showRound1Baseline = roundId === 2 && round1AverageMs != null
-  const showRound2Compare =
+  const showFullCompare =
     roundId === 2 &&
     roundComplete &&
     thisRoundAvgMs != null &&
-    round1AverageMs != null
+    round1AverageMs != null &&
+    (round1LaunchesMs?.length ?? 0) > 0
 
   const improvementMs =
-    showRound2Compare && thisRoundAvgMs != null && round1AverageMs != null
+    showFullCompare && thisRoundAvgMs != null && round1AverageMs != null
       ? leadTimeImprovementMs(round1AverageMs, thisRoundAvgMs)
       : null
 
@@ -71,7 +78,19 @@ export function DataView({
           {roundComplete ? ' · Round complete' : ''}
         </div>
 
-        {(showRound1Baseline || thisRoundAvgMs != null) && (
+        {showFullCompare &&
+          round1AverageMs != null &&
+          thisRoundAvgMs != null &&
+          round1LaunchesMs && (
+            <RoundLeadTimeCompare
+              round1AvgMs={round1AverageMs}
+              round2AvgMs={thisRoundAvgMs}
+              round1LaunchesMs={round1LaunchesMs}
+              round2LaunchesMs={round2LaunchesMs}
+            />
+          )}
+
+        {!showFullCompare && (showRound1Baseline || thisRoundAvgMs != null) && (
           <div className="lead-board__compare" aria-live="polite">
             {showRound1Baseline && (
               <div className="lead-board__stat lead-board__stat--baseline">
@@ -98,7 +117,7 @@ export function DataView({
                 </span>
               </div>
             )}
-            {showRound2Compare && improvementMs != null && (
+            {improvementMs != null && (
               <div
                 className={[
                   'lead-board__stat',

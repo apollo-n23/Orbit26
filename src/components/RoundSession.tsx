@@ -26,7 +26,8 @@ import type { RoundConfig } from '../types/round'
 import { ROCKETS_PER_ROUND, hashForRound } from '../types/round'
 import {
   loadRound1AverageLeadTimeMs,
-  saveRound1AverageLeadTimeMs,
+  loadRound1LaunchLeadTimesMs,
+  saveRound1LeadTimeResults,
 } from '../lib/roundMetrics'
 
 type RoundPhase = 'redesign' | 'play' | 'orbit-complete'
@@ -53,6 +54,10 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
   const [round1AverageMs, setRound1AverageMs] = useState<number | null>(() =>
     round.id === 2 ? loadRound1AverageLeadTimeMs() : null,
   )
+  /** Round 1 per-rocket lead times (ms) for side-by-side visual compare. */
+  const [round1LaunchesMs, setRound1LaunchesMs] = useState<number[] | null>(
+    () => (round.id === 2 ? loadRound1LaunchLeadTimesMs() : null),
+  )
 
   // Reset only when navigating to a different round id.
   // Do NOT depend on round.process — that would wipe a confirmed redesign
@@ -67,6 +72,9 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     lastLoggedRunRef.current = 0
     setRound1AverageMs(
       round.id === 2 ? loadRound1AverageLeadTimeMs() : null,
+    )
+    setRound1LaunchesMs(
+      round.id === 2 ? loadRound1LaunchLeadTimesMs() : null,
     )
     // round fields read intentionally only when round.id changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,9 +97,9 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     setLeadTimeLog((prev) => {
       const next = [...prev, entry]
       if (next.length >= ROCKETS_PER_ROUND) {
-        // Persist Round 1 average so Round 2 Data can compare.
+        // Persist Round 1 average + per-launch times so Round 2 can compare.
         if (round.id === 1) {
-          saveRound1AverageLeadTimeMs(next)
+          saveRound1LeadTimeResults(next)
         }
         window.setTimeout(() => setPhase('orbit-complete'), 600)
       }
@@ -183,6 +191,8 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
             leadTimes={leadTimeLog}
             round2ShareUrl={round2ShareUrl}
             onGoToRound2={round.id === 1 ? onNavigateRound2 : undefined}
+            round1AverageMs={round.id === 2 ? round1AverageMs : null}
+            round1LaunchesMs={round.id === 2 ? round1LaunchesMs : null}
           />
         </main>
       </div>
@@ -242,6 +252,7 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
             roundLabel={round.label}
             roundId={round.id}
             round1AverageMs={round.id === 2 ? round1AverageMs : null}
+            round1LaunchesMs={round.id === 2 ? round1LaunchesMs : null}
           />
         )}
       </main>

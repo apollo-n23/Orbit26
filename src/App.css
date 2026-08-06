@@ -462,6 +462,209 @@
   color: var(--color-text-muted);
 }
 
+/* ── Round 1 vs Round 2 lead time compare visual ─────────── */
+
+.lt-compare {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  margin-bottom: var(--space-3);
+}
+
+.lt-compare--compact {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-3);
+  text-align: left;
+}
+
+.lt-compare__heading {
+  margin: 0 0 var(--space-1);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.lt-compare__lede {
+  margin: 0 0 var(--space-4);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.lt-compare__avg-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.lt-compare__avg-card {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-bg) 40%, var(--color-surface));
+}
+
+.lt-compare__avg-card--r1 {
+  border-color: color-mix(in srgb, var(--color-amber) 40%, var(--color-border));
+}
+
+.lt-compare__avg-card--r2 {
+  border-color: color-mix(in srgb, var(--color-orbital) 45%, var(--color-border));
+}
+
+.lt-compare__avg-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  margin-bottom: 0.25rem;
+}
+
+.lt-compare__avg-value {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.lt-compare__bar-track {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-border) 70%, transparent);
+  overflow: hidden;
+}
+
+.lt-compare__bar {
+  height: 100%;
+  border-radius: 999px;
+  min-width: 0.35rem;
+  transition: width 0.35s ease;
+}
+
+.lt-compare__bar--r1 {
+  background: linear-gradient(90deg, #a67c12, var(--color-amber));
+}
+
+.lt-compare__bar--r2 {
+  background: linear-gradient(90deg, var(--color-orbital), var(--color-orbital-strong));
+}
+
+.lt-compare__delta--better {
+  border-color: color-mix(in srgb, #3d9b6a 50%, var(--color-border));
+  background: color-mix(in srgb, rgba(61, 155, 106, 0.14) 70%, var(--color-surface));
+}
+
+.lt-compare__delta--better .lt-compare__avg-value {
+  color: #5ecf96;
+}
+
+.lt-compare__delta--worse {
+  border-color: color-mix(in srgb, #c45c5c 45%, var(--color-border));
+  background: color-mix(in srgb, rgba(196, 92, 92, 0.12) 70%, var(--color-surface));
+}
+
+.lt-compare__delta--worse .lt-compare__avg-value {
+  color: #e88a8a;
+}
+
+.lt-compare__delta-note {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  line-height: 1.35;
+}
+
+.lt-compare__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.lt-compare__swatch {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 2px;
+  margin-right: 0.3rem;
+  vertical-align: -0.1rem;
+}
+
+.lt-compare__swatch--r1 {
+  background: var(--color-amber);
+}
+
+.lt-compare__swatch--r2 {
+  background: var(--color-orbital);
+}
+
+.lt-compare__launches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.lt-compare__pair {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr 3.5rem;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.lt-compare__pair-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.lt-compare__pair-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.lt-compare__pair-row {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr 3rem;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.lt-compare__pair-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--color-text-dim);
+}
+
+.lt-compare__pair-time {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-align: right;
+  color: var(--color-text-muted);
+}
+
+.lt-compare__pair-delta {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: right;
+  color: var(--color-orbital-strong);
+}
+
+.orbit-complete__panel--wide {
+  max-width: min(36rem, 96vw);
+}
+
 /* ── Orbit complete (end of round) ───────────────────────── */
 
 .app-main--orbit {

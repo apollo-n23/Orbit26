@@ -2,6 +2,11 @@ import type { LeadTimeEntry } from '../types/process'
 import type { RoundConfig } from '../types/round'
 import { formatLeadTime } from '../lib/simulation'
 import { hashForRound } from '../types/round'
+import {
+  averageLeadTimeMs,
+  launchDurationsMs,
+} from '../lib/roundMetrics'
+import { RoundLeadTimeCompare } from '../components/RoundLeadTimeCompare'
 
 interface OrbitCompleteSceneProps {
   round: RoundConfig
@@ -9,6 +14,10 @@ interface OrbitCompleteSceneProps {
   /** Shareable absolute URL for Round 2 (tutor link). */
   round2ShareUrl: string
   onGoToRound2?: () => void
+  /** Round 1 average (ms) — for Round 2 completion compare. */
+  round1AverageMs?: number | null
+  /** Round 1 per-rocket times (ms) — for side-by-side bars. */
+  round1LaunchesMs?: number[] | null
 }
 
 export function OrbitCompleteScene({
@@ -16,11 +25,22 @@ export function OrbitCompleteScene({
   leadTimes,
   round2ShareUrl,
   onGoToRound2,
+  round1AverageMs = null,
+  round1LaunchesMs = null,
 }: OrbitCompleteSceneProps) {
   const bestMs =
     leadTimes.length > 0
       ? Math.min(...leadTimes.map((e) => e.durationMs))
       : null
+
+  const round2Avg = averageLeadTimeMs(leadTimes)
+  const round2Launches = launchDurationsMs(leadTimes)
+  const showCompare =
+    round.id === 2 &&
+    round1AverageMs != null &&
+    round2Avg != null &&
+    (round1LaunchesMs?.length ?? 0) > 0 &&
+    round2Launches.length > 0
 
   return (
     <section
@@ -45,14 +65,31 @@ export function OrbitCompleteScene({
         </div>
       </div>
 
-      <div className="orbit-complete__panel">
+      <div
+        className={[
+          'orbit-complete__panel',
+          showCompare ? 'orbit-complete__panel--wide' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <p className="orbit-complete__kicker">Round {round.id}</p>
         <h2 id="orbit-complete-heading" className="orbit-complete__title">
           {round.completeHeadline}
         </h2>
         <p className="orbit-complete__sub">{round.completeSubline}</p>
 
-        {leadTimes.length > 0 && (
+        {showCompare && round1AverageMs != null && round2Avg != null && round1LaunchesMs && (
+          <RoundLeadTimeCompare
+            compact
+            round1AvgMs={round1AverageMs}
+            round2AvgMs={round2Avg}
+            round1LaunchesMs={round1LaunchesMs}
+            round2LaunchesMs={round2Launches}
+          />
+        )}
+
+        {!showCompare && leadTimes.length > 0 && (
           <ul className="orbit-complete__laps">
             {leadTimes
               .slice()
