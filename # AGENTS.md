@@ -8,10 +8,10 @@ Setting: Orb-it, a fictional satellite constellation company. Learners act as pr
 Tone: Professional, precise, operational. Light narrative framing only. No cartoonish or overly playful language.
 
 ## Core Learning Loop (must be preserved)
-1. **Execute** — Learner runs the current (initially inefficient) process through **visualised, interactive process steps** (not an auto-playing checklist).
-2. **Map & Analyse** — Learner builds/adjusts a process map and tags the eight wastes.
-3. **Redesign** — Learner edits the process (remove, merge, resequence, limited parallel paths or automation).
-4. **Validate** — Redesigned process is re-run; metrics compared; new options unlock over sessions.
+1. **Execute** — Learner runs the current (initially inefficient) process through **visualised, interactive process steps** (not an auto-playing checklist). Focus: experience and improve **lead time** (end-to-end assembly → launch).
+2. **Data** — Review logged lead times across runs (lap board). Process mapping / waste tagging is handled **outside** this app for now.
+3. **Redesign** — Learner edits the process (remove, merge, resequence, limited parallel paths or automation) — later.
+4. **Validate** — Redesigned process is re-run; lead times compared on the Data board; new options unlock over sessions.
 
 ---
 
@@ -46,11 +46,13 @@ Full unit completion happens only on the **last** process step (baseline: launch
 ### Session / metrics
 - **Start Session** arms the session; **Run Process** starts a unit at step index 0 (`beginRun`).
 - Top bar (live from run state):
-  - **Cycle Time** — wall-clock `m:ss` from Run Process (`runStartedAt`) until the unit finishes (`completeUnitRun` sets `runEndedAt` and freezes the display). Not process work-minutes.
+  - **Lead Time** — wall-clock `m:ss` end-to-end from Run Process (`runStartedAt`) through launch (`completeUnitRun` sets `runEndedAt` and freezes the display). Primary learning measure (not process work-minutes).
   - **Yield** — good runs / completed runs.
   - **Flow Efficiency** — process value-add minutes / process work minutes (still simulation-based).
 - Cap full unit runs per session (**12**) so baseline inefficiency stays visible across repeats.
-- Map and Comparison views remain placeholders until those learning-loop phases are built.
+- **Primary views:** Simulation · **Data** · Comparison.
+  - **Data** — ongoing lead-time board (motorsport lap style): each completed full cycle (assembly → launch) appends one entry; show run #, lead time, delta vs best, best highlighted. Process mapping is **out of scope** here (done separately — do not reintroduce a Map tab).
+  - **Comparison** — still a placeholder until Validate/compare UX is built.
 
 ---
 
@@ -108,7 +110,7 @@ Order is fixed in `src/data/baselineProcess.ts`. Do not reorder without an expli
   1. **GO poll** — Guidance → Capcom → Fuel/Propulsion → Avionics → Range Safety → Weather (only the current station is armed)  
   2. **Launch enable key** — hold-to-turn physical key control  
   3. **Liftoff cutaway** — pad feed: tower/pad, plume, climb (CSS; duration ~`LIFTOFF_MS` / 3.2s — keep JS timer and CSS in sync)  
-- Completing liftoff is the **only** baseline path to **full unit run** complete (`completeUnitRun` → freezes wall-clock Cycle Time).
+- Completing liftoff is the **only** baseline path to **full unit run** complete (`completeUnitRun` → freezes wall-clock **Lead Time** and appends one entry to the Data lead-time board).
 
 ---
 
@@ -154,7 +156,8 @@ Prefer CSS/SVG + pointer/keyboard events. No heavy game engines.
 - Multiplayer / competitive features
 - Instructor authoring tools
 - Mobile-first design
-- Waste tagging UI and redesign tools (until Map / Redesign phases)
+- In-app process mapping / Map tab (mapping done separately)
+- Waste tagging UI and redesign tools (until Redesign / Validate phases)
 
 ## Working Style
 - Prefer small, incremental, working steps.

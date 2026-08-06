@@ -32,7 +32,7 @@ export function hasNextStep(
   return run.currentStepIndex >= 0 && run.currentStepIndex < process.steps.length - 1
 }
 
-/** Start a new round on the first process step. Resets and starts wall-clock cycle time. */
+/** Start a new round on the first process step. Resets and starts wall-clock lead time. */
 export function beginRun(prev: RunState): RunState {
   return {
     ...prev,
@@ -57,8 +57,8 @@ export function wallClockMs(run: RunState, now = Date.now()): number | null {
 }
 
 /**
- * Mark the unit fully complete and freeze the wall-clock cycle timer.
- * Use from any final step finish handler (launch-prep or launch-sequence).
+ * Mark the unit fully complete and freeze the wall-clock lead-time timer.
+ * Use from any final step finish handler (launch-sequence liftoff in baseline).
  */
 export function completeUnitRun(
   prev: RunState,
@@ -331,7 +331,7 @@ export function finishLaunchSequenceAction(
 
 /**
  * Live top-bar metrics.
- * @param now - Wall-clock ms for live cycle-time while a run is open (pass ticking Date.now()).
+ * @param now - Wall-clock ms for live lead time while a run is open (pass ticking Date.now()).
  */
 export function metricsFromRun(run: RunState, now = Date.now()): SessionMetrics {
   const inProgress =
@@ -342,12 +342,12 @@ export function metricsFromRun(run: RunState, now = Date.now()): SessionMetrics 
     run.status === 'complete'
 
   if (!inProgress && run.completedRuns === 0 && run.runStartedAt == null) {
-    return { cycleTime: null, yield: null, flowEfficiency: null }
+    return { leadTime: null, yield: null, flowEfficiency: null }
   }
 
   const wallMs = wallClockMs(run, now)
-  // Cycle time is real elapsed seconds from Run Process until launch complete.
-  const cycleTime = wallMs != null ? wallMs / 1000 : null
+  // Lead time: real end-to-end seconds from Run Process until launch complete.
+  const leadTime = wallMs != null ? wallMs / 1000 : null
 
   // Flow efficiency stays process-based (value-add minutes / process work minutes).
   const processCycle = run.elapsedTime
@@ -368,7 +368,7 @@ export function metricsFromRun(run: RunState, now = Date.now()): SessionMetrics 
         : null
 
   return {
-    cycleTime,
+    leadTime,
     yield: yieldPct,
     flowEfficiency,
   }
@@ -379,13 +379,37 @@ export function formatMetric(value: number | null, digits = 0): string {
   return value.toFixed(digits)
 }
 
-/** Format wall-clock cycle time (seconds) as m:ss. */
-export function formatCycleTime(totalSeconds: number | null): string {
+/** Format wall-clock lead time (seconds) as m:ss. */
+export function formatLeadTime(totalSeconds: number | null): string {
   if (totalSeconds == null || Number.isNaN(totalSeconds)) return '—'
   const s = Math.max(0, Math.floor(totalSeconds))
   const m = Math.floor(s / 60)
   const sec = s % 60
   return `${m}:${sec.toString().padStart(2, '0')}`
+}
+
+/** @deprecated Prefer formatLeadTime — alias for older call sites. */
+export const formatCycleTime = formatLeadTime
+
+/** Build a Data-tab board entry from a just-completed unit run. */
+export function leadTimeEntryFromRun(run: RunState): {
+  runNumber: number
+  durationMs: number
+  completedAt: number
+} | null {
+  if (
+    run.status !== 'complete' ||
+    run.runStartedAt == null ||
+    run.runEndedAt == null ||
+    run.completedRuns < 1
+  ) {
+    return null
+  }
+  return {
+    runNumber: run.completedRuns,
+    durationMs: Math.max(0, run.runEndedAt - run.runStartedAt),
+    completedAt: run.runEndedAt,
+  }
 }
 
 /** True while a unit run is open and the wall-clock timer should tick. */

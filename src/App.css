@@ -274,6 +274,123 @@
   line-height: 1.55;
 }
 
+/* ── Data tab — lead time board ──────────────────────────── */
+
+.data-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.lead-board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 42rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.lead-board__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.lead-board__stat {
+  flex: 1;
+  min-width: 8rem;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
+.lead-board__stat--best {
+  border-color: color-mix(in srgb, var(--color-orbital) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-orbital-dim) 55%, var(--color-surface-raised));
+}
+
+.lead-board__stat-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.lead-board__stat-value {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.lead-board__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.lead-board__table th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.lead-board__table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.lead-board__row--best {
+  background: color-mix(in srgb, var(--color-orbital-dim) 40%, transparent);
+}
+
+.lead-board__run {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lead-board__best-tag {
+  margin-left: var(--space-2);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-orbital-strong);
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--color-orbital) 45%, transparent);
+  background: var(--color-orbital-dim);
+}
+
+.lead-board__time {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.lead-board__delta {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+}
+
+.lead-board__when {
+  color: var(--color-text-dim);
+  font-size: 0.8rem;
+}
+
 /* ── Simulation ──────────────────────────────────────────── */
 
 .sim-header {

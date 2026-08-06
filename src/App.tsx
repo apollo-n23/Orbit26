@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TopBar } from './components/TopBar'
 import { ViewNav } from './components/ViewNav'
 import { SimulationView } from './views/SimulationView'
-import { MapView } from './views/MapView'
+import { DataView } from './views/DataView'
 import { ComparisonView } from './views/ComparisonView'
 import { BASELINE_PROCESS } from './data/baselineProcess'
 import {
@@ -12,13 +12,14 @@ import {
   finishLaunchSequenceAction,
   finishMachineWork,
   isRunTimerActive,
+  leadTimeEntryFromRun,
   markOnPad,
   metricsFromRun,
   proceedToNextStep,
   startMachineWork,
 } from './lib/simulation'
 import type { AppView } from './types/views'
-import type { ProcessVersion, RunState } from './types/process'
+import type { LeadTimeEntry, ProcessVersion, RunState } from './types/process'
 import {
   INITIAL_RUN_STATE,
   MAX_RUNS_PER_SESSION,
@@ -32,8 +33,11 @@ function App() {
     structuredClone(BASELINE_PROCESS),
   )
   const [run, setRun] = useState<RunState>(INITIAL_RUN_STATE)
-  /** Wall-clock sample so Cycle Time ticks while a unit run is open. */
+  /** Ongoing board of completed end-to-end lead times (Data tab). */
+  const [leadTimeLog, setLeadTimeLog] = useState<LeadTimeEntry[]>([])
+  /** Wall-clock sample so Lead Time ticks while a unit run is open. */
   const [now, setNow] = useState(() => Date.now())
+  const lastLoggedRunRef = useRef(0)
 
   useEffect(() => {
     if (!isRunTimerActive(run)) return
@@ -45,12 +49,23 @@ function App() {
     return () => window.clearInterval(id)
   }, [run.status, run.runStartedAt, run.runEndedAt])
 
+  // When a full unit finishes (launch complete), append one lap to the Data board.
+  useEffect(() => {
+    if (run.status !== 'complete') return
+    const entry = leadTimeEntryFromRun(run)
+    if (!entry) return
+    if (entry.runNumber <= lastLoggedRunRef.current) return
+    lastLoggedRunRef.current = entry.runNumber
+    setLeadTimeLog((prev) => [...prev, entry])
+  }, [run.status, run.completedRuns, run.runEndedAt, run.runStartedAt])
+
   const metrics = useMemo(() => metricsFromRun(run, now), [run, now])
 
   function handleStartSession() {
     setSessionActive(true)
     setActiveView('simulation')
     setRun(INITIAL_RUN_STATE)
+    // Keep lead-time board across the session arming; clear only if desired later.
   }
 
   function handleRunProcess() {
@@ -81,7 +96,6 @@ function App() {
   }, [])
 
   const handleHaulMountToPad = useCallback(() => {
-    // completeHaulStep seats + auto-advances to the next step when one exists.
     setRun((prev) => completeHaulStep(process, prev))
   }, [process])
 
@@ -117,7 +131,7 @@ function App() {
             onLaunchSequenceActionComplete={handleLaunchSequenceActionComplete}
           />
         )}
-        {activeView === 'map' && <MapView />}
+        {activeView === 'data' && <DataView entries={leadTimeLog} />}
         {activeView === 'comparison' && <ComparisonView />}
       </main>
     </div>

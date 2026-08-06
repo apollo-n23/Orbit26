@@ -53,12 +53,25 @@ export interface ProcessVersion {
 
 export interface SessionMetrics {
   /**
-   * Wall-clock cycle time for the current (or last completed) unit run, in seconds.
-   * Display as elapsed time (e.g. m:ss). Null when no run has started.
+   * Wall-clock lead time for the current (or last completed) unit run, in seconds.
+   * End-to-end process time from Run Process through launch. Display as m:ss.
    */
-  cycleTime: number | null
+  leadTime: number | null
   yield: number | null
   flowEfficiency: number | null
+}
+
+/**
+ * One completed full unit run (all process steps) for the Data tab lead-time board.
+ * Like a motorsport lap: each full assembly→launch cycle logs one entry.
+ */
+export interface LeadTimeEntry {
+  /** 1-based run number within the session (matches completedRuns at log time). */
+  runNumber: number
+  /** Wall-clock duration of the full process, milliseconds. */
+  durationMs: number
+  /** `Date.now()` when the unit completed (launch finished). */
+  completedAt: number
 }
 
 /**
@@ -92,7 +105,7 @@ export interface RunState {
   completedMachineIds: string[]
   /**
    * Accumulated process work time (simulated minutes) for flow-efficiency math.
-   * Not used for top-bar Cycle Time — that uses wall-clock timestamps.
+   * Not used for top-bar Lead Time — that uses wall-clock timestamps.
    */
   elapsedTime: number
   /** Value-add slice of process work time (simulated minutes). */
@@ -104,7 +117,7 @@ export interface RunState {
   runStartedAt: number | null
   /**
    * Wall-clock end when the unit reaches `complete` (final step finished).
-   * Null while the run is in progress; freezes the cycle-time display.
+   * Null while the run is in progress; freezes the lead-time display.
    */
   runEndedAt: number | null
   unitDefective: boolean
@@ -115,7 +128,7 @@ export interface RunState {
 export const MAX_RUNS_PER_SESSION = 12
 
 export const EMPTY_METRICS: SessionMetrics = {
-  cycleTime: null,
+  leadTime: null,
   yield: null,
   flowEfficiency: null,
 }

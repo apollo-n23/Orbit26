@@ -1,7 +1,7 @@
-export type AppView = 'simulation' | 'map' | 'comparison'
+export type AppView = 'simulation' | 'data' | 'comparison'
 
 export const APP_VIEWS: { id: AppView; label: string }[] = [
   { id: 'simulation', label: 'Simulation' },
-  { id: 'map', label: 'Map' },
+  { id: 'data', label: 'Data' },
   { id: 'comparison', label: 'Comparison' },
 ]

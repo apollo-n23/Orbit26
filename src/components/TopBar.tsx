@@ -1,5 +1,5 @@
 import type { SessionMetrics } from '../types/process'
-import { formatCycleTime, formatMetric } from '../lib/simulation'
+import { formatLeadTime, formatMetric } from '../lib/simulation'
 
 interface TopBarProps {
   metrics: SessionMetrics
@@ -10,9 +10,9 @@ interface TopBarProps {
 export function TopBar({ metrics, onStartSession, sessionActive }: TopBarProps) {
   const display = [
     {
-      label: 'Cycle Time',
-      // Wall-clock m:ss from Run Process until unit complete (launch).
-      value: formatCycleTime(metrics.cycleTime),
+      label: 'Lead Time',
+      // End-to-end wall-clock from Run Process until launch complete.
+      value: formatLeadTime(metrics.leadTime),
       unit: '',
     },
     {
