@@ -12,9 +12,18 @@ export interface ProcessMachine {
   kind: 'robot-arm' | 'welder' | 'laser'
   /** Simulated work time added to cycle time (minutes). */
   workTime: number
+  /**
+   * Extra vertical park distance from the production line (rem).
+   * Larger values park further from the belt; approach travels that distance to the line.
+   */
+  parkOffset: number
 }
 
-export type ProcessStepKind = 'manufacture' | 'haul' | 'launch-prep'
+export type ProcessStepKind =
+  | 'manufacture'
+  | 'haul'
+  | 'launch-prep'
+  | 'launch-sequence'
 
 /** A single step in the value stream. */
 export interface ProcessStep {
@@ -38,6 +47,10 @@ export interface ProcessVersion {
 }
 
 export interface SessionMetrics {
+  /**
+   * Wall-clock cycle time for the current (or last completed) unit run, in seconds.
+   * Display as elapsed time (e.g. m:ss). Null when no run has started.
+   */
   cycleTime: number | null
   yield: number | null
   flowEfficiency: number | null
@@ -72,8 +85,23 @@ export interface RunState {
   activeMachineId: string | null
   /** Machine ids finished this step. */
   completedMachineIds: string[]
+  /**
+   * Accumulated process work time (simulated minutes) for flow-efficiency math.
+   * Not used for top-bar Cycle Time — that uses wall-clock timestamps.
+   */
   elapsedTime: number
+  /** Value-add slice of process work time (simulated minutes). */
   valueAddTime: number
+  /**
+   * Wall-clock start of this unit run (`Date.now()`).
+   * Set on Run Process / `beginRun`; null when idle with no active unit.
+   */
+  runStartedAt: number | null
+  /**
+   * Wall-clock end when the unit reaches `complete` (final step finished).
+   * Null while the run is in progress; freezes the cycle-time display.
+   */
+  runEndedAt: number | null
   unitDefective: boolean
   completedRuns: number
   goodRuns: number
@@ -95,6 +123,8 @@ export const INITIAL_RUN_STATE: RunState = {
   completedMachineIds: [],
   elapsedTime: 0,
   valueAddTime: 0,
+  runStartedAt: null,
+  runEndedAt: null,
   unitDefective: false,
   completedRuns: 0,
   goodRuns: 0,
@@ -168,3 +198,62 @@ export const LAUNCH_PREP_STEP_TIME = LAUNCH_PREP_ACTIONS.reduce(
   (sum, a) => sum + a.workTime,
   0,
 )
+
+/**
+ * Mission-control GO stations for the launch-sequence step.
+ * Operator must clear each station in order before arming the key.
+ */
+export interface LaunchSeqGoStation {
+  id: string
+  /** Short console label (e.g. GUIDANCE). */
+  callsign: string
+  /** Human-readable station name. */
+  name: string
+}
+
+export const LAUNCH_SEQ_GO_STATIONS: LaunchSeqGoStation[] = [
+  { id: 'go-guidance', callsign: 'GUIDANCE', name: 'Guidance' },
+  { id: 'go-capcom', callsign: 'CAPCOM', name: 'Capcom' },
+  { id: 'go-propulsion', callsign: 'PROPULSION', name: 'Fuel / Propulsion' },
+  { id: 'go-avionics', callsign: 'AVIONICS', name: 'Avionics' },
+  { id: 'go-range', callsign: 'RANGE', name: 'Range Safety' },
+  { id: 'go-weather', callsign: 'WEATHER', name: 'Weather' },
+]
+
+/**
+ * Ordered actions for launch-sequence:
+ * sequential GO calls → key arm → liftoff.
+ * Reuses run nextMachineIndex / completedMachineIds for progress.
+ */
+export const LAUNCH_SEQ_ACTIONS: LaunchPrepAction[] = [
+  ...LAUNCH_SEQ_GO_STATIONS.map((s) => ({
+    id: s.id,
+    name: `${s.name} — GO`,
+    workTime: 2,
+    valueAddRatio: 0.25,
+  })),
+  {
+    id: 'key-arm',
+    name: 'Arm launch key',
+    workTime: 5,
+    valueAddRatio: 0.4,
+  },
+  {
+    id: 'liftoff',
+    name: 'Liftoff',
+    workTime: 10,
+    valueAddRatio: 0.95,
+  },
+]
+
+/** Nominal total time for launch-sequence (sum of action work times). */
+export const LAUNCH_SEQ_STEP_TIME = LAUNCH_SEQ_ACTIONS.reduce(
+  (sum, a) => sum + a.workTime,
+  0,
+)
+
+/** Index of the key-arm action within LAUNCH_SEQ_ACTIONS. */
+export const LAUNCH_SEQ_KEY_INDEX = LAUNCH_SEQ_GO_STATIONS.length
+
+/** Index of the liftoff action within LAUNCH_SEQ_ACTIONS. */
+export const LAUNCH_SEQ_LIFTOFF_INDEX = LAUNCH_SEQ_KEY_INDEX + 1

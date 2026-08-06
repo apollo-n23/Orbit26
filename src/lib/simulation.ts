@@ -5,7 +5,11 @@ import type {
   RunState,
   SessionMetrics,
 } from '../types/process'
-import { HAUL_STEP_TIME, LAUNCH_PREP_ACTIONS } from '../types/process'
+import {
+  HAUL_STEP_TIME,
+  LAUNCH_PREP_ACTIONS,
+  LAUNCH_SEQ_ACTIONS,
+} from '../types/process'
 
 export function getActiveStep(
   process: ProcessVersion,
@@ -28,7 +32,7 @@ export function hasNextStep(
   return run.currentStepIndex >= 0 && run.currentStepIndex < process.steps.length - 1
 }
 
-/** Start a new round on the first process step. */
+/** Start a new round on the first process step. Resets and starts wall-clock cycle time. */
 export function beginRun(prev: RunState): RunState {
   return {
     ...prev,
@@ -39,7 +43,37 @@ export function beginRun(prev: RunState): RunState {
     completedMachineIds: [],
     elapsedTime: 0,
     valueAddTime: 0,
+    runStartedAt: Date.now(),
+    runEndedAt: null,
     unitDefective: false,
+  }
+}
+
+/** Wall-clock elapsed ms for the current/last unit run. */
+export function wallClockMs(run: RunState, now = Date.now()): number | null {
+  if (run.runStartedAt == null) return null
+  const end = run.runEndedAt ?? now
+  return Math.max(0, end - run.runStartedAt)
+}
+
+/**
+ * Mark the unit fully complete and freeze the wall-clock cycle timer.
+ * Use from any final step finish handler (launch-prep or launch-sequence).
+ */
+export function completeUnitRun(
+  prev: RunState,
+  patch: Omit<
+    Partial<RunState>,
+    'status' | 'runEndedAt' | 'completedRuns' | 'goodRuns'
+  > = {},
+): RunState {
+  return {
+    ...prev,
+    ...patch,
+    status: 'complete',
+    runEndedAt: Date.now(),
+    completedRuns: prev.completedRuns + 1,
+    goodRuns: prev.goodRuns + (prev.unitDefective ? 0 : 1),
   }
 }
 
@@ -163,14 +197,7 @@ export function completeHaulStep(
   const isLast = prev.currentStepIndex >= process.steps.length - 1
 
   if (isLast) {
-    return {
-      ...prev,
-      status: 'complete',
-      elapsedTime,
-      valueAddTime,
-      completedRuns: prev.completedRuns + 1,
-      goodRuns: prev.goodRuns + (prev.unitDefective ? 0 : 1),
-    }
+    return completeUnitRun(prev, { elapsedTime, valueAddTime })
   }
 
   return {
@@ -208,17 +235,13 @@ export function finishLaunchPrepAction(
   if (allDone) {
     const isLast = prev.currentStepIndex >= process.steps.length - 1
     if (isLast) {
-      return {
-        ...prev,
-        status: 'complete',
+      return completeUnitRun(prev, {
         activeMachineId: null,
         nextMachineIndex,
         completedMachineIds,
         elapsedTime,
         valueAddTime,
-        completedRuns: prev.completedRuns + 1,
-        goodRuns: prev.goodRuns + (prev.unitDefective ? 0 : 1),
-      }
+      })
     }
     return {
       ...prev,
@@ -242,7 +265,68 @@ export function finishLaunchPrepAction(
   }
 }
 
-export function metricsFromRun(run: RunState): SessionMetrics {
+/**
+ * Operator finished the next launch-sequence action (GO / key / liftoff).
+ * Completing the last action (liftoff) finishes the full unit run when this
+ * is the final process step.
+ */
+export function finishLaunchSequenceAction(
+  process: ProcessVersion,
+  prev: RunState,
+): RunState {
+  if (prev.status !== 'running') return prev
+
+  const step = getActiveStep(process, prev)
+  if (step?.kind !== 'launch-sequence') return prev
+
+  const action = LAUNCH_SEQ_ACTIONS[prev.nextMachineIndex]
+  if (!action) return prev
+
+  const completedMachineIds = [...prev.completedMachineIds, action.id]
+  const nextMachineIndex = prev.nextMachineIndex + 1
+  const elapsedTime = prev.elapsedTime + action.workTime
+  const valueAddTime =
+    prev.valueAddTime + Math.round(action.workTime * action.valueAddRatio)
+  const allDone = nextMachineIndex >= LAUNCH_SEQ_ACTIONS.length
+
+  if (allDone) {
+    const isLast = prev.currentStepIndex >= process.steps.length - 1
+    if (isLast) {
+      return completeUnitRun(prev, {
+        activeMachineId: null,
+        nextMachineIndex,
+        completedMachineIds,
+        elapsedTime,
+        valueAddTime,
+      })
+    }
+    return {
+      ...prev,
+      status: 'step_complete',
+      activeMachineId: null,
+      nextMachineIndex,
+      completedMachineIds,
+      elapsedTime,
+      valueAddTime,
+    }
+  }
+
+  return {
+    ...prev,
+    status: 'running',
+    activeMachineId: null,
+    nextMachineIndex,
+    completedMachineIds,
+    elapsedTime,
+    valueAddTime,
+  }
+}
+
+/**
+ * Live top-bar metrics.
+ * @param now - Wall-clock ms for live cycle-time while a run is open (pass ticking Date.now()).
+ */
+export function metricsFromRun(run: RunState, now = Date.now()): SessionMetrics {
   const inProgress =
     run.status === 'running' ||
     run.status === 'machine_working' ||
@@ -250,16 +334,19 @@ export function metricsFromRun(run: RunState): SessionMetrics {
     run.status === 'awaiting_reorient' ||
     run.status === 'complete'
 
-  if (!inProgress && run.completedRuns === 0) {
+  if (!inProgress && run.completedRuns === 0 && run.runStartedAt == null) {
     return { cycleTime: null, yield: null, flowEfficiency: null }
   }
 
-  const cycleTime =
-    run.elapsedTime > 0 || inProgress ? run.elapsedTime : null
+  const wallMs = wallClockMs(run, now)
+  // Cycle time is real elapsed seconds from Run Process until launch complete.
+  const cycleTime = wallMs != null ? wallMs / 1000 : null
 
+  // Flow efficiency stays process-based (value-add minutes / process work minutes).
+  const processCycle = run.elapsedTime
   const flowEfficiency =
-    cycleTime != null && cycleTime > 0
-      ? (run.valueAddTime / cycleTime) * 100
+    processCycle > 0
+      ? (run.valueAddTime / processCycle) * 100
       : inProgress
         ? 0
         : null
@@ -283,4 +370,23 @@ export function metricsFromRun(run: RunState): SessionMetrics {
 export function formatMetric(value: number | null, digits = 0): string {
   if (value == null || Number.isNaN(value)) return '—'
   return value.toFixed(digits)
+}
+
+/** Format wall-clock cycle time (seconds) as m:ss. */
+export function formatCycleTime(totalSeconds: number | null): string {
+  if (totalSeconds == null || Number.isNaN(totalSeconds)) return '—'
+  const s = Math.max(0, Math.floor(totalSeconds))
+  const m = Math.floor(s / 60)
+  const sec = s % 60
+  return `${m}:${sec.toString().padStart(2, '0')}`
+}
+
+/** True while a unit run is open and the wall-clock timer should tick. */
+export function isRunTimerActive(run: RunState): boolean {
+  return (
+    run.runStartedAt != null &&
+    run.runEndedAt == null &&
+    run.status !== 'idle' &&
+    run.status !== 'complete'
+  )
 }

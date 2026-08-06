@@ -2,9 +2,14 @@ import { useEffect, useMemo } from 'react'
 import { ManufactureScene } from '../components/ManufactureScene'
 import { IntegratePayloadScene } from '../components/IntegratePayloadScene'
 import { LaunchPrepScene } from '../components/LaunchPrepScene'
+import { LaunchSequenceScene } from '../components/LaunchSequenceScene'
 import type { ProcessVersion, RunState } from '../types/process'
 import {
   LAUNCH_PREP_ACTIONS,
+  LAUNCH_SEQ_ACTIONS,
+  LAUNCH_SEQ_GO_STATIONS,
+  LAUNCH_SEQ_KEY_INDEX,
+  LAUNCH_SEQ_LIFTOFF_INDEX,
   MACHINE_CYCLE_MS,
   MAX_RUNS_PER_SESSION,
 } from '../types/process'
@@ -25,6 +30,7 @@ interface SimulationViewProps {
   onReachedPad: () => void
   onHaulReorient: () => void
   onLaunchPrepActionComplete: () => void
+  onLaunchSequenceActionComplete: () => void
 }
 
 export function SimulationView({
@@ -38,6 +44,7 @@ export function SimulationView({
   onReachedPad,
   onHaulReorient,
   onLaunchPrepActionComplete,
+  onLaunchSequenceActionComplete,
 }: SimulationViewProps) {
   const runsRemaining = MAX_RUNS_PER_SESSION - run.completedRuns
   const canRun =
@@ -75,6 +82,13 @@ export function SimulationView({
       run.status === 'step_complete' ||
       run.status === 'complete')
 
+  const showLaunchSequence =
+    inActiveRun &&
+    step?.kind === 'launch-sequence' &&
+    (run.status === 'running' ||
+      run.status === 'step_complete' ||
+      run.status === 'complete')
+
   const showManufactureProceed =
     run.status === 'step_complete' &&
     step?.kind === 'manufacture' &&
@@ -83,6 +97,11 @@ export function SimulationView({
   const showHaulProceed =
     run.status === 'step_complete' &&
     step?.kind === 'haul' &&
+    hasNextStep(process, run)
+
+  const showLaunchPrepProceed =
+    run.status === 'step_complete' &&
+    step?.kind === 'launch-prep' &&
     hasNextStep(process, run)
 
   useEffect(() => {
@@ -138,16 +157,41 @@ export function SimulationView({
         }
       }
       if (run.status === 'step_complete') {
-        return 'Launch preparation complete.'
+        return hasNextStep(process, run)
+          ? 'Launch preparation complete. Proceed to Launch sequence.'
+          : 'Launch preparation complete.'
+      }
+    }
+    if (step?.kind === 'launch-sequence') {
+      if (run.status === 'running') {
+        const idx = run.nextMachineIndex
+        if (idx < LAUNCH_SEQ_GO_STATIONS.length) {
+          const station = LAUNCH_SEQ_GO_STATIONS[idx]
+          return `Mission control: ${station.callsign} — report GO (${idx + 1} of ${LAUNCH_SEQ_GO_STATIONS.length}).`
+        }
+        if (idx === LAUNCH_SEQ_KEY_INDEX) {
+          return 'All stations GO. Hold and turn the launch enable key to arm ignition.'
+        }
+        if (idx === LAUNCH_SEQ_LIFTOFF_INDEX) {
+          return 'Key armed. Liftoff sequence in progress…'
+        }
+        const action = LAUNCH_SEQ_ACTIONS[idx]
+        if (action) return action.name
+      }
+      if (run.status === 'step_complete') {
+        return 'Launch sequence complete.'
       }
     }
     if (run.status === 'complete') {
       return runsRemaining > 0
-        ? 'Process complete for this unit. Run Process again for another unit.'
+        ? 'Process complete for this unit — vehicle launched. Run Process again for another unit.'
         : 'Process complete. Session run limit reached.'
     }
     return ''
   }
+
+  const showAnyScene =
+    showManufacture || showHaul || showLaunchPrep || showLaunchSequence
 
   return (
     <section className="view-panel" aria-labelledby="simulation-heading">
@@ -179,7 +223,7 @@ export function SimulationView({
         {!sessionActive ? (
           <p className="placeholder-copy">
             Start a session, then run the process: manufacture the booster, haul
-            it to the pad, then prepare for launch.
+            it to the pad, prepare for launch, then execute the launch sequence.
           </p>
         ) : (
           <>
@@ -224,7 +268,26 @@ export function SimulationView({
               />
             )}
 
-            {!showManufacture && !showHaul && !showLaunchPrep && (
+            {showLaunchPrepProceed && (
+              <div className="sim-proceed">
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={onProceedToNextStep}
+                >
+                  Proceed to Launch sequence
+                </button>
+              </div>
+            )}
+
+            {showLaunchSequence && (
+              <LaunchSequenceScene
+                run={run}
+                onActionComplete={onLaunchSequenceActionComplete}
+              />
+            )}
+
+            {!showAnyScene && (
               <p className="placeholder-copy">
                 Click Run Process to load a booster onto the manufacture line.
               </p>

@@ -57,12 +57,13 @@ Order is fixed in `src/data/baselineProcess.ts`. Do not reorder without an expli
 
 - Four stations with **physical L→R order 2 · 1 · 4 · 3** (`linePosition` 0–3).
 - Operator sequence remains **1 → 2 → 3 → 4** (`sequence`).
-- Booster **travels along the belt** to the next required station (forward or back) before that station unlocks.
-- Machines park **offset from the line**. On operate (required + booster arrived):
-  1. Approach the line  
+- Booster is **drag-and-drop** along the belt: operator must place it on the next required station stop (no auto-travel between stations). Wrong stop / miss gives feedback and does not unlock the machine.
+- A station is operable only when it is the next `sequence` **and** the booster is snapped at that stop.
+- Machines park at **variable** `parkOffset` (rem) from the line — some closer, some further. On operate (required + booster arrived):
+  1. Approach the line (travel distance follows parkOffset)  
   2. Work animation (robot-arm / welder / laser remain distinct)  
   3. Retreat to park  
-  4. Then unlock the next sequence  
+  4. Unlock the next sequence (booster stays put until the operator drags it)  
 - Timing constants in `types/process.ts`: `MACHINE_APPROACH_MS`, `MACHINE_WORK_MS`, `MACHINE_RETREAT_MS`, `MACHINE_CYCLE_MS`, `BOOSTER_TRAVEL_MS`.
 - When all four finish → `step_complete` → **Proceed to next step**.
 

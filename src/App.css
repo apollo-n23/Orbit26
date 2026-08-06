@@ -366,7 +366,8 @@
   display: grid;
   gap: var(--space-3);
   align-items: end;
-  min-height: 11.5rem;
+  /* Room for farthest parkOffset (~2.9rem) above the default park row */
+  min-height: 14rem;
   padding: 0 2%;
 }
 
@@ -375,15 +376,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  min-height: 11rem;
+  justify-content: flex-end;
+  min-height: 13.5rem;
 }
 
 /* Vertical drop path from parked machine toward the belt */
 .station-bay__drop {
-  flex: 1;
+  flex: 0 0 auto;
   width: 2px;
-  min-height: 2.5rem;
+  min-height: var(--drop-min-height, 2.5rem);
+  height: var(--drop-min-height, 2.5rem);
   margin-top: 0.25rem;
   background: linear-gradient(
     180deg,
@@ -451,7 +453,22 @@
   border-color: var(--color-orbital);
 }
 
-/* Booster carrier slides along the belt between station stops */
+.production-line__stop--drop-target {
+  background: var(--color-amber);
+  border-color: color-mix(in srgb, var(--color-amber) 70%, #fff);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-amber) 55%, transparent);
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-top: -0.35rem;
+  margin-left: -0.35rem;
+}
+
+.production-line__stop--occupied {
+  outline: 2px solid color-mix(in srgb, var(--color-orbital) 70%, transparent);
+  outline-offset: 3px;
+}
+
+/* Booster carrier — operator drags along the belt to station stops */
 .production-line__carrier {
   position: absolute;
   top: 50%;
@@ -460,10 +477,48 @@
   transition-property: left;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   will-change: left;
+  touch-action: none;
+  user-select: none;
+}
+
+.production-line__carrier--draggable {
+  cursor: grab;
+}
+
+.production-line__carrier--dragging {
+  cursor: grabbing;
+  transition-duration: 0ms !important;
+  z-index: 5;
+}
+
+.production-line__carrier--dragging .booster {
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.55));
+  transform: scale(1.04);
 }
 
 .production-line__carrier--arrived .booster {
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+}
+
+.production-line__carrier--wrong {
+  animation: carrier-nudge 0.45s ease;
+}
+
+.production-line__carrier--miss {
+  animation: carrier-nudge 0.35s ease;
+}
+
+@keyframes carrier-nudge {
+  0%,
+  100% {
+    transform: translate(-50%, -50%);
+  }
+  25% {
+    transform: translate(calc(-50% + 5px), -50%);
+  }
+  55% {
+    transform: translate(calc(-50% - 4px), -50%);
+  }
 }
 
 /* Booster unit */
@@ -569,7 +624,7 @@
   padding: 0.15rem 0.5rem;
 }
 
-/* Machines — parked above the line; approach slides down toward the belt */
+/* Machines — parkOffset varies per station; approach slides down to the belt */
 
 .factory-machine {
   position: relative;
@@ -586,13 +641,15 @@
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-surface-raised) 88%, #000);
   color: var(--color-text);
-  /* Vertical travel uses --machine-travel-ms from ManufactureScene (MACHINE_APPROACH_MS) */
+  /* Park above the line by --park-offset; travel uses --machine-travel-ms */
+  --park-offset: 1.5rem;
+  --line-approach-y: 5.25rem;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
     opacity 150ms ease,
     transform var(--machine-travel-ms, 750ms) cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateY(0);
+  transform: translateY(calc(-1 * var(--park-offset)));
 }
 
 .factory-machine:disabled {
@@ -619,22 +676,22 @@
 
 .factory-machine--required:hover {
   border-color: var(--color-orbital-strong);
-  transform: translateY(-2px);
+  transform: translateY(calc(-1 * var(--park-offset) - 2px));
 }
 
 /* On the production line over the waiting booster */
 .factory-machine--at-line {
-  transform: translateY(5.25rem);
+  transform: translateY(var(--line-approach-y));
   z-index: 4;
   animation: none;
 }
 
 .factory-machine--required.factory-machine--at-line:hover {
-  transform: translateY(5.25rem);
+  transform: translateY(var(--line-approach-y));
 }
 
 .factory-machine--retreating {
-  transform: translateY(0);
+  transform: translateY(calc(-1 * var(--park-offset)));
   z-index: 4;
   animation: none;
   border-color: color-mix(in srgb, var(--color-amber) 40%, var(--color-border));
@@ -644,7 +701,7 @@
   border-color: var(--color-amber);
   box-shadow: 0 0 16px color-mix(in srgb, var(--color-amber) 30%, transparent);
   animation: none;
-  transform: translateY(5.25rem);
+  transform: translateY(var(--line-approach-y));
   z-index: 4;
 }
 
@@ -902,6 +959,21 @@
     transform: translateX(6px);
     opacity: 1;
   }
+}
+
+.manufacture-scene__feedback {
+  position: relative;
+  z-index: 2;
+  margin: var(--space-2) 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  min-height: 1.25rem;
+}
+
+.manufacture-scene__feedback--alert {
+  color: var(--color-amber);
+  font-weight: 600;
 }
 
 .manufacture-scene__proceed {
@@ -1243,19 +1315,27 @@
     font-size: 0.68rem;
   }
 
+  .factory-machine {
+    --line-approach-y: 4.25rem;
+  }
+
   .factory-machine--at-line,
   .factory-machine--working,
   .factory-machine--required.factory-machine--at-line:hover {
-    transform: translateY(4.25rem);
+    transform: translateY(var(--line-approach-y, 4.25rem));
   }
 
   .manufacture-scene {
-    min-height: 22rem;
+    min-height: 24rem;
     padding: var(--space-3);
   }
 
   .station-row {
-    min-height: 10rem;
+    min-height: 12rem;
+  }
+
+  .station-bay {
+    min-height: 11.5rem;
   }
 
   .haul-map {

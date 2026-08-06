@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TopBar } from './components/TopBar'
 import { ViewNav } from './components/ViewNav'
 import { SimulationView } from './views/SimulationView'
@@ -9,7 +9,9 @@ import {
   beginRun,
   completeHaulStep,
   finishLaunchPrepAction,
+  finishLaunchSequenceAction,
   finishMachineWork,
+  isRunTimerActive,
   markOnPad,
   metricsFromRun,
   proceedToNextStep,
@@ -30,8 +32,20 @@ function App() {
     structuredClone(BASELINE_PROCESS),
   )
   const [run, setRun] = useState<RunState>(INITIAL_RUN_STATE)
+  /** Wall-clock sample so Cycle Time ticks while a unit run is open. */
+  const [now, setNow] = useState(() => Date.now())
 
-  const metrics = useMemo(() => metricsFromRun(run), [run])
+  useEffect(() => {
+    if (!isRunTimerActive(run)) return
+
+    const id = window.setInterval(() => {
+      setNow(Date.now())
+    }, 200)
+
+    return () => window.clearInterval(id)
+  }, [run.status, run.runStartedAt, run.runEndedAt])
+
+  const metrics = useMemo(() => metricsFromRun(run, now), [run, now])
 
   function handleStartSession() {
     setSessionActive(true)
@@ -43,6 +57,7 @@ function App() {
     if (!sessionActive) return
     if (run.status !== 'idle' && run.status !== 'complete') return
     if (run.completedRuns >= MAX_RUNS_PER_SESSION) return
+    setNow(Date.now())
     setRun((prev) => beginRun(prev))
   }
 
@@ -73,6 +88,10 @@ function App() {
     setRun((prev) => finishLaunchPrepAction(process, prev))
   }, [process])
 
+  const handleLaunchSequenceActionComplete = useCallback(() => {
+    setRun((prev) => finishLaunchSequenceAction(process, prev))
+  }, [process])
+
   return (
     <div className="app-shell">
       <TopBar
@@ -94,6 +113,7 @@ function App() {
             onReachedPad={handleReachedPad}
             onHaulReorient={handleHaulReorient}
             onLaunchPrepActionComplete={handleLaunchPrepActionComplete}
+            onLaunchSequenceActionComplete={handleLaunchSequenceActionComplete}
           />
         )}
         {activeView === 'map' && <MapView />}

@@ -1,11 +1,16 @@
 import type { ProcessVersion } from '../types/process'
-import { HAUL_STEP_TIME, LAUNCH_PREP_STEP_TIME } from '../types/process'
+import {
+  HAUL_STEP_TIME,
+  LAUNCH_PREP_STEP_TIME,
+  LAUNCH_SEQ_STEP_TIME,
+} from '../types/process'
 
 /**
  * Baseline process:
  * 1. Manufacture booster — operate four machines in sequence
  * 2. Integrate payload — haul booster along a constrained path to the pad
  * 3. Prepare for launch — mate to tower, stack payload, fuel, power up
+ * 4. Launch sequence — mission-control GO calls, key arm, liftoff
  */
 export const BASELINE_PROCESS: ProcessVersion = {
   id: 'baseline-v1',
@@ -19,6 +24,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
       baseTime: 48,
       defectProbability: 0,
       // Physical line order left→right: 2, 1, 4, 3 (sequence still 1→2→3→4)
+      // parkOffset (rem): varied distance from belt — further stations travel more on approach
       machines: [
         {
           id: 'form-press',
@@ -27,6 +33,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
           name: 'Form press arm',
           kind: 'robot-arm',
           workTime: 12,
+          parkOffset: 1.1,
         },
         {
           id: 'seam-welder',
@@ -35,6 +42,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
           name: 'Seam welder',
           kind: 'welder',
           workTime: 14,
+          parkOffset: 2.9,
         },
         {
           id: 'trim-laser',
@@ -43,6 +51,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
           name: 'Trim laser',
           kind: 'laser',
           workTime: 10,
+          parkOffset: 0.55,
         },
         {
           id: 'fit-arm',
@@ -51,6 +60,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
           name: 'Fit-out arm',
           kind: 'robot-arm',
           workTime: 12,
+          parkOffset: 2.15,
         },
       ],
     },
@@ -66,6 +76,13 @@ export const BASELINE_PROCESS: ProcessVersion = {
       name: 'Prepare for launch',
       kind: 'launch-prep',
       baseTime: LAUNCH_PREP_STEP_TIME,
+      defectProbability: 0,
+    },
+    {
+      id: 'launch-sequence',
+      name: 'Launch sequence',
+      kind: 'launch-sequence',
+      baseTime: LAUNCH_SEQ_STEP_TIME,
       defectProbability: 0,
     },
   ],
