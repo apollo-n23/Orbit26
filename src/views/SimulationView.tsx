@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { ManufactureScene } from '../components/ManufactureScene'
 import { IntegratePayloadScene } from '../components/IntegratePayloadScene'
 import type { ProcessVersion, RunState } from '../types/process'
-import { MACHINE_WORK_MS, MAX_RUNS_PER_SESSION } from '../types/process'
+import { MACHINE_CYCLE_MS, MAX_RUNS_PER_SESSION } from '../types/process'
 import {
   getActiveStep,
   getStepMachines,
@@ -69,9 +69,10 @@ export function SimulationView({
   useEffect(() => {
     if (run.status !== 'machine_working') return
 
+    // Full cycle: machine approaches line → works → retreats, then unlock next.
     const id = window.setTimeout(() => {
       onMachineWorkFinished()
-    }, MACHINE_WORK_MS)
+    }, MACHINE_CYCLE_MS)
 
     return () => window.clearTimeout(id)
   }, [run.status, run.activeMachineId, onMachineWorkFinished])
@@ -85,11 +86,11 @@ export function SimulationView({
     }
     if (step?.kind === 'manufacture') {
       if (run.status === 'running' && required) {
-        return `Operate machine ${required.sequence}: ${required.name}.`
+        return `Booster moves to station ${required.sequence}. Operate ${required.name} when it arrives (sequence ${required.sequence} of ${machines.length}).`
       }
       if (run.status === 'machine_working' && run.activeMachineId) {
         const active = machines.find((m) => m.id === run.activeMachineId)
-        return `${active?.name ?? 'Machine'} is working on the booster…`
+        return `${active?.name ?? 'Machine'} approaches the line, works the booster, then returns to park…`
       }
       if (run.status === 'step_complete') {
         return hasNextStep(process, run)
@@ -99,7 +100,7 @@ export function SimulationView({
     }
     if (step?.kind === 'haul') {
       if (run.status === 'running') {
-        return 'Drag the booster along the path from Assembly to the Launch Pad. Stay on the corridor — leave it and you reset. Use re-orient controls at corners.'
+        return 'Use arrow keys to move the booster along the road from Assembly to the Launch Pad. Stay on the corridor — leave it and you explode and reset. Use re-orient controls at corners (drag optional).'
       }
       if (run.status === 'awaiting_reorient') {
         return 'Booster is on the pad. Click Reorient to seat it correctly and finish this step.'

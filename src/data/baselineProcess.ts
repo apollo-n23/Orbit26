@@ -17,10 +17,12 @@ export const BASELINE_PROCESS: ProcessVersion = {
       kind: 'manufacture',
       baseTime: 48,
       defectProbability: 0,
+      // Physical line order left→right: 2, 1, 4, 3 (sequence still 1→2→3→4)
       machines: [
         {
           id: 'form-press',
           sequence: 1,
+          linePosition: 1,
           name: 'Form press arm',
           kind: 'robot-arm',
           workTime: 12,
@@ -28,6 +30,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
         {
           id: 'seam-welder',
           sequence: 2,
+          linePosition: 0,
           name: 'Seam welder',
           kind: 'welder',
           workTime: 14,
@@ -35,6 +38,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
         {
           id: 'trim-laser',
           sequence: 3,
+          linePosition: 3,
           name: 'Trim laser',
           kind: 'laser',
           workTime: 10,
@@ -42,6 +46,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
         {
           id: 'fit-arm',
           sequence: 4,
+          linePosition: 2,
           name: 'Fit-out arm',
           kind: 'robot-arm',
           workTime: 12,

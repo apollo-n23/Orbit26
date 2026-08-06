@@ -38,6 +38,14 @@ const ORIENTATIONS = [
   { label: '−90°', value: -90 },
 ] as const
 
+/** Scene units per second while an arrow key is held. */
+const MOVE_SPEED = 140
+
+/** How long the explosion plays before reset (ms). */
+const EXPLODE_MS = 560
+
+const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'])
+
 export function IntegratePayloadScene({
   run,
   onReachedPad,
@@ -51,22 +59,38 @@ export function IntegratePayloadScene({
     rotation: HAUL_START.rotation,
   })
   const [dragging, setDragging] = useState(false)
-  const [resetPulse, setResetPulse] = useState(false)
+  const [exploding, setExploding] = useState(false)
   const [seated, setSeated] = useState(false)
   const dragOffset = useRef<Point>({ x: 0, y: 0 })
   const reachedPadRef = useRef(false)
+  const poseRef = useRef(pose)
+  const keysRef = useRef<Set<string>>(new Set())
+  const explodingRef = useRef(false)
+  const explodeTimerRef = useRef<number | null>(null)
+
+  poseRef.current = pose
 
   const locked =
     run.status === 'awaiting_reorient' ||
     run.status === 'complete' ||
     run.status === 'step_complete'
-  const canDrag = run.status === 'running' && !seated
+  const canMove = run.status === 'running' && !seated && !exploding
   const showReorient =
     run.status === 'awaiting_reorient' && !seated
+
+  const clearExplodeTimer = useCallback(() => {
+    if (explodeTimerRef.current != null) {
+      window.clearTimeout(explodeTimerRef.current)
+      explodeTimerRef.current = null
+    }
+  }, [])
 
   // Reset haul pose when a new run of this step begins.
   useEffect(() => {
     if (run.status === 'running' && run.currentStepIndex >= 0) {
+      clearExplodeTimer()
+      explodingRef.current = false
+      setExploding(false)
       setPose({
         x: HAUL_START.x,
         y: HAUL_START.y,
@@ -74,9 +98,12 @@ export function IntegratePayloadScene({
       })
       setSeated(false)
       setDragging(false)
+      keysRef.current.clear()
       reachedPadRef.current = false
     }
-  }, [run.status, run.currentStepIndex, run.completedRuns])
+  }, [run.status, run.currentStepIndex, run.completedRuns, clearExplodeTimer])
+
+  useEffect(() => () => clearExplodeTimer(), [clearExplodeTimer])
 
   const clientToScene = useCallback((clientX: number, clientY: number): Point => {
     const el = sceneRef.current
@@ -87,22 +114,35 @@ export function IntegratePayloadScene({
     return { x, y }
   }, [])
 
-  const resetToStart = useCallback(() => {
-    setPose({
-      x: HAUL_START.x,
-      y: HAUL_START.y,
-      rotation: pose.rotation,
-    })
-    setResetPulse(true)
-    window.setTimeout(() => setResetPulse(false), 450)
-    onPathReset?.()
-  }, [onPathReset, pose.rotation])
+  /** Off-corridor: play explosion, then return to Assembly start pose. */
+  const explodeAndRestart = useCallback(() => {
+    if (explodingRef.current) return
+    explodingRef.current = true
+    setExploding(true)
+    setDragging(false)
+    keysRef.current.clear()
+
+    clearExplodeTimer()
+    explodeTimerRef.current = window.setTimeout(() => {
+      explodeTimerRef.current = null
+      setPose({
+        x: HAUL_START.x,
+        y: HAUL_START.y,
+        rotation: HAUL_START.rotation,
+      })
+      explodingRef.current = false
+      setExploding(false)
+      onPathReset?.()
+    }, EXPLODE_MS)
+  }, [clearExplodeTimer, onPathReset])
 
   const tryMoveTo = useCallback(
     (next: HaulPose) => {
+      if (explodingRef.current) return
+
       if (!isBoosterOnPath({ x: next.x, y: next.y }, next.rotation)) {
         setDragging(false)
-        resetToStart()
+        explodeAndRestart()
         return
       }
 
@@ -114,14 +154,83 @@ export function IntegratePayloadScene({
       ) {
         reachedPadRef.current = true
         setDragging(false)
+        keysRef.current.clear()
         onReachedPad()
       }
     },
-    [onReachedPad, resetToStart],
+    [onReachedPad, explodeAndRestart],
   )
 
+  // Arrow keys: continuous movement while held; block page scroll.
+  useEffect(() => {
+    if (run.status !== 'running' || seated) {
+      keysRef.current.clear()
+      return
+    }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!ARROW_KEYS.has(e.key)) return
+      // Prevent browser scroll while operating the haul scene
+      e.preventDefault()
+      if (explodingRef.current) return
+      keysRef.current.add(e.key)
+    }
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (!ARROW_KEYS.has(e.key)) return
+      keysRef.current.delete(e.key)
+    }
+
+    const onBlur = () => {
+      keysRef.current.clear()
+    }
+
+    let raf = 0
+    let last = performance.now()
+
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000)
+      last = now
+
+      if (!explodingRef.current && keysRef.current.size > 0) {
+        let dx = 0
+        let dy = 0
+        if (keysRef.current.has('ArrowLeft')) dx -= 1
+        if (keysRef.current.has('ArrowRight')) dx += 1
+        if (keysRef.current.has('ArrowUp')) dy -= 1
+        if (keysRef.current.has('ArrowDown')) dy += 1
+
+        if (dx !== 0 || dy !== 0) {
+          const len = Math.hypot(dx, dy)
+          const step = (MOVE_SPEED * dt) / len
+          const p = poseRef.current
+          tryMoveTo({
+            x: p.x + dx * step,
+            y: p.y + dy * step,
+            rotation: p.rotation,
+          })
+        }
+      }
+
+      raf = window.requestAnimationFrame(tick)
+    }
+
+    window.addEventListener('keydown', onKeyDown, { passive: false })
+    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
+    raf = window.requestAnimationFrame(tick)
+
+    return () => {
+      window.cancelAnimationFrame(raf)
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
+      keysRef.current.clear()
+    }
+  }, [run.status, seated, tryMoveTo])
+
   function handlePointerDown(e: React.PointerEvent) {
-    if (!canDrag) return
+    if (!canMove) return
     e.currentTarget.setPointerCapture(e.pointerId)
     const scenePt = clientToScene(e.clientX, e.clientY)
     dragOffset.current = {
@@ -132,7 +241,7 @@ export function IntegratePayloadScene({
   }
 
   function handlePointerMove(e: React.PointerEvent) {
-    if (!dragging || !canDrag) return
+    if (!dragging || !canMove) return
     const scenePt = clientToScene(e.clientX, e.clientY)
     tryMoveTo({
       x: scenePt.x + dragOffset.current.x,
@@ -152,18 +261,10 @@ export function IntegratePayloadScene({
   }
 
   function setOrientation(rotation: number) {
-    if (!canDrag) return
+    if (!canMove) return
     const next = { ...pose, rotation: clampRotation(rotation) }
     if (!isBoosterOnPath({ x: next.x, y: next.y }, next.rotation)) {
-      // Rotation would leave the corridor — snap back to start with new heading.
-      setPose({
-        x: HAUL_START.x,
-        y: HAUL_START.y,
-        rotation: next.rotation,
-      })
-      setResetPulse(true)
-      window.setTimeout(() => setResetPulse(false), 450)
-      onPathReset?.()
+      explodeAndRestart()
       return
     }
     setPose(next)
@@ -194,7 +295,7 @@ export function IntegratePayloadScene({
             <button
               type="button"
               className="btn btn--ghost"
-              disabled={!canDrag}
+              disabled={!canMove}
               onClick={() => rotateBy(-90)}
               title="Rotate counter-clockwise 90°"
             >
@@ -203,7 +304,7 @@ export function IntegratePayloadScene({
             <button
               type="button"
               className="btn btn--ghost"
-              disabled={!canDrag}
+              disabled={!canMove}
               onClick={() => rotateBy(90)}
               title="Rotate clockwise 90°"
             >
@@ -221,7 +322,7 @@ export function IntegratePayloadScene({
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                disabled={!canDrag}
+                disabled={!canMove}
                 onClick={() => setOrientation(o.value)}
               >
                 {o.label}
@@ -245,11 +346,14 @@ export function IntegratePayloadScene({
         ref={sceneRef}
         className={[
           'haul-map',
-          resetPulse ? 'haul-map--reset' : '',
+          exploding ? 'haul-map--exploding' : '',
           seated ? 'haul-map--seated' : '',
         ]
           .filter(Boolean)
           .join(' ')}
+        tabIndex={canMove ? 0 : -1}
+        role="application"
+        aria-label="Haul map — use arrow keys to move the booster along the road"
       >
         <svg
           className="haul-map__svg"
@@ -257,39 +361,81 @@ export function IntegratePayloadScene({
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
-          {/* Ground grid */}
           <defs>
+            {/* Outdoor grass field */}
+            <linearGradient id="haul-grass" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3d7a35" />
+              <stop offset="45%" stopColor="#2f6a2a" />
+              <stop offset="100%" stopColor="#255522" />
+            </linearGradient>
             <pattern
-              id="haul-grid"
-              width="40"
-              height="40"
+              id="haul-grass-texture"
+              width="28"
+              height="28"
               patternUnits="userSpaceOnUse"
             >
+              <rect width="28" height="28" fill="transparent" />
               <path
-                d="M 40 0 L 0 0 0 40"
+                d="M4 22 Q6 12 5 6 M12 26 Q14 14 13 5 M20 24 Q22 13 21 7 M8 18 Q9 10 8 4"
                 fill="none"
-                stroke="rgba(42,50,61,0.55)"
-                strokeWidth="1"
+                stroke="rgba(20, 70, 18, 0.28)"
+                strokeWidth="1.2"
+                strokeLinecap="round"
               />
+              <circle cx="16" cy="10" r="1.1" fill="rgba(90, 150, 50, 0.22)" />
+              <circle cx="6" cy="8" r="0.8" fill="rgba(70, 130, 40, 0.18)" />
+              <circle cx="22" cy="16" r="0.9" fill="rgba(100, 160, 55, 0.16)" />
             </pattern>
+            <radialGradient id="haul-field-vignette" cx="50%" cy="50%" r="70%">
+              <stop offset="50%" stopColor="rgba(0,0,0,0)" />
+              <stop offset="100%" stopColor="rgba(10, 28, 8, 0.35)" />
+            </radialGradient>
+            {/* Road surface */}
+            <linearGradient id="haul-road" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#4a4f56" />
+              <stop offset="50%" stopColor="#3d4249" />
+              <stop offset="100%" stopColor="#353a41" />
+            </linearGradient>
           </defs>
-          <rect width={SCENE_WIDTH} height={SCENE_HEIGHT} fill="url(#haul-grid)" />
 
-          {/* Transport corridor — 50% wider than booster short side */}
+          {/* Grassy ground */}
+          <rect width={SCENE_WIDTH} height={SCENE_HEIGHT} fill="url(#haul-grass)" />
+          <rect
+            width={SCENE_WIDTH}
+            height={SCENE_HEIGHT}
+            fill="url(#haul-grass-texture)"
+          />
+          <rect
+            width={SCENE_WIDTH}
+            height={SCENE_HEIGHT}
+            fill="url(#haul-field-vignette)"
+          />
+
+          {/* Transport corridor — asphalt road, 50% wider than booster short side */}
           <polyline
             points={pathPoints}
             fill="none"
-            stroke="rgba(58, 69, 84, 0.95)"
+            stroke="url(#haul-road)"
             strokeWidth={PATH_WIDTH}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
+          {/* Road edge lines */}
           <polyline
             points={pathPoints}
             fill="none"
-            stroke="rgba(90, 104, 122, 0.55)"
+            stroke="rgba(210, 200, 160, 0.35)"
+            strokeWidth={PATH_WIDTH - 6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={0.25}
+          />
+          <polyline
+            points={pathPoints}
+            fill="none"
+            stroke="rgba(255, 220, 90, 0.55)"
             strokeWidth={2}
-            strokeDasharray="10 8"
+            strokeDasharray="12 10"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -302,27 +448,27 @@ export function IntegratePayloadScene({
               width="110"
               height="130"
               rx="4"
-              fill="#1e242c"
-              stroke="#3a4554"
+              fill="#2a3038"
+              stroke="#5a6574"
               strokeWidth="2"
             />
-            <rect x="30" y="195" width="28" height="22" fill="#2a3340" />
-            <rect x="68" y="195" width="28" height="22" fill="#2a3340" />
-            <rect x="30" y="230" width="28" height="22" fill="#2a3340" />
-            <rect x="68" y="230" width="28" height="22" fill="#2a3340" />
+            <rect x="30" y="195" width="28" height="22" fill="#1a222c" />
+            <rect x="68" y="195" width="28" height="22" fill="#1a222c" />
+            <rect x="30" y="230" width="28" height="22" fill="#1a222c" />
+            <rect x="68" y="230" width="28" height="22" fill="#1a222c" />
             <rect
               x="48"
               y="268"
               width="50"
               height="28"
               fill="#151a21"
-              stroke="#3a4554"
+              stroke="#5a6574"
             />
             <text
               x="73"
               y="165"
               textAnchor="middle"
-              fill="#9aa6b5"
+              fill="#e8f0e4"
               fontSize="13"
               fontFamily="Segoe UI, system-ui, sans-serif"
               fontWeight="600"
@@ -341,11 +487,11 @@ export function IntegratePayloadScene({
               rx="6"
               fill={
                 locked || seated
-                  ? 'rgba(59, 130, 196, 0.22)'
-                  : 'rgba(42, 50, 61, 0.9)'
+                  ? 'rgba(59, 130, 196, 0.35)'
+                  : 'rgba(55, 60, 68, 0.95)'
               }
               stroke={
-                locked || seated ? '#3b82c4' : '#5a6574'
+                locked || seated ? '#5ba3e0' : '#8a929c'
               }
               strokeWidth="2"
             />
@@ -354,7 +500,7 @@ export function IntegratePayloadScene({
               cy={PAD_SEATED.y}
               r="18"
               fill="none"
-              stroke="rgba(212, 160, 23, 0.45)"
+              stroke="rgba(212, 160, 23, 0.55)"
               strokeWidth="2"
               strokeDasharray="4 3"
             />
@@ -362,7 +508,7 @@ export function IntegratePayloadScene({
               x={PAD_SEATED.x}
               y={LAUNCH_PAD.y - 12}
               textAnchor="middle"
-              fill="#9aa6b5"
+              fill="#e8f0e4"
               fontSize="13"
               fontFamily="Segoe UI, system-ui, sans-serif"
               fontWeight="600"
@@ -372,13 +518,14 @@ export function IntegratePayloadScene({
           </g>
         </svg>
 
-        {/* HTML booster overlay for drag + CSS art */}
+        {/* HTML booster overlay — arrow keys primary; drag optional */}
         <div
           className={[
             'haul-booster',
             dragging ? 'haul-booster--dragging' : '',
-            canDrag ? 'haul-booster--draggable' : '',
+            canMove ? 'haul-booster--draggable' : '',
             seated ? 'haul-booster--seated' : '',
+            exploding ? 'haul-booster--exploding' : '',
           ]
             .filter(Boolean)
             .join(' ')}
@@ -394,16 +541,42 @@ export function IntegratePayloadScene({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
-          <Booster
-            className="booster--haul"
-            ready={seated}
-            label={
-              seated
-                ? 'Booster seated on launch pad'
-                : 'Booster — drag along the path'
-            }
-          />
+          {!exploding && (
+            <Booster
+              className="booster--haul"
+              ready={seated}
+              label={
+                seated
+                  ? 'Booster seated on launch pad'
+                  : 'Booster — arrow keys to move along the path'
+              }
+            />
+          )}
         </div>
+
+        {exploding && (
+          <div
+            className="haul-explosion"
+            style={{
+              left: `${(pose.x / SCENE_WIDTH) * 100}%`,
+              top: `${(pose.y / SCENE_HEIGHT) * 100}%`,
+            }}
+            aria-live="assertive"
+            role="img"
+            aria-label="Booster left the road and exploded — resetting to Assembly"
+          >
+            <span className="haul-explosion__core" />
+            <span className="haul-explosion__ring" />
+            <span className="haul-explosion__ring haul-explosion__ring--late" />
+            <span className="haul-explosion__spark haul-explosion__spark--1" />
+            <span className="haul-explosion__spark haul-explosion__spark--2" />
+            <span className="haul-explosion__spark haul-explosion__spark--3" />
+            <span className="haul-explosion__spark haul-explosion__spark--4" />
+            <span className="haul-explosion__spark haul-explosion__spark--5" />
+            <span className="haul-explosion__spark haul-explosion__spark--6" />
+            <span className="haul-explosion__flash" />
+          </div>
+        )}
       </div>
     </div>
   )

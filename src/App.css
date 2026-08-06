@@ -321,9 +321,9 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   gap: var(--space-4);
-  min-height: 22rem;
+  min-height: 24rem;
   padding: var(--space-5);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -352,13 +352,45 @@
   opacity: 0.7;
 }
 
-.factory-row {
+/* Floor: parked machines above, belt + booster below */
+.manufacture-floor {
   position: relative;
   z-index: 1;
   display: flex;
-  justify-content: space-around;
-  gap: var(--space-4);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+.station-row {
+  display: grid;
+  gap: var(--space-3);
+  align-items: end;
+  min-height: 11.5rem;
+  padding: 0 2%;
+}
+
+.station-bay {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 11rem;
+}
+
+/* Vertical drop path from parked machine toward the belt */
+.station-bay__drop {
+  flex: 1;
+  width: 2px;
+  min-height: 2.5rem;
+  margin-top: 0.25rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-border) 80%, transparent),
+    transparent
+  );
+  opacity: 0.55;
 }
 
 .production-line {
@@ -366,16 +398,17 @@
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 7.5rem;
-  padding: var(--space-4) 0;
+  min-height: 6.5rem;
+  padding: var(--space-3) 0 var(--space-2);
 }
 
 .production-line__belt {
   position: absolute;
-  left: 4%;
-  right: 4%;
+  left: 2%;
+  right: 2%;
+  top: 50%;
   height: 2.75rem;
+  margin-top: -1.375rem;
   border-radius: 4px;
   background: linear-gradient(180deg, #2a3038 0%, #1a1e24 45%, #252b33 100%);
   border: 1px solid #3a424e;
@@ -383,7 +416,7 @@
   display: flex;
   align-items: center;
   justify-content: space-evenly;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .production-line__groove {
@@ -391,6 +424,46 @@
   height: 3px;
   border-radius: 2px;
   background: rgba(0, 0, 0, 0.35);
+}
+
+.production-line__stop {
+  position: absolute;
+  top: 50%;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: -0.28rem;
+  margin-left: -0.28rem;
+  border-radius: 50%;
+  background: #4a5462;
+  border: 1px solid #6a7584;
+  transform: translateX(0);
+  z-index: 1;
+}
+
+.production-line__stop--active {
+  background: var(--color-orbital);
+  border-color: var(--color-orbital-strong);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-orbital) 55%, transparent);
+}
+
+.production-line__stop--done {
+  background: color-mix(in srgb, var(--color-orbital) 45%, #4a5462);
+  border-color: var(--color-orbital);
+}
+
+/* Booster carrier slides along the belt between station stops */
+.production-line__carrier {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  transition-property: left;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: left;
+}
+
+.production-line__carrier--arrived .booster {
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
 }
 
 /* Booster unit */
@@ -496,26 +569,30 @@
   padding: 0.15rem 0.5rem;
 }
 
-/* Machines */
+/* Machines — parked above the line; approach slides down toward the belt */
 
 .factory-machine {
   position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
-  min-width: 8.5rem;
-  max-width: 11rem;
-  padding: var(--space-3) var(--space-3) var(--space-2);
+  width: 100%;
+  max-width: 10.5rem;
+  min-width: 0;
+  padding: var(--space-3) var(--space-2) var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-surface-raised) 88%, #000);
   color: var(--color-text);
+  /* Vertical travel matches MACHINE_APPROACH_MS / MACHINE_RETREAT_MS (750ms) */
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
     opacity 150ms ease,
-    transform 150ms ease;
+    transform 750ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
 }
 
 .factory-machine:disabled {
@@ -524,6 +601,11 @@
 
 .factory-machine--locked {
   opacity: 0.45;
+}
+
+.factory-machine--awaiting {
+  border-color: color-mix(in srgb, var(--color-orbital) 45%, var(--color-border));
+  opacity: 0.9;
 }
 
 .factory-machine--required {
@@ -540,10 +622,30 @@
   transform: translateY(-2px);
 }
 
+/* On the production line over the waiting booster */
+.factory-machine--at-line {
+  transform: translateY(5.25rem);
+  z-index: 4;
+  animation: none;
+}
+
+.factory-machine--required.factory-machine--at-line:hover {
+  transform: translateY(5.25rem);
+}
+
+.factory-machine--retreating {
+  transform: translateY(0);
+  z-index: 4;
+  animation: none;
+  border-color: color-mix(in srgb, var(--color-amber) 40%, var(--color-border));
+}
+
 .factory-machine--working {
   border-color: var(--color-amber);
   box-shadow: 0 0 16px color-mix(in srgb, var(--color-amber) 30%, transparent);
   animation: none;
+  transform: translateY(5.25rem);
+  z-index: 4;
 }
 
 .factory-machine--done {
@@ -850,7 +952,7 @@
   font-size: 0.62rem;
 }
 
-/* ── Integrate payload (haul) scene ──────────────────────── */
+/* ── Integrate payload (haul) scene — outdoor grassy haul ── */
 
 .haul-scene {
   position: relative;
@@ -895,29 +997,40 @@
   position: relative;
   flex: 1;
   min-height: 20rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid color-mix(in srgb, #4a7a3a 45%, var(--color-border));
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, #12161c 0%, #0c0f13 100%);
+  /* Outdoor field base (SVG grass fills map; this shows if SVG lags) */
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(90, 150, 55, 0.35) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 70%, rgba(50, 100, 40, 0.4) 0%, transparent 50%),
+    linear-gradient(180deg, #356b2e 0%, #2a5a25 45%, #1f4a1c 100%);
   overflow: hidden;
   touch-action: none;
   user-select: none;
+  outline: none;
 }
 
-.haul-map--reset {
-  animation: haul-flash 0.45s ease;
+.haul-map:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-orbital) 50%, transparent);
+}
+
+.haul-map--exploding {
+  animation: haul-explode-flash 0.55s ease;
 }
 
 .haul-map--seated {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-orbital) 40%, transparent);
 }
 
-@keyframes haul-flash {
-  0%,
+@keyframes haul-explode-flash {
+  0% {
+    box-shadow: inset 0 0 40px 8px rgba(255, 120, 20, 0.55);
+  }
+  35% {
+    box-shadow: inset 0 0 60px 14px rgba(255, 60, 10, 0.4);
+  }
   100% {
     box-shadow: inset 0 0 0 0 transparent;
-  }
-  40% {
-    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-amber) 55%, transparent);
   }
 }
 
@@ -954,8 +1067,136 @@
   pointer-events: none;
 }
 
+.haul-booster--exploding {
+  pointer-events: none;
+  opacity: 0;
+}
+
 .haul-booster .booster {
   pointer-events: none;
+}
+
+/* Off-road explosion burst */
+.haul-explosion {
+  position: absolute;
+  z-index: 6;
+  width: 7rem;
+  height: 7rem;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.haul-explosion__core {
+  position: absolute;
+  inset: 28%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #fff6c8 0%,
+    #ffb020 28%,
+    #ff4a12 55%,
+    transparent 72%
+  );
+  animation: haul-explode-core 0.55s ease-out forwards;
+}
+
+.haul-explosion__ring {
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 160, 40, 0.85);
+  animation: haul-explode-ring 0.55s ease-out forwards;
+}
+
+.haul-explosion__ring--late {
+  inset: 22%;
+  border-color: rgba(255, 80, 20, 0.7);
+  animation-delay: 0.06s;
+}
+
+.haul-explosion__flash {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 240, 180, 0.9) 0%,
+    rgba(255, 100, 20, 0.35) 40%,
+    transparent 70%
+  );
+  animation: haul-explode-flash-burst 0.55s ease-out forwards;
+}
+
+.haul-explosion__spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin: -0.22rem;
+  border-radius: 50%;
+  background: #ffc040;
+  box-shadow: 0 0 6px 2px rgba(255, 120, 20, 0.8);
+  animation: haul-explode-spark 0.55s ease-out forwards;
+}
+
+.haul-explosion__spark--1 { --sx: 1.8rem; --sy: -2.2rem; }
+.haul-explosion__spark--2 { --sx: -2rem; --sy: -1.4rem; animation-delay: 0.02s; }
+.haul-explosion__spark--3 { --sx: 2.2rem; --sy: 1.2rem; animation-delay: 0.04s; }
+.haul-explosion__spark--4 { --sx: -1.6rem; --sy: 2rem; animation-delay: 0.03s; }
+.haul-explosion__spark--5 { --sx: 0.4rem; --sy: 2.4rem; animation-delay: 0.05s; }
+.haul-explosion__spark--6 { --sx: -0.2rem; --sy: -2.5rem; animation-delay: 0.01s; }
+
+@keyframes haul-explode-core {
+  0% {
+    transform: scale(0.35);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes haul-explode-ring {
+  0% {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes haul-explode-flash-burst {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  30% {
+    transform: scale(1.4);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes haul-explode-spark {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--sx), var(--sy)) scale(0.2);
+    opacity: 0;
+  }
 }
 
 @media (max-width: 700px) {
@@ -964,7 +1205,27 @@
   }
 
   .factory-machine {
-    min-width: 7rem;
+    max-width: 7.5rem;
+    padding: var(--space-2) var(--space-1);
+  }
+
+  .factory-machine__label {
+    font-size: 0.68rem;
+  }
+
+  .factory-machine--at-line,
+  .factory-machine--working,
+  .factory-machine--required.factory-machine--at-line:hover {
+    transform: translateY(4.25rem);
+  }
+
+  .manufacture-scene {
+    min-height: 22rem;
+    padding: var(--space-3);
+  }
+
+  .station-row {
+    min-height: 10rem;
   }
 
   .haul-map,

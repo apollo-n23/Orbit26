@@ -111,20 +111,35 @@ export function distanceToPath(p: Point, path: Point[]): number {
 
 /**
  * True if the entire booster footprint stays within the path corridor
- * (centerline ± PATH_HALF).
+ * (centerline ± PATH_HALF). Samples corners, edge quarters, and interior
+ * so rotation mid-turn cannot clip through the corridor boundary.
  */
 export function isBoosterOnPath(
   center: Point,
   rotation: number,
   path: Point[] = HAUL_PATH,
 ): boolean {
-  const samples = [center, ...boosterCorners(center, rotation)]
-  // Also sample midpoints of each edge for fewer corner-cuts
   const corners = boosterCorners(center, rotation)
+  const samples: Point[] = [center, ...corners]
+
+  // Edge samples at 25% / 50% / 75% along each side
   for (let i = 0; i < 4; i++) {
     const a = corners[i]
     const b = corners[(i + 1) % 4]
-    samples.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 })
+    for (const t of [0.25, 0.5, 0.75]) {
+      samples.push({
+        x: a.x + (b.x - a.x) * t,
+        y: a.y + (b.y - a.y) * t,
+      })
+    }
+  }
+
+  // Interior ring between center and corners (catches mid-body clipping)
+  for (const c of corners) {
+    samples.push({
+      x: center.x + (c.x - center.x) * 0.5,
+      y: center.y + (c.y - center.y) * 0.5,
+    })
   }
 
   return samples.every((s) => distanceToPath(s, path) <= PATH_HALF + 0.5)

@@ -1,8 +1,13 @@
 /** Machine / station the operator must trigger inside a manufacture step. */
 export interface ProcessMachine {
   id: string
-  /** 1-based sequence order shown to the user. */
+  /** 1-based sequence order the operator must follow (1 → 2 → 3 → 4). */
   sequence: number
+  /**
+   * Physical left-to-right slot on the production line (0 = leftmost).
+   * May differ from sequence so the booster travels forward/back between stops.
+   */
+  linePosition: number
   name: string
   kind: 'robot-arm' | 'welder' | 'laser'
   /** Simulated work time added to cycle time (minutes). */
@@ -95,8 +100,24 @@ export const INITIAL_RUN_STATE: RunState = {
   goodRuns: 0,
 }
 
-/** Work animation length before the next machine unlocks (ms). */
+/** Machine slides from parked offset toward the production line (ms). */
+export const MACHINE_APPROACH_MS = 750
+
+/** Work animation length while the machine is on the booster (ms). */
 export const MACHINE_WORK_MS = 1100
+
+/** Machine returns from the line to its parked position (ms). */
+export const MACHINE_RETREAT_MS = 750
+
+/**
+ * Full operate cycle: approach → work → retreat.
+ * Used by SimulationView before finishMachineWork unlocks the next sequence.
+ */
+export const MACHINE_CYCLE_MS =
+  MACHINE_APPROACH_MS + MACHINE_WORK_MS + MACHINE_RETREAT_MS
+
+/** Booster travel between station stops along the belt (ms). */
+export const BOOSTER_TRAVEL_MS = 850
 
 /** Time credited when the haul step is completed (minutes). */
 export const HAUL_STEP_TIME = 35
