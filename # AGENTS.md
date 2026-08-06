@@ -82,3 +82,9 @@ The Execute phase is a **hands-on floor simulation**. The learner operates the p
 - Always keep the application runnable after each change.
 - Use clear, descriptive component and variable names.
 - Comment only where intent is not obvious from the code.
+
+## Git Practices
+- A **local Git repository** is active in the project root.
+- Commit **meaningful working changes** with clear, concise messages.
+- Keep the **working tree clean** (no leftover uncommitted noise after a task).
+- **No remote** is configured — local-only for now.
