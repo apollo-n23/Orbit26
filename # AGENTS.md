@@ -34,8 +34,8 @@ The Execute phase is a **hands-on floor / field simulation**. The learner operat
 | `idle` | Session may be active; no unit on the floor |
 | `running` | Learner is operating the current step |
 | `machine_working` | Manufacture machine mid approach→work→retreat |
-| `awaiting_reorient` | Haul booster on pad; waiting for **Reorient** |
-| `step_complete` | Current step done; show **Proceed** if more steps remain |
+| `awaiting_reorient` | Haul booster on pad; waiting for **Mount to launch pad** |
+| `step_complete` | Current step done; show **Proceed** if more steps remain (haul auto-advances instead) |
 | `complete` | All steps for this unit finished (`completedRuns++`) |
 
 Full unit completion happens only on the **last** process step. Intermediate steps end in `step_complete` + Proceed.
@@ -81,12 +81,12 @@ Order is fixed in `src/data/baselineProcess.ts`. Do not reorder without an expli
   - Safe: road corridor (visual width = short-side × 1.5) **+ grass margin**, **Assembly building/apron**, **Launch pad**, and **corner fillets** at path vertices.
   - Unsafe: pure grass (sample outside all safe regions).
   - Any unsafe footprint sample → **explosion VFX** → reset to Assembly start (not a silent teleport).
-- When booster **touches the pad** → status `awaiting_reorient` → **Reorient** seats the booster on the pad → `step_complete` → **Proceed** (haul is **not** the final baseline step).
+- When booster **touches the pad** → status `awaiting_reorient` → **Mount to launch pad** seats the booster on the pad → **auto-advances** to the next step (`running` at next index; no haul **Proceed**). Haul is **not** the final baseline step and must **not** call `completeUnitRun`.
 
 ### 3. Prepare for launch (`kind: launch-prep`)
 **Scene:** `LaunchPrepScene.tsx` — pad beside launch tower.
 
-- Only after haul reorient + Proceed.
+- Only after haul mount-to-pad (auto-advance from step 2).
 - Operator sub-tasks **in order** (reuses run `nextMachineIndex` / `completedMachineIds` for progress):
   1. **Mate** booster to tower (strongback control / slider)  
   2. **Crane** payload onto the stack (numbered crane sequence)  

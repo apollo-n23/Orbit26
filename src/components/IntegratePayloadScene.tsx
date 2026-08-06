@@ -21,7 +21,8 @@ import type { RunState } from '../types/process'
 interface IntegratePayloadSceneProps {
   run: RunState
   onReachedPad: () => void
-  onReorient: () => void
+  /** Mount booster to the launch pad (seats pose + completes haul / auto-advances). */
+  onMountToPad: () => void
   onPathReset?: () => void
 }
 
@@ -62,7 +63,7 @@ function startPose(): HaulPose {
 export function IntegratePayloadScene({
   run,
   onReachedPad,
-  onReorient,
+  onMountToPad,
   onPathReset,
 }: IntegratePayloadSceneProps) {
   const sceneRef = useRef<HTMLDivElement>(null)
@@ -86,7 +87,7 @@ export function IntegratePayloadScene({
     run.status === 'step_complete'
   const canMove = run.status === 'running' && !seated && !exploding
   canMoveRef.current = canMove
-  const showReorient = run.status === 'awaiting_reorient' && !seated
+  const showMountToPad = run.status === 'awaiting_reorient' && !seated
 
   const clearExplodeTimer = useCallback(() => {
     if (explodeTimerRef.current != null) {
@@ -314,14 +315,14 @@ export function IntegratePayloadScene({
     setOrientation(poseRef.current.rotation + delta)
   }
 
-  function handleReorient() {
+  function handleMountToPad() {
     setSeated(true)
     applyPose({
       x: PAD_SEATED.x,
       y: PAD_SEATED.y,
       rotation: PAD_SEATED.rotation,
     })
-    onReorient()
+    onMountToPad()
   }
 
   // Discrete nudge for on-screen pad (and reliability when keys are captured).
@@ -430,13 +431,14 @@ export function IntegratePayloadScene({
           </div>
         </div>
 
-        {showReorient && (
+        {showMountToPad && (
           <button
             type="button"
-            className="btn btn--primary btn--reorient"
-            onClick={handleReorient}
+            className="btn btn--primary btn--mount-pad"
+            onClick={handleMountToPad}
+            aria-label="Mount to launch pad"
           >
-            Reorient
+            Mount to launch pad
           </button>
         )}
       </div>

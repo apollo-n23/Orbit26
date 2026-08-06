@@ -80,7 +80,8 @@ function App() {
     setRun((prev) => markOnPad(prev))
   }, [])
 
-  const handleHaulReorient = useCallback(() => {
+  const handleHaulMountToPad = useCallback(() => {
+    // completeHaulStep seats + auto-advances to the next step when one exists.
     setRun((prev) => completeHaulStep(process, prev))
   }, [process])
 
@@ -111,7 +112,7 @@ function App() {
             onMachineWorkFinished={handleMachineWorkFinished}
             onProceedToNextStep={handleProceedToNextStep}
             onReachedPad={handleReachedPad}
-            onHaulReorient={handleHaulReorient}
+            onHaulMountToPad={handleHaulMountToPad}
             onLaunchPrepActionComplete={handleLaunchPrepActionComplete}
             onLaunchSequenceActionComplete={handleLaunchSequenceActionComplete}
           />

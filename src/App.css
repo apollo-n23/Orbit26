@@ -167,6 +167,7 @@
   background: var(--color-orbital-dim);
 }
 
+.btn--mount-pad,
 .btn--reorient {
   animation: machine-pulse 1.4s ease-in-out infinite;
 }

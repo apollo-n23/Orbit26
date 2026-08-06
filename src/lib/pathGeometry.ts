@@ -77,7 +77,7 @@ export const LAUNCH_PAD: Rect = {
   height: 130,
 }
 
-/** Final seated pose after reorient on the pad. */
+/** Final seated pose after mounting to the launch pad. */
 export const PAD_SEATED = {
   x: LAUNCH_PAD.x + LAUNCH_PAD.width / 2,
   y: LAUNCH_PAD.y + LAUNCH_PAD.height / 2,

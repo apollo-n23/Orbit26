@@ -168,7 +168,7 @@ export function proceedToNextStep(
   }
 }
 
-/** Booster reached the pad — wait for explicit reorient. */
+/** Booster reached the pad — wait for explicit Mount to launch pad. */
 export function markOnPad(prev: RunState): RunState {
   if (prev.status !== 'running') return prev
   return {
@@ -178,9 +178,10 @@ export function markOnPad(prev: RunState): RunState {
 }
 
 /**
- * Operator reoriented on the pad — complete the haul step.
+ * Operator mounted the booster to the launch pad — complete the haul step.
  * If this is the last process step, finishes the full unit run; otherwise
- * enters step_complete so the learner can proceed.
+ * auto-advances into the next step (no Proceed click). Does not reset
+ * wall-clock cycle time (`runStartedAt` / `runEndedAt` unchanged).
  */
 export function completeHaulStep(
   process: ProcessVersion,
@@ -200,9 +201,15 @@ export function completeHaulStep(
     return completeUnitRun(prev, { elapsedTime, valueAddTime })
   }
 
+  // Auto-advance: seat complete → next step running (skip haul step_complete / Proceed).
+  const nextIndex = prev.currentStepIndex + 1
   return {
     ...prev,
-    status: 'step_complete',
+    status: 'running',
+    currentStepIndex: nextIndex,
+    nextMachineIndex: 0,
+    activeMachineId: null,
+    completedMachineIds: [],
     elapsedTime,
     valueAddTime,
   }

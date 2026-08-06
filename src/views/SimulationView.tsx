@@ -28,7 +28,7 @@ interface SimulationViewProps {
   onMachineWorkFinished: () => void
   onProceedToNextStep: () => void
   onReachedPad: () => void
-  onHaulReorient: () => void
+  onHaulMountToPad: () => void
   onLaunchPrepActionComplete: () => void
   onLaunchSequenceActionComplete: () => void
 }
@@ -42,7 +42,7 @@ export function SimulationView({
   onMachineWorkFinished,
   onProceedToNextStep,
   onReachedPad,
-  onHaulReorient,
+  onHaulMountToPad,
   onLaunchPrepActionComplete,
   onLaunchSequenceActionComplete,
 }: SimulationViewProps) {
@@ -94,10 +94,7 @@ export function SimulationView({
     step?.kind === 'manufacture' &&
     hasNextStep(process, run)
 
-  const showHaulProceed =
-    run.status === 'step_complete' &&
-    step?.kind === 'haul' &&
-    hasNextStep(process, run)
+  // Haul auto-advances to the next step on mount — no Proceed button.
 
   const showLaunchPrepProceed =
     run.status === 'step_complete' &&
@@ -141,12 +138,7 @@ export function SimulationView({
         return 'Use arrow keys to move the booster along the road from Assembly to the Launch Pad. Stay on the road (assembly and pad are safe); pure grass explodes and resets. Use re-orient controls at corners (drag optional).'
       }
       if (run.status === 'awaiting_reorient') {
-        return 'Booster is on the pad. Click Reorient to seat it correctly and finish this step.'
-      }
-      if (run.status === 'step_complete') {
-        return hasNextStep(process, run)
-          ? 'Payload integration complete. Proceed to Prepare for launch.'
-          : 'Payload integration complete.'
+        return 'Booster is on the pad. Click Mount to launch pad to seat it and continue to launch preparation.'
       }
     }
     if (step?.kind === 'launch-prep') {
@@ -245,20 +237,8 @@ export function SimulationView({
               <IntegratePayloadScene
                 run={run}
                 onReachedPad={onReachedPad}
-                onReorient={onHaulReorient}
+                onMountToPad={onHaulMountToPad}
               />
-            )}
-
-            {showHaulProceed && (
-              <div className="sim-proceed">
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  onClick={onProceedToNextStep}
-                >
-                  Proceed to next step
-                </button>
-              </div>
             )}
 
             {showLaunchPrep && (

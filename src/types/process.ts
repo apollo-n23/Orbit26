@@ -61,7 +61,7 @@ export interface SessionMetrics {
  * - running: interact with current step
  * - machine_working: manufacture machine animating
  * - step_complete: current step done; may proceed if more steps remain
- * - awaiting_reorient: haul booster is on the pad; operator must reorient
+ * - awaiting_reorient: haul booster is on the pad; operator must Mount to launch pad
  * - complete: all process steps finished for this unit
  */
 export type RunStatus =
