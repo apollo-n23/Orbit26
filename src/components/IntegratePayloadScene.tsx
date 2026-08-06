@@ -12,7 +12,7 @@ import {
   SCENE_WIDTH,
   boosterTouchesPad,
   clampRotation,
-  isBoosterOnPath,
+  isBoosterSafe,
   pathPolylinePoints,
   type Point,
 } from '../lib/pathGeometry'
@@ -140,7 +140,7 @@ export function IntegratePayloadScene({
     (next: HaulPose) => {
       if (explodingRef.current) return
 
-      if (!isBoosterOnPath({ x: next.x, y: next.y }, next.rotation)) {
+      if (!isBoosterSafe({ x: next.x, y: next.y }, next.rotation)) {
         setDragging(false)
         explodeAndRestart()
         return
@@ -264,7 +264,7 @@ export function IntegratePayloadScene({
   function setOrientation(rotation: number) {
     if (!canMove) return
     const next = { ...pose, rotation: clampRotation(rotation) }
-    if (!isBoosterOnPath({ x: next.x, y: next.y }, next.rotation)) {
+    if (!isBoosterSafe({ x: next.x, y: next.y }, next.rotation)) {
       explodeAndRestart()
       return
     }

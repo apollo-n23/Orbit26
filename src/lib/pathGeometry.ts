@@ -3,6 +3,13 @@ export interface Point {
   y: number
 }
 
+export interface Rect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 /** Scene size used by the integrate-payload map (SVG user units). */
 export const SCENE_WIDTH = 800
 export const SCENE_HEIGHT = 480
@@ -15,6 +22,12 @@ export const BOOSTER_LENGTH = 96
 export const BOOSTER_WIDTH = 32
 export const PATH_WIDTH = BOOSTER_WIDTH * 1.5
 export const PATH_HALF = PATH_WIDTH / 2
+
+/**
+ * Forgiveness band of grass adjacent to the road that still counts as safe.
+ * Effective path half-width = PATH_HALF + GRASS_MARGIN.
+ */
+export const GRASS_MARGIN = 6
 
 /** Start pose at the Assembly building exit. */
 export const HAUL_START: Point & { rotation: number } = {
@@ -35,8 +48,20 @@ export const HAUL_PATH: Point[] = [
   { x: 700, y: 280 },
 ]
 
-/** Launch pad rectangle (scene units). */
-export const LAUNCH_PAD = {
+/**
+ * Assembly building + exit apron (scene units).
+ * Covers the visual building and the apron that joins it to the path start so
+ * the full booster footprint at HAUL_START is safe.
+ */
+export const ASSEMBLY_SAFE: Rect = {
+  x: 10,
+  y: 160,
+  width: 150,
+  height: 160,
+}
+
+/** Launch pad rectangle (scene units) — visual + safe zone. */
+export const LAUNCH_PAD: Rect = {
   x: 655,
   y: 230,
   width: 120,
@@ -109,16 +134,46 @@ export function distanceToPath(p: Point, path: Point[]): number {
   return best
 }
 
-/**
- * True if the entire booster footprint stays within the path corridor
- * (centerline ± PATH_HALF). Samples corners, edge quarters, and interior
- * so rotation mid-turn cannot clip through the corridor boundary.
- */
-export function isBoosterOnPath(
-  center: Point,
-  rotation: number,
+export function pointInRect(p: Point, r: Rect): boolean {
+  return (
+    p.x >= r.x &&
+    p.x <= r.x + r.width &&
+    p.y >= r.y &&
+    p.y <= r.y + r.height
+  )
+}
+
+/** Effective half-width of the road corridor including grass forgiveness. */
+export const PATH_SAFE_HALF = PATH_HALF + GRASS_MARGIN
+
+/** True if a sample is on the road corridor (with grass margin). */
+export function isPointOnSafePath(
+  p: Point,
   path: Point[] = HAUL_PATH,
 ): boolean {
+  return distanceToPath(p, path) <= PATH_SAFE_HALF + 0.5
+}
+
+/**
+ * True if a sample is inside any safe region: path (+ margin), assembly, or pad.
+ * Pure grass (outside all safe zones) is unsafe.
+ */
+export function isPointSafe(p: Point, path: Point[] = HAUL_PATH): boolean {
+  return (
+    isPointOnSafePath(p, path) ||
+    pointInRect(p, ASSEMBLY_SAFE) ||
+    pointInRect(p, LAUNCH_PAD)
+  )
+}
+
+/**
+ * Sample points across the booster footprint (center, corners, edge quarters,
+ * interior ring) so mid-body clipping is not missed on turns.
+ */
+export function boosterFootprintSamples(
+  center: Point,
+  rotation: number,
+): Point[] {
   const corners = boosterCorners(center, rotation)
   const samples: Point[] = [center, ...corners]
 
@@ -142,18 +197,41 @@ export function isBoosterOnPath(
     })
   }
 
-  return samples.every((s) => distanceToPath(s, path) <= PATH_HALF + 0.5)
+  return samples
+}
+
+/**
+ * Booster is safe when every footprint sample is inside at least one safe
+ * region (path-with-margin OR assembly OR pad). Explode only when a sample
+ * lies in pure grass.
+ */
+export function isBoosterSafe(
+  center: Point,
+  rotation: number,
+  path: Point[] = HAUL_PATH,
+): boolean {
+  return boosterFootprintSamples(center, rotation).every((s) =>
+    isPointSafe(s, path),
+  )
+}
+
+/**
+ * @deprecated Prefer isBoosterSafe — path corridor only (no assembly/pad).
+ * Kept for call sites that only care about the road.
+ */
+export function isBoosterOnPath(
+  center: Point,
+  rotation: number,
+  path: Point[] = HAUL_PATH,
+): boolean {
+  return boosterFootprintSamples(center, rotation).every((s) =>
+    isPointOnSafePath(s, path),
+  )
 }
 
 export function boosterTouchesPad(center: Point, rotation: number): boolean {
   const points = [center, ...boosterCorners(center, rotation)]
-  return points.some(
-    (p) =>
-      p.x >= LAUNCH_PAD.x &&
-      p.x <= LAUNCH_PAD.x + LAUNCH_PAD.width &&
-      p.y >= LAUNCH_PAD.y &&
-      p.y <= LAUNCH_PAD.y + LAUNCH_PAD.height,
-  )
+  return points.some((p) => pointInRect(p, LAUNCH_PAD))
 }
 
 /** SVG path `d` for a rounded corridor outline (visual only). */
