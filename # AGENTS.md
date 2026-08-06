@@ -21,12 +21,15 @@ The Execute phase is a **hands-on floor / field simulation**. The learner operat
 
 ### Principles (do not regress)
 - Each **process step** is its own interactive scene with a clear operator task.
-- The learner must **perform work** (click, drag, keyboard, sequence controls, hold-to-fill, etc.) — not watch an automated token advance through a list.
-- Steps are **gated**: finish the current step → **Proceed to next step** (unless it is the last step, which completes the unit run).
+- The learner must **perform work** (click, drag, keyboard, type codes, sequence controls, hold-to-fill, etc.) — not watch an automated token advance through a list.
+- **Step transitions (settled):**
+  - **Default:** step finishes → `step_complete` → learner clicks **Proceed to next step**.
+  - **Haul exception:** after **Mount to launch pad**, auto-advance to the next step (`running` at next index) — **no** Proceed click.
+  - **Last step:** finish → `completeUnitRun` (status `complete`, freezes wall-clock Cycle Time). Never complete the unit on an intermediate step.
 - Process definitions live in **React state** as a versioned process (`ProcessVersion` in `App`) so redesign can later swap steps and re-run.
-- Clear affordances: status line copy, numbered badges, disabled-until-ready controls, short work animations.
+- Clear affordances: status line copy, numbered badges, banners for required codes, disabled-until-ready controls, short work animations.
 - **Do not** implement Execute as a vertical list of step descriptions that auto-scrolls when the user clicks Run.
-- Scenes should **look distinct** by environment (e.g. indoor charcoal assembly line vs outdoor grassy haul road vs pad/tower).
+- Scenes should **look distinct** by environment (e.g. indoor charcoal assembly line vs outdoor grassy haul road vs pad/tower vs mission control).
 
 ### Run status lifecycle
 | Status | Meaning |
@@ -34,11 +37,11 @@ The Execute phase is a **hands-on floor / field simulation**. The learner operat
 | `idle` | Session may be active; no unit on the floor |
 | `running` | Learner is operating the current step |
 | `machine_working` | Manufacture machine mid approach→work→retreat |
-| `awaiting_reorient` | Haul booster on pad; waiting for **Mount to launch pad** |
-| `step_complete` | Current step done; show **Proceed** if more steps remain (haul auto-advances instead) |
-| `complete` | All steps for this unit finished (`completedRuns++`) |
+| `awaiting_reorient` | Haul booster on pad; waiting for **Mount to launch pad** (legacy status id; UI says Mount, not Reorient) |
+| `step_complete` | Current step done; show **Proceed** if more steps remain (not used for haul happy path) |
+| `complete` | All steps for this unit finished via `completeUnitRun` (`completedRuns++`, `runEndedAt` set) |
 
-Full unit completion happens only on the **last** process step. Intermediate steps end in `step_complete` + Proceed.
+Full unit completion happens only on the **last** process step (baseline: launch-sequence liftoff).
 
 ### Session / metrics
 - **Start Session** arms the session; **Run Process** starts a unit at step index 0 (`beginRun`).
@@ -61,8 +64,9 @@ Order is fixed in `src/data/baselineProcess.ts`. Do not reorder without an expli
 - Four stations with **physical L→R order 2 · 1 · 4 · 3** (`linePosition` 0–3).
 - Operator sequence remains **1 → 2 → 3 → 4** (`sequence`).
 - Booster is **drag-and-drop** along the belt: operator must place it on the next required station stop (no auto-travel between stations). Wrong stop / miss gives feedback and does not unlock the machine.
-- Each station has a **4-digit `accessCode`**. A banner at the top of the manufacture scene shows the code for the **current required** station.
-- Operator enters the code in that station’s text field. When the code matches **and** the booster is at that stop, an **Activate** control appears (no bare click-to-run).
+- Each station has a **4-digit `accessCode`** (baseline: form-press `4821`, seam-welder `7390`, trim-laser `1564`, fit-arm `9057`).
+- A **banner** at the top of the manufacture scene shows the code for the **current required** station only.
+- Operator types the code into that station’s field. When the code matches **and** the booster is at that stop, **Activate** appears (no bare click-to-run on the machine body).
 - Machines park at **variable** `parkOffset` (rem) from the line — some closer, some further. On Activate (required + booster arrived + correct code):
   1. Approach the line (travel distance follows parkOffset)  
   2. Work animation (robot-arm / welder / laser remain distinct)  
@@ -76,34 +80,35 @@ Order is fixed in `src/data/baselineProcess.ts`. Do not reorder without an expli
 
 - Only after manufacture + Proceed.
 - **Primary move:** arrow keys (continuous while held). **Secondary:** on-screen D-pad; drag optional.
-- **Re-orient:** toolbar ↺/↻ 90° and fixed headings (0° / 90° / 180° / −90°). Long axis should follow the corridor at corners.
+- **Re-orient (in-transit):** toolbar ↺/↻ 90° and fixed headings (0° / 90° / 180° / −90°) for corners — not the pad action.
 - Map is **aspect-locked** to the scene viewBox so booster position matches the road.
 - **Collision / safety (settled):**
   - Safe: road corridor (visual width = short-side × 1.5) **+ grass margin**, **Assembly building/apron**, **Launch pad**, and **corner fillets** at path vertices.
   - Unsafe: pure grass (sample outside all safe regions).
   - Any unsafe footprint sample → **explosion VFX** → reset to Assembly start (not a silent teleport).
-- When booster **touches the pad** → status `awaiting_reorient` → **Mount to launch pad** seats the booster on the pad → **auto-advances** to the next step (`running` at next index; no haul **Proceed**). Haul is **not** the final baseline step and must **not** call `completeUnitRun`.
+- When booster **touches the pad** → status `awaiting_reorient` → button **Mount to launch pad** (not “Reorient”) seats the booster → **`completeHaulStep` auto-advances** to step 3 (`running`, next index; no haul Proceed UI). Must **not** call `completeUnitRun`.
 
 ### 3. Prepare for launch (`kind: launch-prep`)
-**Scene:** `LaunchPrepScene.tsx` — pad beside launch tower.
+**Scene:** `LaunchPrepScene.tsx` — pad beside launch tower (`lp-` CSS namespace).
 
 - Only after haul mount-to-pad (auto-advance from step 2).
 - Operator sub-tasks **in order** (reuses run `nextMachineIndex` / `completedMachineIds` for progress):
   1. **Mate** booster to tower (strongback control / slider)  
-  2. **Crane** payload onto the stack (numbered crane sequence)  
+  2. **Crane** payload onto the stack (numbered crane sequence 1→4)  
   3. **Fuel** — connect umbilicals, hold-to-fill LOX/RP-1  
   4. **Power up** — arm switches in order  
-- Completing the last sub-task → `step_complete` → **Proceed to Launch sequence** (launch-prep is **not** the final baseline step).
+- **Layout (settled):** crane boom sits **close to the stack** so the payload lowers **onto the booster nose** (not a distant floating crane). LOX/RP-1 have **tank graphics** on the supply end; lines must **visually reach vehicle ports** when connected (not short of the hull).
+- Completing the last sub-task → `step_complete` → **Proceed to Launch sequence** (not the final baseline step).
 
 ### 4. Launch sequence (`kind: launch-sequence`)
-**Scene:** `LaunchSequenceScene.tsx` — mission control room (consoles, pad live feed).
+**Scene:** `LaunchSequenceScene.tsx` — mission control room (consoles, pad live feed; `launch-seq` / `mc-` CSS).
 
 - Only after launch-prep + Proceed.
 - Operator actions **in order** (reuses run `nextMachineIndex` / `completedMachineIds`; constants in `types/process.ts`):
   1. **GO poll** — Guidance → Capcom → Fuel/Propulsion → Avionics → Range Safety → Weather (only the current station is armed)  
   2. **Launch enable key** — hold-to-turn physical key control  
-  3. **Liftoff cutaway** — pad feed rocket leaves the tower (CSS animation)  
-- Completing liftoff finishes the **full unit run** (`complete` + `completedRuns` / `goodRuns` via `completeUnitRun`, freezes wall-clock cycle time).
+  3. **Liftoff cutaway** — pad feed: tower/pad, plume, climb (CSS; duration ~`LIFTOFF_MS` / 3.2s — keep JS timer and CSS in sync)  
+- Completing liftoff is the **only** baseline path to **full unit run** complete (`completeUnitRun` → freezes wall-clock Cycle Time).
 
 ---
 
@@ -115,10 +120,11 @@ Use this when extending the baseline process (e.g. a fifth step after launch-seq
 2. **Process data** — Append a step to `BASELINE_PROCESS.steps` in `src/data/baselineProcess.ts` (`id`, `name`, `kind`, `baseTime`, optional config).
 3. **Scene** — New component under `src/components/` with **operator-driven** interactions (match the hands-on style of existing steps). Give the scene a distinct visual environment if it is a new location.
 4. **Simulation** — In `src/lib/simulation.ts`:
-   - Previous last step must end in `step_complete` + Proceed (not `complete`) when a next step exists.
-   - New step’s finish handler: `step_complete` if more steps follow, else `completeUnitRun` (last step).
-5. **UI wiring** — `SimulationView.tsx` status copy, show/hide scene, Proceed button; `App.tsx` handlers; styles in `App.css` under a clear namespace (e.g. `launch-seq` / `mc-`; avoid clobbering manufacture / haul / launch-prep).
-6. **Docs** — Update this file’s baseline step list.
+   - Previous last step must end in `step_complete` + Proceed **or** an explicit auto-advance (like haul) — never `completeUnitRun` when a next step exists.
+   - New step’s finish handler: `step_complete` / auto-advance if more steps follow, else `completeUnitRun` (last step only).
+   - Wall-clock `runStartedAt` must survive step transitions; only `completeUnitRun` sets `runEndedAt`.
+5. **UI wiring** — `SimulationView.tsx` status copy, show/hide scene, Proceed (where used); `App.tsx` handlers; styles in `App.css` under a clear namespace (e.g. `lp-`, `launch-seq` / `mc-`; avoid clobbering manufacture / haul).
+6. **Docs** — Update this file’s baseline step list and transition rules.
 7. **Verify** — `npm run build`; keep the app runnable; commit with a clear message.
 
 Prefer CSS/SVG + pointer/keyboard events. No heavy game engines.
