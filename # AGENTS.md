@@ -61,8 +61,9 @@ Order is fixed in `src/data/baselineProcess.ts`. Do not reorder without an expli
 - Four stations with **physical L→R order 2 · 1 · 4 · 3** (`linePosition` 0–3).
 - Operator sequence remains **1 → 2 → 3 → 4** (`sequence`).
 - Booster is **drag-and-drop** along the belt: operator must place it on the next required station stop (no auto-travel between stations). Wrong stop / miss gives feedback and does not unlock the machine.
-- A station is operable only when it is the next `sequence` **and** the booster is snapped at that stop.
-- Machines park at **variable** `parkOffset` (rem) from the line — some closer, some further. On operate (required + booster arrived):
+- Each station has a **4-digit `accessCode`**. A banner at the top of the manufacture scene shows the code for the **current required** station.
+- Operator enters the code in that station’s text field. When the code matches **and** the booster is at that stop, an **Activate** control appears (no bare click-to-run).
+- Machines park at **variable** `parkOffset` (rem) from the line — some closer, some further. On Activate (required + booster arrived + correct code):
   1. Approach the line (travel distance follows parkOffset)  
   2. Work animation (robot-arm / welder / laser remain distinct)  
   3. Retreat to park  
