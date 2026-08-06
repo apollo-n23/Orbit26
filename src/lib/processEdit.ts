@@ -100,3 +100,23 @@ export function applyHaulPath(
     ),
   }
 }
+
+/** Whether manufacture auto-moves the booster after each machine completes. */
+export function resolveAutoMoveBooster(process: ProcessVersion): boolean {
+  if (process.autoMoveBooster === true) return true
+  return getManufactureStep(process)?.autoMoveBooster === true
+}
+
+/** Enable/disable booster auto-advance between manufacture stations (Round 2 redesign). */
+export function applyAutoMoveBooster(
+  process: ProcessVersion,
+  enabled: boolean,
+): ProcessVersion {
+  return {
+    ...process,
+    autoMoveBooster: enabled,
+    steps: process.steps.map((s) =>
+      s.kind === 'manufacture' ? { ...s, autoMoveBooster: enabled } : s,
+    ),
+  }
+}

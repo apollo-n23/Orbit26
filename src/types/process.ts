@@ -53,6 +53,11 @@ export interface ProcessStep {
    * Set in Round 2 redesign when the learner paints a road.
    */
   haulPath?: HaulPathPoint[]
+  /**
+   * Manufacture redesign: after a machine finishes work, the booster auto-moves
+   * to the next required station (no drag). Off by default (as-is friction).
+   */
+  autoMoveBooster?: boolean
 }
 
 export interface ProcessVersion {
@@ -66,6 +71,10 @@ export interface ProcessVersion {
    * Set when the learner confirms a painted road in Round 2 redesign.
    */
   haulPathOverride?: HaulPathPoint[]
+  /**
+   * Process-level copy of manufacture auto-move upgrade (mirrors step flag for easy resolve).
+   */
+  autoMoveBooster?: boolean
 }
 
 export interface SessionMetrics {

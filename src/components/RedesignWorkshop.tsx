@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
 import type { ProcessMachine, ProcessVersion } from '../types/process'
 import {
+  applyAutoMoveBooster,
   applyHaulPath,
   applyMachineLineOrder,
   applyMachineParkOffset,
   getHaulStep,
   getManufactureStep,
+  resolveAutoMoveBooster,
 } from '../lib/processEdit'
+import { Booster } from './Booster'
 import {
   ROAD_COLS,
   ROAD_ROWS,
@@ -49,6 +52,7 @@ export function RedesignWorkshop({
     return [...list].sort((a, b) => a.linePosition - b.linePosition)
   }, [draft])
 
+  const autoMoveBooster = resolveAutoMoveBooster(draft)
   const endpoints = requiredEndpointCells()
 
   function handleDropOnSlot(targetSlotIndex: number, machineId: string) {
@@ -64,6 +68,10 @@ export function RedesignWorkshop({
 
   function handleParkChange(machineId: string, value: number) {
     setDraft((p) => applyMachineParkOffset(p, machineId, value))
+  }
+
+  function handleToggleAutoMove() {
+    setDraft((p) => applyAutoMoveBooster(p, !resolveAutoMoveBooster(p)))
   }
 
   function toggleTile(col: number, row: number) {
@@ -158,7 +166,8 @@ export function RedesignWorkshop({
             <p className="redesign-hint">
               Drag stations left/right to set line order (physical layout). Use
               the distance slider to park each machine closer to or further from
-              the belt. Operate sequence numbers stay on each machine.
+              the belt. Hover the booster on the line to unlock an auto-transfer
+              upgrade. Operate sequence numbers stay on each machine.
             </p>
             <div className="redesign-mfg__line" aria-label="Production line slots">
               <div className="redesign-mfg__belt" aria-hidden="true" />
@@ -177,6 +186,46 @@ export function RedesignWorkshop({
                     onParkChange={(v) => handleParkChange(machine.id, v)}
                   />
                 ))}
+              </div>
+              <div
+                className={[
+                  'redesign-booster-upgrade',
+                  autoMoveBooster ? 'redesign-booster-upgrade--on' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                <div className="redesign-booster-upgrade__unit">
+                  <Booster
+                    className="booster--redesign"
+                    label="Booster — hover for transfer upgrade"
+                  />
+                  <div className="redesign-booster-upgrade__panel">
+                    <p className="redesign-booster-upgrade__title">
+                      {autoMoveBooster
+                        ? 'Auto-transfer enabled'
+                        : 'Transfer upgrade'}
+                    </p>
+                    <p className="redesign-booster-upgrade__copy">
+                      {autoMoveBooster
+                        ? 'After each machine finishes, the booster moves to the next station automatically during launches.'
+                        : 'Upgrade the booster so it auto-moves to the next station when a machine completes its task.'}
+                    </p>
+                    <button
+                      type="button"
+                      className={
+                        autoMoveBooster
+                          ? 'btn btn--ghost'
+                          : 'btn btn--primary'
+                      }
+                      onClick={handleToggleAutoMove}
+                    >
+                      {autoMoveBooster
+                        ? 'Disable auto-transfer'
+                        : 'Enable auto-transfer'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -18,7 +18,7 @@ import {
   getStepMachines,
   hasNextStep,
 } from '../lib/simulation'
-import { resolveHaulPath } from '../lib/processEdit'
+import { resolveAutoMoveBooster, resolveHaulPath } from '../lib/processEdit'
 
 interface SimulationViewProps {
   process: ProcessVersion
@@ -66,6 +66,10 @@ export function SimulationView({
   const haulPathKey = useMemo(
     () => haulPath.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join('|'),
     [haulPath],
+  )
+  const autoMoveBooster = useMemo(
+    () => resolveAutoMoveBooster(process),
+    [process],
   )
   const inActiveRun =
     sessionActive &&
@@ -133,7 +137,10 @@ export function SimulationView({
     }
     if (step?.kind === 'manufacture') {
       if (run.status === 'running' && required) {
-        return `Drag the booster to station ${required.sequence} (${required.name}), enter access code ${required.accessCode} from the banner, then Activate (${required.sequence} of ${machines.length}).`
+        const moveHint = autoMoveBooster
+          ? `Booster auto-transfers between stations. At station ${required.sequence} (${required.name})`
+          : `Drag the booster to station ${required.sequence} (${required.name})`
+        return `${moveHint}, enter access code ${required.accessCode} from the banner, then Activate (${required.sequence} of ${machines.length}).`
       }
       if (run.status === 'machine_working' && run.activeMachineId) {
         const active = machines.find((m) => m.id === run.activeMachineId)
@@ -244,6 +251,7 @@ export function SimulationView({
                 onMachineClick={onMachineClick}
                 showProceed={showManufactureProceed}
                 onProceed={onProceedToNextStep}
+                autoMoveBooster={autoMoveBooster}
               />
             )}
 

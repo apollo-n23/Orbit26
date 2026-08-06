@@ -22,6 +22,11 @@ interface ManufactureSceneProps {
   /** Shown when manufacture machines are done and another step follows. */
   showProceed?: boolean
   onProceed?: () => void
+  /**
+   * Round 2 redesign upgrade: after each machine finishes, move booster to the
+   * next required station automatically (no drag).
+   */
+  autoMoveBooster?: boolean
 }
 
 type MachinePhase = 'idle' | 'approaching' | 'working' | 'retreating'
@@ -95,6 +100,7 @@ export function ManufactureScene({
   onMachineClick,
   showProceed = false,
   onProceed,
+  autoMoveBooster = false,
 }: ManufactureSceneProps) {
   const required = machines[run.nextMachineIndex]
   const stepDone = run.status === 'step_complete'
@@ -148,10 +154,20 @@ export function ManufactureScene({
     snappedLinePos === required.linePosition
 
   /** Operator may drag only between machine cycles (not during approach/work/retreat). */
-  const canDrag = run.status === 'running'
+  const canDrag = run.status === 'running' && !autoMoveBooster
 
   const showDropHint =
     canDrag && !boosterArrived && required != null && !dragging
+
+  function snapBoosterToLinePos(linePos: number) {
+    const left = stopLeftByLinePos.get(linePos)
+    if (left == null) return
+    setBoosterLeftPct(left)
+    setSnappedLinePos(linePos)
+    lastGoodLeftRef.current = left
+    lastGoodSnapRef.current = linePos
+    setDropFeedback(null)
+  }
 
   // Reset when idle or a new unit begins on this step.
   useEffect(() => {
@@ -165,24 +181,52 @@ export function ManufactureScene({
       return
     }
 
-    // Fresh manufacture step: place booster at the entrance for the operator to drag.
+    // Fresh manufacture step: place booster at the entrance for the operator to drag
+    // (or at the first required stop when auto-move is enabled).
     if (
       run.status === 'running' &&
       run.nextMachineIndex === 0 &&
       run.completedMachineIds.length === 0
     ) {
-      setBoosterLeftPct(ENTRANCE_LEFT_PCT)
-      setSnappedLinePos(null)
-      setDropFeedback(null)
       setCodeDrafts({})
-      lastGoodLeftRef.current = ENTRANCE_LEFT_PCT
-      lastGoodSnapRef.current = null
+      setDropFeedback(null)
+      if (autoMoveBooster && required) {
+        snapBoosterToLinePos(required.linePosition)
+      } else {
+        setBoosterLeftPct(ENTRANCE_LEFT_PCT)
+        setSnappedLinePos(null)
+        lastGoodLeftRef.current = ENTRANCE_LEFT_PCT
+        lastGoodSnapRef.current = null
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- snap helper uses stop map
   }, [
     run.status,
     run.currentStepIndex,
     run.nextMachineIndex,
     run.completedMachineIds.length,
+    autoMoveBooster,
+    required?.linePosition,
+    stopLeftByLinePos,
+  ])
+
+  // Auto-move upgrade: after a machine finishes, travel to the next required stop.
+  useEffect(() => {
+    if (!autoMoveBooster) return
+    if (run.status !== 'running' || !required) return
+    if (run.completedMachineIds.length === 0) return
+    if (snappedLinePos === required.linePosition) return
+    snapBoosterToLinePos(required.linePosition)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    autoMoveBooster,
+    run.status,
+    run.nextMachineIndex,
+    run.completedMachineIds.length,
+    required?.linePosition,
+    required?.id,
+    stopLeftByLinePos,
+    snappedLinePos,
   ])
 
   // Clear wrong-station flash after the next sequence unlocks (machine finished).
@@ -464,6 +508,13 @@ export function ManufactureScene({
     feedbackCopy = 'Drop on a station stop on the belt.'
   } else if (showDropHint && required) {
     feedbackCopy = `Drag the booster to station ${required.sequence} (${required.name}), then enter its access code.`
+  } else if (
+    autoMoveBooster &&
+    canInteract &&
+    required &&
+    !boosterArrived
+  ) {
+    feedbackCopy = `Auto-transfer to station ${required.sequence} (${required.name})…`
   } else if (
     canInteract &&
     required &&
