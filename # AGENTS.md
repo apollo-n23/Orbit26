@@ -13,66 +13,117 @@ Tone: Professional, precise, operational. Light narrative framing only. No carto
 3. **Redesign** — Learner edits the process (remove, merge, resequence, limited parallel paths or automation).
 4. **Validate** — Redesigned process is re-run; metrics compared; new options unlock over sessions.
 
-## Execute Phase — Interaction Model (current design)
+---
 
-The Execute phase is a **hands-on floor simulation**. The learner operates the process themselves. Prefer spatial scenes and direct manipulation over passive lists or auto-scroll timelines.
+## Execute Phase — Interaction Model (settled design)
 
-### Principles
+The Execute phase is a **hands-on floor / field simulation**. The learner operates the process themselves. Prefer spatial scenes and direct manipulation over passive lists or auto-scroll timelines.
+
+### Principles (do not regress)
 - Each **process step** is its own interactive scene with a clear operator task.
-- The learner must **perform work** (click, drag, re-orient, sequence controls) to advance — not watch an automated token advance.
-- Steps are **gated**: the next step is only available after the current step is complete (e.g. a **Proceed to next step** control).
-- Process definitions live in **React state** as a versioned process so redesign can later swap steps and re-run the same session model.
-- Keep interactions readable and operable: short animations when machines work, clear affordances for the next required action, operational copy in the status line.
+- The learner must **perform work** (click, drag, keyboard, sequence controls, hold-to-fill, etc.) — not watch an automated token advance through a list.
+- Steps are **gated**: finish the current step → **Proceed to next step** (unless it is the last step, which completes the unit run).
+- Process definitions live in **React state** as a versioned process (`ProcessVersion` in `App`) so redesign can later swap steps and re-run.
+- Clear affordances: status line copy, numbered badges, disabled-until-ready controls, short work animations.
 - **Do not** implement Execute as a vertical list of step descriptions that auto-scrolls when the user clicks Run.
+- Scenes should **look distinct** by environment (e.g. indoor charcoal assembly line vs outdoor grassy haul road vs pad/tower).
 
-### Current process steps (baseline)
-1. **Manufacture booster** (`kind: manufacture`)
-   - Booster on a production line with **four machines** (robot arms, welder, laser).
-   - Physical left-to-right station order may be out of sequence (baseline: **2, 1, 4, 3**); logical click order remains **1 → 2 → 3 → 4**.
-   - Booster travels along the belt to the next required station before that machine unlocks.
-   - Only the next machine is enabled once the booster arrives; on operate: approach line → work animation → retreat to park, then unlock the next.
-   - When all four finish, the step is complete and **Proceed to next step** is offered (if a following step exists).
+### Run status lifecycle
+| Status | Meaning |
+|--------|---------|
+| `idle` | Session may be active; no unit on the floor |
+| `running` | Learner is operating the current step |
+| `machine_working` | Manufacture machine mid approach→work→retreat |
+| `awaiting_reorient` | Haul booster on pad; waiting for **Reorient** |
+| `step_complete` | Current step done; show **Proceed** if more steps remain |
+| `complete` | All steps for this unit finished (`completedRuns++`) |
 
-2. **Integrate payload** (`kind: haul`)
-   - Accessible only after manufacture is complete and the learner proceeds.
-   - Learner moves the booster from Assembly to the Launch Pad along a **winding outdoor road** (**arrow keys** primary; drag optional).
-   - Path corridor is **50% wider than the booster** (short side × 1.5), plus a small grass margin. Assembly apron and launch pad are also safe. Pure grass (outside path/assembly/pad) → **explosion**, then reset to Assembly start.
-   - On-screen **re-orient** controls (90° turns / fixed headings) help navigate corners; long axis should follow the corridor.
-   - When the booster **touches the pad**, a **Reorient** button appears; confirming seats the booster correctly on the pad and completes the step → **Proceed to next step** (haul is not the final step in baseline).
+Full unit completion happens only on the **last** process step. Intermediate steps end in `step_complete` + Proceed.
 
-3. **Prepare for launch** (`kind: launch-prep`)
-   - Accessible only after haul/reorient is complete and the learner proceeds.
-   - Pad scene with launch tower, strongback, crane, umbilicals, and power panel.
-   - Operator sequence: **(1)** slide strongback control to mate booster to tower · **(2)** crane click sequence to stack payload fairing · **(3)** connect LOX/RP-1 umbilicals and hold-to-fill tanks · **(4)** arm power switches in order.
-   - Completing all four sub-tasks finishes the full unit run (`complete` + completedRuns++).
-
-### Session / metrics behaviour
-- **Start Session** arms the session; **Run Process** starts a unit at the first step.
-- Top-bar metrics update from the run: **Cycle Time**, **Yield**, **Flow Efficiency**.
-- A full unit run completes only after all process steps for that unit are finished (baseline: manufacture → haul/reorient → launch-prep).
-- Cap full unit runs per session (currently 12) so inefficiency remains visible across repeats.
+### Session / metrics
+- **Start Session** arms the session; **Run Process** starts a unit at step index 0.
+- Top bar: **Cycle Time**, **Yield**, **Flow Efficiency** (live from run state).
+- Cap full unit runs per session (**12**) so baseline inefficiency stays visible across repeats.
 - Map and Comparison views remain placeholders until those learning-loop phases are built.
 
-### Adding new Execute steps
-- Define the step on the process version (`id`, `name`, `kind`, times, optional machines / scene config).
-- Build a dedicated scene component with **operator-driven** interactions.
-- Wire completion into run state (`step_complete` → proceed, or `complete` if last step).
-- Prefer CSS/SVG scenes and pointer events; avoid heavy game engines.
-- Match dark professional UI (charcoal base, orbital blue, restrained amber accents).
+---
+
+## Baseline process steps (current)
+
+Order is fixed in `src/data/baselineProcess.ts`. Do not reorder without an explicit product decision.
+
+### 1. Manufacture booster (`kind: manufacture`)
+**Scene:** `ManufactureScene.tsx` — indoor production line (charcoal / orbital UI).
+
+- Four stations with **physical L→R order 2 · 1 · 4 · 3** (`linePosition` 0–3).
+- Operator sequence remains **1 → 2 → 3 → 4** (`sequence`).
+- Booster **travels along the belt** to the next required station (forward or back) before that station unlocks.
+- Machines park **offset from the line**. On operate (required + booster arrived):
+  1. Approach the line  
+  2. Work animation (robot-arm / welder / laser remain distinct)  
+  3. Retreat to park  
+  4. Then unlock the next sequence  
+- Timing constants in `types/process.ts`: `MACHINE_APPROACH_MS`, `MACHINE_WORK_MS`, `MACHINE_RETREAT_MS`, `MACHINE_CYCLE_MS`, `BOOSTER_TRAVEL_MS`.
+- When all four finish → `step_complete` → **Proceed to next step**.
+
+### 2. Integrate payload (`kind: haul`)
+**Scene:** `IntegratePayloadScene.tsx` + `pathGeometry.ts` — outdoor grassy field, asphalt road.
+
+- Only after manufacture + Proceed.
+- **Primary move:** arrow keys (continuous while held). **Secondary:** on-screen D-pad; drag optional.
+- **Re-orient:** toolbar ↺/↻ 90° and fixed headings (0° / 90° / 180° / −90°). Long axis should follow the corridor at corners.
+- Map is **aspect-locked** to the scene viewBox so booster position matches the road.
+- **Collision / safety (settled):**
+  - Safe: road corridor (visual width = short-side × 1.5) **+ grass margin**, **Assembly building/apron**, **Launch pad**, and **corner fillets** at path vertices.
+  - Unsafe: pure grass (sample outside all safe regions).
+  - Any unsafe footprint sample → **explosion VFX** → reset to Assembly start (not a silent teleport).
+- When booster **touches the pad** → status `awaiting_reorient` → **Reorient** seats the booster on the pad → `step_complete` → **Proceed** (haul is **not** the final baseline step).
+
+### 3. Prepare for launch (`kind: launch-prep`)
+**Scene:** `LaunchPrepScene.tsx` — pad beside launch tower.
+
+- Only after haul reorient + Proceed.
+- Operator sub-tasks **in order** (reuses run `nextMachineIndex` / `completedMachineIds` for progress):
+  1. **Mate** booster to tower (strongback control / slider)  
+  2. **Crane** payload onto the stack (numbered crane sequence)  
+  3. **Fuel** — connect umbilicals, hold-to-fill LOX/RP-1  
+  4. **Power up** — arm switches in order  
+- Completing the last sub-task finishes the **full unit run** (`complete` + `completedRuns` / `goodRuns`).
+
+---
+
+## Adding a new Execute step (checklist)
+
+Use this when extending the baseline process (e.g. a fourth step after launch-prep).
+
+1. **Types** — Extend `ProcessStepKind` in `src/types/process.ts`; add any step-specific constants/actions.
+2. **Process data** — Append a step to `BASELINE_PROCESS.steps` in `src/data/baselineProcess.ts` (`id`, `name`, `kind`, `baseTime`, optional config).
+3. **Scene** — New component under `src/components/` with **operator-driven** interactions (match the hands-on style of steps 1–3). Give the scene a distinct visual environment if it is a new location.
+4. **Simulation** — In `src/lib/simulation.ts`:
+   - Previous last step must end in `step_complete` + Proceed (not `complete`) when a next step exists.
+   - New step’s finish handler: `step_complete` if more steps follow, else `complete` + increment run counts.
+5. **UI wiring** — `SimulationView.tsx` status copy, show/hide scene, Proceed button; `App.tsx` handlers; styles in `App.css` under a clear namespace (avoid clobbering manufacture / haul / launch-prep).
+6. **Docs** — Update this file’s baseline step list.
+7. **Verify** — `npm run build`; keep the app runnable; commit with a clear message.
+
+Prefer CSS/SVG + pointer/keyboard events. No heavy game engines.
+
+---
 
 ## Key Constraints
 - Sessions must stay in the 4–8 minute range.
 - Progressive unlocking of improvement levers and analysis tools.
 - Client-side first. Prefer deterministic simulation with light stochastic defects where used.
-- Dark professional UI: charcoal base, orbital blue, restrained amber accents.
+- Dark professional UI chrome: charcoal base, orbital blue, restrained amber accents (step interiors may use themed environments).
 - Clean, minimal controls with operational language.
 - Interactive Execute scenes first; polish only where it clarifies the task.
 
 ## Technical Preferences
 - TypeScript + React (Vite).
 - Process map (Map phase): SVG or lightweight canvas (keep it simple).
-- Execute scenes: React components + CSS/SVG; pointer-driven interaction; shared process/run state in `App`.
-- State: React state for current process version and run; local storage for progress/process versions in v1 later.
+- Execute: React scene components + CSS/SVG; shared process/run state in `App`.
+- Key modules: `src/data/baselineProcess.ts`, `src/lib/simulation.ts`, `src/lib/pathGeometry.ts` (haul), `src/types/process.ts`, `src/views/SimulationView.tsx`.
+- State: React state for current process version and run; local storage for progress later in v1.
 - No heavy game engines.
 - Prioritise clarity and maintainability over visual effects.
 
