@@ -1,5 +1,5 @@
 import type { SessionMetrics } from '../types/process'
-import { formatLeadTime, formatMetric } from '../lib/simulation'
+import { formatLeadTime } from '../lib/simulation'
 
 interface TopBarProps {
   metrics: SessionMetrics
@@ -8,25 +8,6 @@ interface TopBarProps {
 }
 
 export function TopBar({ metrics, onStartSession, sessionActive }: TopBarProps) {
-  const display = [
-    {
-      label: 'Lead Time',
-      // End-to-end wall-clock from Run Process until launch complete.
-      value: formatLeadTime(metrics.leadTime),
-      unit: '',
-    },
-    {
-      label: 'Yield',
-      value: formatMetric(metrics.yield, 0),
-      unit: '%',
-    },
-    {
-      label: 'Flow Efficiency',
-      value: formatMetric(metrics.flowEfficiency, 0),
-      unit: '%',
-    },
-  ]
-
   return (
     <header className="top-bar">
       <div className="top-bar__brand">
@@ -38,17 +19,14 @@ export function TopBar({ metrics, onStartSession, sessionActive }: TopBarProps) 
       </div>
 
       <dl className="top-bar__metrics">
-        {display.map((metric) => (
-          <div key={metric.label} className="metric">
-            <dt className="metric__label">{metric.label}</dt>
-            <dd className="metric__value">
-              <span className="metric__number">{metric.value}</span>
-              {metric.unit ? (
-                <span className="metric__unit">{metric.unit}</span>
-              ) : null}
-            </dd>
-          </div>
-        ))}
+        <div className="metric">
+          <dt className="metric__label">Lead Time</dt>
+          <dd className="metric__value">
+            <span className="metric__number">
+              {formatLeadTime(metrics.leadTime)}
+            </span>
+          </dd>
+        </div>
       </dl>
 
       <div className="top-bar__actions">

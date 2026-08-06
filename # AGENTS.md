@@ -46,9 +46,7 @@ Full unit completion happens only on the **last** process step (baseline: launch
 ### Session / metrics
 - **Start Session** arms the session; **Run Process** starts a unit at step index 0 (`beginRun`).
 - Top bar (live from run state):
-  - **Lead Time** — wall-clock `m:ss` end-to-end from Run Process (`runStartedAt`) through launch (`completeUnitRun` sets `runEndedAt` and freezes the display). Primary learning measure (not process work-minutes).
-  - **Yield** — good runs / completed runs.
-  - **Flow Efficiency** — process value-add minutes / process work minutes (still simulation-based).
+  - **Lead Time** only — wall-clock `m:ss` end-to-end from Run Process (`runStartedAt`) through launch (`completeUnitRun` sets `runEndedAt` and freezes the display). Primary learning measure. Do **not** reintroduce Yield or Flow Efficiency on the chrome.
 - Cap full unit runs per session (**12**) so baseline inefficiency stays visible across repeats.
 - **Primary views:** Simulation · **Data** · Comparison.
   - **Data** — ongoing lead-time board (motorsport lap style): each completed full cycle (assembly → launch) appends one entry; show run #, lead time, delta vs best, best highlighted. Process mapping is **out of scope** here (done separately — do not reintroduce a Map tab).

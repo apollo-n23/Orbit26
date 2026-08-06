@@ -57,8 +57,6 @@ export interface SessionMetrics {
    * End-to-end process time from Run Process through launch. Display as m:ss.
    */
   leadTime: number | null
-  yield: number | null
-  flowEfficiency: number | null
 }
 
 /**
@@ -129,8 +127,6 @@ export const MAX_RUNS_PER_SESSION = 12
 
 export const EMPTY_METRICS: SessionMetrics = {
   leadTime: null,
-  yield: null,
-  flowEfficiency: null,
 }
 
 export const INITIAL_RUN_STATE: RunState = {

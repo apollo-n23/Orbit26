@@ -342,41 +342,14 @@ export function metricsFromRun(run: RunState, now = Date.now()): SessionMetrics 
     run.status === 'complete'
 
   if (!inProgress && run.completedRuns === 0 && run.runStartedAt == null) {
-    return { leadTime: null, yield: null, flowEfficiency: null }
+    return { leadTime: null }
   }
 
   const wallMs = wallClockMs(run, now)
   // Lead time: real end-to-end seconds from Run Process until launch complete.
   const leadTime = wallMs != null ? wallMs / 1000 : null
 
-  // Flow efficiency stays process-based (value-add minutes / process work minutes).
-  const processCycle = run.elapsedTime
-  const flowEfficiency =
-    processCycle > 0
-      ? (run.valueAddTime / processCycle) * 100
-      : inProgress
-        ? 0
-        : null
-
-  const yieldPct =
-    run.completedRuns > 0
-      ? (run.goodRuns / run.completedRuns) * 100
-      : inProgress
-        ? run.unitDefective
-          ? 0
-          : 100
-        : null
-
-  return {
-    leadTime,
-    yield: yieldPct,
-    flowEfficiency,
-  }
-}
-
-export function formatMetric(value: number | null, digits = 0): string {
-  if (value == null || Number.isNaN(value)) return '—'
-  return value.toFixed(digits)
+  return { leadTime }
 }
 
 /** Format wall-clock lead time (seconds) as m:ss. */
