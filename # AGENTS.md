@@ -28,14 +28,14 @@ Each round is a self-contained session: process config, lead-time board, chrome,
 - **Route:** `#/round/1` (default).
 - **Config:** `ROUND_CONFIGS[1]` — baseline inefficient process; **no** redesign phase.
 - **Complete:** “As-is round complete” + lap times + Continue / share link to Round 2.
-- **Persist average:** when all 3 launches are logged, save **Round 1 average lead time** via `saveRound1AverageLeadTimeMs` (`localStorage` key `orbit26.round1.avgLeadTimeMs` in `lib/roundMetrics.ts`).
+- **Persist results:** when all 3 launches are logged, save **Round 1 average** + **per-rocket lead times** via `saveRound1LeadTimeResults` in `lib/roundMetrics.ts` (`localStorage` keys `orbit26.round1.avgLeadTimeMs` and `orbit26.round1.launchLeadTimesMs`).
 
 ### Round 2 — Redesign then execute
 - **Route:** `#/round/2` (tutor-shareable deep link).
 - **Config:** `allowsRedesign: true`.
 - **Flow:** `phase: redesign` → `RedesignWorkshop` → confirm (with **are-you-sure**) → `phase: play` (3 launches) → orbit complete.
-- **Data comparison:** load Round 1 average on mount (`loadRound1AverageLeadTimeMs`); Data tab shows **Round 1 average lead time**; after Round 2's three launches, show **Round 2 average** and **vs Round 1 average** (faster/slower).
-- **State isolation:** fresh `RoundSession` per `round.id`; redesign must **not** be wiped after lock-in (reset only on round id change). Lap logs do not carry across rounds; **only** Round 1 average is carried via localStorage.
+- **Data comparison (settled):** load Round 1 average + per-rocket times on mount. Data tab shows **Round 1 average lead time** during Round 2. When Round 2's three launches complete, show full visual compare (`RoundLeadTimeCompare`): Round 1 vs Round 2 averages (difference faster/slower) **and** side-by-side bar chart for Rockets 1–3 of both rounds. Same visual on Round 2 **orbit complete** panel.
+- **State isolation:** fresh `RoundSession` per `round.id`; redesign must **not** be wiped after lock-in (reset only on round id change). Lap logs do not carry across rounds; Round 1 **average + three launch times** carry via localStorage only.
 - **Do not** delete Round 2 or merge it into Round 1.
 
 ### Round 2 redesign workshop (`RedesignWorkshop.tsx`)
@@ -82,7 +82,8 @@ Resolve via `resolveLaunchPrepTech(process)`. Scene must re-read tech when the l
 | `processEdit.ts`, `roadGrid.ts` | Apply/resolve redesign fields |
 | `OrbitCompleteScene.tsx` | End-of-round cutaway |
 | `SiteBrand.tsx` | Top banner brand lockup |
-| `lib/roundMetrics.ts` | Round 1 avg lead time save/load; averages for Data compare |
+| `lib/roundMetrics.ts` | Round 1 avg + per-launch times save/load; averages |
+| `RoundLeadTimeCompare.tsx` | Visual R1 vs R2 averages + three-launch bar compare (Data + orbit complete) |
 | Views | **Simulation** · **Data** only (**Comparison tab removed**) |
 
 ---
