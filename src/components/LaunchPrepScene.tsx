@@ -1,13 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Booster } from './Booster'
-import type { LaunchPrepTech, RunState } from '../types/process'
+import type { LaunchPrepTech, ProcessVersion, RunState } from '../types/process'
 import { LAUNCH_PREP_ACTIONS } from '../types/process'
+import {
+  isLaunchPrepTech,
+  resolveLaunchPrepTech,
+} from '../lib/processEdit'
 
 interface LaunchPrepSceneProps {
   run: RunState
   onActionComplete: () => void
-  /** Round 2 technology investment (at most one). */
+  /**
+   * Round 2 technology investment (at most one).
+   * Prefer `process` when available so tech is re-resolved on each run start.
+   */
   tech?: LaunchPrepTech | null
+  /** Full process version — used to re-read launchPrepTech when the step starts. */
+  process?: ProcessVersion | null
 }
 
 const CRANE_STEPS = [
@@ -24,9 +33,21 @@ const POWER_SWITCHES = [
   { id: 'range', label: 'Range safety arm' },
 ] as const
 
+/** Index of the power-up sub-task in LAUNCH_PREP_ACTIONS (mate/crane/fuel/power). */
+const POWER_ACTION_INDEX = 3
+
 const FILL_RATE_PER_MS = 0.045 // % per ms while holding (~2.2s to fill)
 /** Faster fuel pumps upgrade — near-instant fill while holding. */
 const FAST_FILL_RATE_PER_MS = 1.8
+
+function resolveSceneTech(
+  process: ProcessVersion | null | undefined,
+  techProp: LaunchPrepTech | null | undefined,
+): LaunchPrepTech | null {
+  // When process is provided, trust it alone (includes explicit clear → null).
+  if (process) return resolveLaunchPrepTech(process)
+  return isLaunchPrepTech(techProp) ? techProp : null
+}
 
 /**
  * Pad-side launch preparation: mate booster to tower, crane-stack payload,
@@ -36,8 +57,13 @@ const FAST_FILL_RATE_PER_MS = 1.8
 export function LaunchPrepScene({
   run,
   onActionComplete,
-  tech = null,
+  tech: techProp = null,
+  process = null,
 }: LaunchPrepSceneProps) {
+  // Snapshot tech when launch-prep (re)starts so a mid-step parent re-render cannot drop it.
+  const [tech, setTech] = useState<LaunchPrepTech | null>(() =>
+    resolveSceneTech(process, techProp),
+  )
   const fastPumps = tech === 'faster-pumps'
   const autoPower = tech === 'auto-power'
   const payloadDrone = tech === 'payload-drone'
@@ -71,7 +97,14 @@ export function LaunchPrepScene({
   const [powerArmed, setPowerArmed] = useState<string[]>([])
   const [powerDone, setPowerDone] = useState(false)
 
-  // Reset local interaction state when this step (re)starts.
+  // Re-read redesign tech whenever this step (re)starts for a unit.
+  useEffect(() => {
+    if (run.status === 'running' && run.currentStepIndex >= 0) {
+      setTech(resolveSceneTech(process, techProp))
+    }
+  }, [run.status, run.currentStepIndex, run.completedRuns, process, techProp])
+
+  // Reset local interaction state when this step (re)starts (not mid-step tech re-read).
   useEffect(() => {
     if (run.status === 'running' && run.currentStepIndex >= 0) {
       finishGuardRef.current = false
@@ -116,9 +149,10 @@ export function LaunchPrepScene({
   }, [run.completedMachineIds])
 
   const completeCurrent = useCallback(() => {
-    if (!canInteract || finishGuardRef.current) return
+    if (!canInteract || finishGuardRef.current) return false
     finishGuardRef.current = true
     onActionComplete()
+    return true
   }, [canInteract, onActionComplete])
 
   // —— Mate: drag slider to 100% ——
@@ -146,16 +180,28 @@ export function LaunchPrepScene({
 
   function handleDroneDeploy() {
     if (!canInteract || actionIndex !== 1 || craneDone || !payloadDrone) return
+    // Clear stale guard from a prior sub-task so one click always commits.
+    finishGuardRef.current = false
     setCraneStep(CRANE_STEPS.length)
     setCraneDone(true)
     completeCurrent()
   }
 
   function handleMasterPowerOn() {
-    if (!canInteract || actionIndex !== 3 || powerDone || !autoPower) return
+    if (
+      !canInteract ||
+      actionIndex !== POWER_ACTION_INDEX ||
+      powerDone ||
+      !autoPower
+    ) {
+      return
+    }
+    // Clear stale guard from fuel complete so a single master ON always finishes power-up.
+    finishGuardRef.current = false
+    const committed = completeCurrent()
+    if (!committed) return
     setPowerArmed(POWER_SWITCHES.map((s) => s.id))
     setPowerDone(true)
-    completeCurrent()
   }
 
   // —— Fuel: connect umbilicals, hold-to-fill ——
@@ -212,16 +258,20 @@ export function LaunchPrepScene({
     }
   }, [loxFill, rpFill, canInteract, actionIndex, fuelDone, completeCurrent])
 
-  // —— Power: arm switches in order ——
+  // —— Power: arm switches in order (baseline; auto-power uses master ON instead) ——
   function handlePowerSwitch(id: string, index: number) {
-    if (!canInteract || actionIndex !== 3 || powerDone) return
+    if (!canInteract || actionIndex !== POWER_ACTION_INDEX || powerDone) return
+    // Auto-power UI must never accept sequential switches.
+    if (autoPower) return
     if (powerArmed.length !== index) return
     if (powerArmed.includes(id)) return
     const next = [...powerArmed, id]
     setPowerArmed(next)
     if (next.length >= POWER_SWITCHES.length) {
+      finishGuardRef.current = false
+      const committed = completeCurrent()
+      if (!committed) return
       setPowerDone(true)
-      completeCurrent()
     }
   }
 
@@ -590,9 +640,13 @@ export function LaunchPrepScene({
           </div>
         )}
 
-        {canInteract && actionIndex === 3 && (
-          <div className="lp-panel">
-            <p className="lp-panel__title">4 · Power up for launch</p>
+        {canInteract && actionIndex === POWER_ACTION_INDEX && (
+          <div className="lp-panel" data-lp-tech={tech ?? 'none'}>
+            <p className="lp-panel__title">
+              {autoPower
+                ? '4 · Power up for launch (master ON)'
+                : '4 · Power up for launch'}
+            </p>
             {autoPower ? (
               <>
                 <p className="lp-panel__hint">
@@ -603,6 +657,8 @@ export function LaunchPrepScene({
                   type="button"
                   className="btn btn--primary lp-master-on"
                   onClick={handleMasterPowerOn}
+                  aria-label="Master power ON"
+                  data-lp-action="master-power-on"
                 >
                   ON
                 </button>
@@ -616,6 +672,7 @@ export function LaunchPrepScene({
                   className="lp-power-row"
                   role="group"
                   aria-label="Power checklist"
+                  data-lp-action="power-switches"
                 >
                   {POWER_SWITCHES.map((sw, i) => {
                     const isArmed = powerArmed.includes(sw.id)

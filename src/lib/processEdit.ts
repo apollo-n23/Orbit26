@@ -127,28 +127,6 @@ export function applyAutoMoveBooster(
   }
 }
 
-export function resolveLaunchPrepTech(
-  process: ProcessVersion,
-): LaunchPrepTech | null {
-  if (process.launchPrepTech) return process.launchPrepTech
-  const step = process.steps.find((s) => s.kind === 'launch-prep')
-  return step?.launchPrepTech ?? null
-}
-
-/** Set or clear the single launch-prep technology investment (Round 2 redesign). */
-export function applyLaunchPrepTech(
-  process: ProcessVersion,
-  tech: LaunchPrepTech | null,
-): ProcessVersion {
-  return {
-    ...process,
-    launchPrepTech: tech,
-    steps: process.steps.map((s) =>
-      s.kind === 'launch-prep' ? { ...s, launchPrepTech: tech ?? undefined } : s,
-    ),
-  }
-}
-
 export const LAUNCH_PREP_TECH_OPTIONS: {
   id: LaunchPrepTech
   name: string
@@ -173,3 +151,45 @@ export const LAUNCH_PREP_TECH_OPTIONS: {
       'Replaces the multi-step pad crane with a drone that seats the payload on the stack in one action.',
   },
 ]
+
+const LAUNCH_PREP_TECH_IDS = new Set<string>(
+  LAUNCH_PREP_TECH_OPTIONS.map((o) => o.id),
+)
+
+/** True when value is a known Round 2 launch-prep investment id. */
+export function isLaunchPrepTech(value: unknown): value is LaunchPrepTech {
+  return typeof value === 'string' && LAUNCH_PREP_TECH_IDS.has(value)
+}
+
+/**
+ * Resolve the launch-prep technology for play:
+ * process.launchPrepTech → launch-prep step.launchPrepTech → null.
+ * Invalid / cleared values do not fall through as a false positive.
+ */
+export function resolveLaunchPrepTech(
+  process: ProcessVersion,
+): LaunchPrepTech | null {
+  if (isLaunchPrepTech(process.launchPrepTech)) return process.launchPrepTech
+  // Explicit null on the version means "cleared in redesign" — do not use step.
+  if (process.launchPrepTech === null) return null
+  const step = process.steps.find((s) => s.kind === 'launch-prep')
+  if (isLaunchPrepTech(step?.launchPrepTech)) return step.launchPrepTech
+  return null
+}
+
+/** Set or clear the single launch-prep technology investment (Round 2 redesign). */
+export function applyLaunchPrepTech(
+  process: ProcessVersion,
+  tech: LaunchPrepTech | null,
+): ProcessVersion {
+  const nextTech = tech != null && isLaunchPrepTech(tech) ? tech : null
+  return {
+    ...process,
+    launchPrepTech: nextTech,
+    steps: process.steps.map((s) => {
+      if (s.kind !== 'launch-prep') return s
+      const { launchPrepTech: _prev, ...rest } = s
+      return nextTech ? { ...rest, launchPrepTech: nextTech } : rest
+    }),
+  }
+}

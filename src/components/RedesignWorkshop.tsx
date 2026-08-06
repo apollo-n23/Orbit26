@@ -111,9 +111,13 @@ export function RedesignWorkshop({
       setTab('haul')
       return
     }
+    // Snapshot tech before haul stamp so play cannot lose the redesign investment.
+    const selectedTech = resolveLaunchPrepTech(draft)
     // Always start from a fresh clone of the manufacture draft, then stamp the road + cost.
     const cost = roadCostFromTiles(roadTiles)
-    const withRoad = applyHaulPath(structuredClone(draft), path, cost)
+    let withRoad = applyHaulPath(structuredClone(draft), path, cost)
+    // Re-stamp launch-prep tech after haul apply (defensive: same field on version + step).
+    withRoad = applyLaunchPrepTech(withRoad, selectedTech)
     const stored = withRoad.haulPathOverride ?? getHaulStep(withRoad)?.haulPath
     if (!stored || stored.length < 2) {
       setRoadError(

@@ -172,7 +172,21 @@ export function SimulationView({
       if (run.status === 'running') {
         const action = LAUNCH_PREP_ACTIONS[run.nextMachineIndex]
         if (action) {
-          return `Launch pad: ${action.name} (${run.nextMachineIndex + 1} of ${LAUNCH_PREP_ACTIONS.length}).`
+          let name = action.name
+          if (action.id === 'power-up' && launchPrepTech === 'auto-power') {
+            name = 'Power up for launch (master ON)'
+          } else if (
+            action.id === 'crane-payload' &&
+            launchPrepTech === 'payload-drone'
+          ) {
+            name = 'Stack payload with drone'
+          } else if (
+            action.id === 'fuel-vehicle' &&
+            launchPrepTech === 'faster-pumps'
+          ) {
+            name = 'Fuel the vehicle (high-flow pumps)'
+          }
+          return `Launch pad: ${name} (${run.nextMachineIndex + 1} of ${LAUNCH_PREP_ACTIONS.length}).`
         }
       }
       if (run.status === 'step_complete') {
@@ -275,7 +289,9 @@ export function SimulationView({
 
             {showLaunchPrep && (
               <LaunchPrepScene
+                key={`launch-prep-${process.id}-${launchPrepTech ?? 'none'}-${run.completedRuns}`}
                 run={run}
+                process={process}
                 tech={launchPrepTech}
                 onActionComplete={onLaunchPrepActionComplete}
               />
