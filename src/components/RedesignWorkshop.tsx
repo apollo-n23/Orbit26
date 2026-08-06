@@ -36,7 +36,6 @@ export function RedesignWorkshop({
     structuredClone(initialProcess),
   )
   const [tab, setTab] = useState<RedesignTab>('manufacture')
-  const [dragId, setDragId] = useState<string | null>(null)
   const [roadError, setRoadError] = useState<string | null>(null)
 
   const haulDefaultPath = getHaulStep(initialProcess)?.haulPath ?? HAUL_PATH
@@ -52,17 +51,15 @@ export function RedesignWorkshop({
 
   const endpoints = requiredEndpointCells()
 
-  function handleDropOnSlot(targetLinePos: number) {
-    if (!dragId) return
+  function handleDropOnSlot(targetSlotIndex: number, machineId: string) {
+    if (!machineId) return
     const ordered = machinesSorted.map((m) => m.id)
-    const from = ordered.indexOf(dragId)
-    if (from < 0) return
-    const next = [...ordered]
-    next.splice(from, 1)
-    const insertAt = Math.min(targetLinePos, next.length)
-    next.splice(insertAt, 0, dragId)
+    if (!ordered.includes(machineId)) return
+    // Rebuild left→right order: remove, then insert at the drop slot.
+    const next = ordered.filter((id) => id !== machineId)
+    const insertAt = Math.max(0, Math.min(targetSlotIndex, next.length))
+    next.splice(insertAt, 0, machineId)
     setDraft((p) => applyMachineLineOrder(p, next))
-    setDragId(null)
   }
 
   function handleParkChange(machineId: string, value: number) {
@@ -169,10 +166,7 @@ export function RedesignWorkshop({
                     key={machine.id}
                     machine={machine}
                     slotIndex={slot}
-                    isDragging={dragId === machine.id}
-                    onDragStart={() => setDragId(machine.id)}
-                    onDragEnd={() => setDragId(null)}
-                    onDrop={() => handleDropOnSlot(slot)}
+                    onDrop={(machineId) => handleDropOnSlot(slot, machineId)}
                     onParkChange={(v) => handleParkChange(machine.id, v)}
                   />
                 ))}
@@ -263,34 +257,27 @@ export function RedesignWorkshop({
 function MachineSlot({
   machine,
   slotIndex,
-  isDragging,
-  onDragStart,
-  onDragEnd,
   onDrop,
   onParkChange,
 }: {
   machine: ProcessMachine
   slotIndex: number
-  isDragging: boolean
-  onDragStart: () => void
-  onDragEnd: () => void
-  onDrop: () => void
+  onDrop: (machineId: string) => void
   onParkChange: (value: number) => void
 }) {
   return (
     <div
-      className={[
-        'redesign-slot',
-        isDragging ? 'redesign-slot--dragging' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className="redesign-slot"
       onDragOver={(e) => {
         e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
       }}
       onDrop={(e) => {
         e.preventDefault()
-        onDrop()
+        const machineId =
+          e.dataTransfer.getData('text/plain') ||
+          e.dataTransfer.getData('application/x-machine-id')
+        if (machineId) onDrop(machineId)
       }}
     >
       <div
@@ -299,10 +286,10 @@ function MachineSlot({
         onDragStart={(e) => {
           e.dataTransfer.effectAllowed = 'move'
           e.dataTransfer.setData('text/plain', machine.id)
-          onDragStart()
+          e.dataTransfer.setData('application/x-machine-id', machine.id)
         }}
-        onDragEnd={onDragEnd}
         style={{
+          // Match play scene: parkOffset is rem above the belt.
           transform: `translateY(calc(-1 * ${machine.parkOffset}rem))`,
         }}
       >

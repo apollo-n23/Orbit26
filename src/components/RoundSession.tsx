@@ -46,6 +46,9 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
   const [now, setNow] = useState(() => Date.now())
   const lastLoggedRunRef = useRef(0)
 
+  // Reset only when navigating to a different round id.
+  // Do NOT depend on round.process — that would wipe a confirmed redesign
+  // if the parent re-renders with a new config object reference.
   useEffect(() => {
     setActiveView('simulation')
     setSessionActive(false)
@@ -54,7 +57,9 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     setRun(INITIAL_RUN_STATE)
     setLeadTimeLog([])
     lastLoggedRunRef.current = 0
-  }, [round.id, round.allowsRedesign, round.process])
+    // round fields read intentionally only when round.id changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round.id])
 
   useEffect(() => {
     if (!isRunTimerActive(run)) return
@@ -87,7 +92,8 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
   }, [])
 
   function handleConfirmRedesign(nextProcess: ProcessVersion) {
-    setProcess(nextProcess)
+    // Deep-clone so later play/mutation cannot touch the workshop draft graph.
+    setProcess(structuredClone(nextProcess))
     setPhase('play')
     setSessionActive(false)
     setRun(INITIAL_RUN_STATE)
