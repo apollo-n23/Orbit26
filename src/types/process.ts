@@ -63,6 +63,16 @@ export interface ProcessStep {
    * Mirrors process.launchPrepTech when set on the launch-prep step.
    */
   launchPrepTech?: LaunchPrepTech
+  /**
+   * Launch-sequence redesign: GO station ids the learner realigned
+   * (reduces as-is misalignment friction in play). Mirrors process.launchSeqRealignIds.
+   */
+  launchSeqRealignIds?: string[]
+  /**
+   * Launch-sequence redesign: GO station ids removed from the poll for this round
+   * (e.g. Range Safety). Mirrors process.launchSeqRemovedIds.
+   */
+  launchSeqRemovedIds?: string[]
 }
 
 /**
@@ -100,6 +110,20 @@ export interface ProcessVersion {
    * Launch-prep technology investment chosen in Round 2 redesign (at most one).
    */
   launchPrepTech?: LaunchPrepTech | null
+  /**
+   * Launch-sequence redesign (Round 2): GO station ids marked realigned.
+   * Ids match LAUNCH_SEQ_GO_STATIONS[].id (e.g. 'go-guidance').
+   * Play should reduce as-is misalignment friction for these stations.
+   * Prefer process-level; may also be mirrored on the launch-sequence step.
+   */
+  launchSeqRealignIds?: string[]
+  /**
+   * Launch-sequence redesign (Round 2): GO station ids removed from the GO poll.
+   * Only Range Safety (`go-range`) is offered for deletion in redesign UI;
+   * field is a list so play can filter generically.
+   * Prefer process-level; may also be mirrored on the launch-sequence step.
+   */
+  launchSeqRemovedIds?: string[]
 }
 
 export interface SessionMetrics {
@@ -293,6 +317,9 @@ export const LAUNCH_SEQ_GO_STATIONS: LaunchSeqGoStation[] = [
   { id: 'go-range', callsign: 'RANGE', name: 'Range Safety' },
   { id: 'go-weather', callsign: 'WEATHER', name: 'Weather' },
 ]
+
+/** Range Safety station id — only station redesign allows removing from the GO poll. */
+export const LAUNCH_SEQ_RANGE_STATION_ID = 'go-range'
 
 /**
  * Ordered actions for launch-sequence:

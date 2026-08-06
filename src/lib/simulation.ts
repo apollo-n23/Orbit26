@@ -8,8 +8,8 @@ import type {
 import {
   HAUL_STEP_TIME,
   LAUNCH_PREP_ACTIONS,
-  LAUNCH_SEQ_ACTIONS,
 } from '../types/process'
+import { resolveLaunchSeqConfig } from './processEdit'
 
 export function getActiveStep(
   process: ProcessVersion,
@@ -276,6 +276,9 @@ export function finishLaunchPrepAction(
  * Operator finished the next launch-sequence action (GO / key / liftoff).
  * Completing the last action (liftoff) finishes the full unit run when this
  * is the final process step.
+ *
+ * Action list is derived from redesign config (removed GO stations shorten the
+ * sequence; key/liftoff indices follow remaining stations).
  */
 export function finishLaunchSequenceAction(
   process: ProcessVersion,
@@ -286,7 +289,8 @@ export function finishLaunchSequenceAction(
   const step = getActiveStep(process, prev)
   if (step?.kind !== 'launch-sequence') return prev
 
-  const action = LAUNCH_SEQ_ACTIONS[prev.nextMachineIndex]
+  const { actions } = resolveLaunchSeqConfig(process)
+  const action = actions[prev.nextMachineIndex]
   if (!action) return prev
 
   const completedMachineIds = [...prev.completedMachineIds, action.id]
@@ -294,7 +298,7 @@ export function finishLaunchSequenceAction(
   const elapsedTime = prev.elapsedTime + action.workTime
   const valueAddTime =
     prev.valueAddTime + Math.round(action.workTime * action.valueAddRatio)
-  const allDone = nextMachineIndex >= LAUNCH_SEQ_ACTIONS.length
+  const allDone = nextMachineIndex >= actions.length
 
   if (allDone) {
     const isLast = prev.currentStepIndex >= process.steps.length - 1

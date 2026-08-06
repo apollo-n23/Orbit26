@@ -4,16 +4,26 @@ import {
   applyAutoMoveBooster,
   applyHaulPath,
   applyLaunchPrepTech,
+  applyLaunchSeqRealign,
+  applyLaunchSeqRedesign,
+  applyLaunchSeqRemove,
   applyMachineLineOrder,
   applyMachineParkOffset,
   getHaulStep,
   getManufactureStep,
   LAUNCH_PREP_TECH_OPTIONS,
+  LAUNCH_SEQ_STATION_CRITICALITY,
   resolveAutoMoveBooster,
   resolveLaunchPrepTech,
+  resolveLaunchSeqRealignIds,
+  resolveLaunchSeqRemovedIds,
 } from '../lib/processEdit'
 import { Booster } from './Booster'
 import type { LaunchPrepTech } from '../types/process'
+import {
+  LAUNCH_SEQ_GO_STATIONS,
+  LAUNCH_SEQ_RANGE_STATION_ID,
+} from '../types/process'
 import {
   ROAD_COLS,
   ROAD_ROWS,
@@ -27,7 +37,7 @@ import {
 } from '../lib/roadGrid'
 import { HAUL_PATH, SCENE_HEIGHT, SCENE_WIDTH } from '../lib/pathGeometry'
 
-type RedesignTab = 'manufacture' | 'haul' | 'launch-prep'
+type RedesignTab = 'manufacture' | 'haul' | 'launch-prep' | 'launch-sequence'
 
 interface RedesignWorkshopProps {
   initialProcess: ProcessVersion
@@ -49,6 +59,8 @@ export function RedesignWorkshop({
   const [upgradePanelOpen, setUpgradePanelOpen] = useState(false)
   /** Confirm lock-in dialog before starting launches. */
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  /** Launch-sequence tab: which station's criticality panel is expanded. */
+  const [launchSeqInfoId, setLaunchSeqInfoId] = useState<string | null>(null)
 
   const haulDefaultPath = getHaulStep(initialProcess)?.haulPath ?? HAUL_PATH
   const [roadTiles, setRoadTiles] = useState<Set<CellKey>>(() =>
@@ -63,6 +75,9 @@ export function RedesignWorkshop({
 
   const autoMoveBooster = resolveAutoMoveBooster(draft)
   const launchPrepTech = resolveLaunchPrepTech(draft)
+  const launchSeqRealignIds = resolveLaunchSeqRealignIds(draft)
+  const launchSeqRemovedIds = resolveLaunchSeqRemovedIds(draft)
+  const rangeRemoved = launchSeqRemovedIds.includes(LAUNCH_SEQ_RANGE_STATION_ID)
   const endpoints = requiredEndpointCells()
   const roadCost = useMemo(() => roadCostFromTiles(roadTiles), [roadTiles])
 
@@ -93,6 +108,26 @@ export function RedesignWorkshop({
     })
   }
 
+  function handleToggleLaunchSeqRealign(stationId: string) {
+    setDraft((p) => {
+      const realigned = resolveLaunchSeqRealignIds(p).includes(stationId)
+      return applyLaunchSeqRealign(p, stationId, !realigned)
+    })
+  }
+
+  function handleDeleteRangeFromSequence() {
+    setDraft((p) => applyLaunchSeqRemove(p, LAUNCH_SEQ_RANGE_STATION_ID, true))
+    setLaunchSeqInfoId(null)
+  }
+
+  function handleRestoreRangeToSequence() {
+    setDraft((p) => applyLaunchSeqRemove(p, LAUNCH_SEQ_RANGE_STATION_ID, false))
+  }
+
+  function toggleLaunchSeqInfo(stationId: string) {
+    setLaunchSeqInfoId((prev) => (prev === stationId ? null : stationId))
+  }
+
   function toggleTile(col: number, row: number) {
     const key = cellKey(col, row)
     // Endpoints stay on (free baseline — not billable, not removable).
@@ -116,13 +151,17 @@ export function RedesignWorkshop({
       setTab('haul')
       return
     }
-    // Snapshot tech before haul stamp so play cannot lose the redesign investment.
+    // Snapshot redesign choices before haul stamp so play cannot lose investments.
     const selectedTech = resolveLaunchPrepTech(draft)
+    const realignIds = resolveLaunchSeqRealignIds(draft)
+    const removedIds = resolveLaunchSeqRemovedIds(draft)
     // Always start from a fresh clone of the manufacture draft, then stamp the road + cost.
     const cost = roadCostFromTiles(roadTiles)
     let withRoad = applyHaulPath(structuredClone(draft), path, cost)
     // Re-stamp launch-prep tech after haul apply (defensive: same field on version + step).
     withRoad = applyLaunchPrepTech(withRoad, selectedTech)
+    // Re-stamp launch-sequence redesign (realign + optional Range removal).
+    withRoad = applyLaunchSeqRedesign(withRoad, realignIds, removedIds)
     const stored = withRoad.haulPathOverride ?? getHaulStep(withRoad)?.haulPath
     if (!stored || stored.length < 2) {
       setShowConfirmDialog(false)
@@ -172,9 +211,9 @@ export function RedesignWorkshop({
       <div className="view-panel__body redesign-body">
         <div className="redesign-warning" role="status">
           <strong>Before you lock in:</strong> work through every redesign tab
-          (manufacture line, haul road, launch prep tech) and finish any upgrades
-          you want. Once you confirm, this layout is fixed for all three launches
-          this round.
+          (manufacture line, haul road, launch prep tech, launch sequence) and
+          finish any upgrades you want. Once you confirm, this layout is fixed
+          for all three launches this round.
         </div>
 
         <nav className="redesign-tabs" aria-label="Redesign steps">
@@ -211,7 +250,17 @@ export function RedesignWorkshop({
           >
             3 · Launch prep tech
           </button>
-          <span className="redesign-tabs__soon">4 · Coming later</span>
+          <button
+            type="button"
+            className={
+              tab === 'launch-sequence'
+                ? 'redesign-tabs__btn redesign-tabs__btn--active'
+                : 'redesign-tabs__btn'
+            }
+            onClick={() => setTab('launch-sequence')}
+          >
+            4 · Launch sequence
+          </button>
         </nav>
 
         {tab === 'manufacture' && (
@@ -360,6 +409,160 @@ export function RedesignWorkshop({
           </div>
         )}
 
+        {tab === 'launch-sequence' && (
+          <div className="redesign-seq">
+            <p className="redesign-hint">
+              Mission-control GO stations for the launch poll. Use{' '}
+              <strong>Realign</strong> to cut as-is misalignment friction on a
+              station. Open the info panel for operational criticality. Range
+              Safety can be removed from the sequence entirely.
+            </p>
+            <ul className="redesign-seq__list" aria-label="GO stations">
+              {LAUNCH_SEQ_GO_STATIONS.map((station) => {
+                const removed = launchSeqRemovedIds.includes(station.id)
+                const realigned = launchSeqRealignIds.includes(station.id)
+                const infoOpen = launchSeqInfoId === station.id
+                const isRange = station.id === LAUNCH_SEQ_RANGE_STATION_ID
+                const criticality =
+                  LAUNCH_SEQ_STATION_CRITICALITY[station.id] ??
+                  'Station contributes to the mission-control GO poll.'
+
+                return (
+                  <li
+                    key={station.id}
+                    className={[
+                      'redesign-seq__row',
+                      realigned ? 'redesign-seq__row--realigned' : '',
+                      removed ? 'redesign-seq__row--removed' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    <div className="redesign-seq__main">
+                      <div className="redesign-seq__identity">
+                        <span className="redesign-seq__callsign">
+                          {station.callsign}
+                        </span>
+                        <span className="redesign-seq__name">{station.name}</span>
+                        {removed && (
+                          <span className="redesign-seq__badge redesign-seq__badge--removed">
+                            Removed
+                          </span>
+                        )}
+                        {!removed && realigned && (
+                          <span className="redesign-seq__badge redesign-seq__badge--realigned">
+                            Realigned
+                          </span>
+                        )}
+                      </div>
+                      <div className="redesign-seq__actions">
+                        {!removed && (
+                          <button
+                            type="button"
+                            className={
+                              realigned
+                                ? 'btn btn--ghost redesign-seq__realign redesign-seq__realign--on'
+                                : 'btn btn--primary redesign-seq__realign'
+                            }
+                            onClick={() =>
+                              handleToggleLaunchSeqRealign(station.id)
+                            }
+                            aria-pressed={realigned}
+                          >
+                            {realigned ? 'Undo realign' : 'Realign'}
+                          </button>
+                        )}
+                        {removed && isRange && (
+                          <button
+                            type="button"
+                            className="btn btn--ghost"
+                            onClick={handleRestoreRangeToSequence}
+                          >
+                            Restore to sequence
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className={[
+                            'redesign-seq__info-btn',
+                            infoOpen ? 'redesign-seq__info-btn--open' : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                          onClick={() => toggleLaunchSeqInfo(station.id)}
+                          aria-expanded={infoOpen}
+                          aria-controls={`launch-seq-info-${station.id}`}
+                          aria-label={
+                            infoOpen
+                              ? `Hide criticality for ${station.name}`
+                              : `Show criticality for ${station.name}`
+                          }
+                          title={`${station.name} criticality`}
+                        >
+                          <span className="redesign-seq__info-icon" aria-hidden="true">
+                            i
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                    {infoOpen && (
+                      <div
+                        id={`launch-seq-info-${station.id}`}
+                        className="redesign-seq__info-panel"
+                        role="region"
+                        aria-label={`${station.name} criticality`}
+                      >
+                        <p className="redesign-seq__info-copy">{criticality}</p>
+                        {isRange && !removed && (
+                          <div className="redesign-seq__info-actions">
+                            <button
+                              type="button"
+                              className="btn btn--ghost redesign-seq__delete"
+                              onClick={handleDeleteRangeFromSequence}
+                            >
+                              Delete from sequence
+                            </button>
+                          </div>
+                        )}
+                        {isRange && removed && (
+                          <p className="redesign-seq__info-note">
+                            Range Safety will not appear in the GO poll for this
+                            round&apos;s launches.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+            {(launchSeqRealignIds.length > 0 || rangeRemoved) && (
+              <p className="redesign-hint redesign-hint--ok">
+                {launchSeqRealignIds.length > 0 && (
+                  <>
+                    Realigned:{' '}
+                    <strong>
+                      {launchSeqRealignIds
+                        .map(
+                          (id) =>
+                            LAUNCH_SEQ_GO_STATIONS.find((s) => s.id === id)
+                              ?.callsign ?? id,
+                        )
+                        .join(', ')}
+                    </strong>
+                  </>
+                )}
+                {launchSeqRealignIds.length > 0 && rangeRemoved && ' · '}
+                {rangeRemoved && (
+                  <>
+                    Removed: <strong>RANGE</strong>
+                  </>
+                )}
+              </p>
+            )}
+          </div>
+        )}
+
         {tab === 'haul' && (
           <div className="redesign-haul">
             <p className="redesign-hint">
@@ -447,8 +650,9 @@ export function RedesignWorkshop({
             </h3>
             <p className="redesign-confirm__copy">
               Are you sure you have finished redesigning all process steps you care
-              about? This layout (machines, road, and pad tech) will be used for all
-              three launches and cannot be changed until the round ends.
+              about? This layout (machines, road, pad tech, and launch-sequence GO
+              changes) will be used for all three launches and cannot be changed
+              until the round ends.
             </p>
             <div className="redesign-confirm__actions">
               <button
