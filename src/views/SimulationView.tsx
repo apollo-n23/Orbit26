@@ -1,8 +1,13 @@
 import { useEffect, useMemo } from 'react'
 import { ManufactureScene } from '../components/ManufactureScene'
 import { IntegratePayloadScene } from '../components/IntegratePayloadScene'
+import { LaunchPrepScene } from '../components/LaunchPrepScene'
 import type { ProcessVersion, RunState } from '../types/process'
-import { MACHINE_CYCLE_MS, MAX_RUNS_PER_SESSION } from '../types/process'
+import {
+  LAUNCH_PREP_ACTIONS,
+  MACHINE_CYCLE_MS,
+  MAX_RUNS_PER_SESSION,
+} from '../types/process'
 import {
   getActiveStep,
   getStepMachines,
@@ -19,6 +24,7 @@ interface SimulationViewProps {
   onProceedToNextStep: () => void
   onReachedPad: () => void
   onHaulReorient: () => void
+  onLaunchPrepActionComplete: () => void
 }
 
 export function SimulationView({
@@ -31,6 +37,7 @@ export function SimulationView({
   onProceedToNextStep,
   onReachedPad,
   onHaulReorient,
+  onLaunchPrepActionComplete,
 }: SimulationViewProps) {
   const runsRemaining = MAX_RUNS_PER_SESSION - run.completedRuns
   const canRun =
@@ -61,9 +68,21 @@ export function SimulationView({
       run.status === 'complete' ||
       run.status === 'step_complete')
 
-  const showProceed =
+  const showLaunchPrep =
+    inActiveRun &&
+    step?.kind === 'launch-prep' &&
+    (run.status === 'running' ||
+      run.status === 'step_complete' ||
+      run.status === 'complete')
+
+  const showManufactureProceed =
     run.status === 'step_complete' &&
     step?.kind === 'manufacture' &&
+    hasNextStep(process, run)
+
+  const showHaulProceed =
+    run.status === 'step_complete' &&
+    step?.kind === 'haul' &&
     hasNextStep(process, run)
 
   useEffect(() => {
@@ -105,6 +124,22 @@ export function SimulationView({
       if (run.status === 'awaiting_reorient') {
         return 'Booster is on the pad. Click Reorient to seat it correctly and finish this step.'
       }
+      if (run.status === 'step_complete') {
+        return hasNextStep(process, run)
+          ? 'Payload integration complete. Proceed to Prepare for launch.'
+          : 'Payload integration complete.'
+      }
+    }
+    if (step?.kind === 'launch-prep') {
+      if (run.status === 'running') {
+        const action = LAUNCH_PREP_ACTIONS[run.nextMachineIndex]
+        if (action) {
+          return `Launch pad: ${action.name} (${run.nextMachineIndex + 1} of ${LAUNCH_PREP_ACTIONS.length}).`
+        }
+      }
+      if (run.status === 'step_complete') {
+        return 'Launch preparation complete.'
+      }
     }
     if (run.status === 'complete') {
       return runsRemaining > 0
@@ -143,8 +178,8 @@ export function SimulationView({
       <div className="view-panel__body sim-body">
         {!sessionActive ? (
           <p className="placeholder-copy">
-            Start a session, then run the process: manufacture the booster, then
-            haul it to the pad for payload integration.
+            Start a session, then run the process: manufacture the booster, haul
+            it to the pad, then prepare for launch.
           </p>
         ) : (
           <>
@@ -157,7 +192,7 @@ export function SimulationView({
                 machines={machines}
                 run={run}
                 onMachineClick={onMachineClick}
-                showProceed={showProceed}
+                showProceed={showManufactureProceed}
                 onProceed={onProceedToNextStep}
               />
             )}
@@ -170,7 +205,26 @@ export function SimulationView({
               />
             )}
 
-            {!showManufacture && !showHaul && (
+            {showHaulProceed && (
+              <div className="sim-proceed">
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={onProceedToNextStep}
+                >
+                  Proceed to next step
+                </button>
+              </div>
+            )}
+
+            {showLaunchPrep && (
+              <LaunchPrepScene
+                run={run}
+                onActionComplete={onLaunchPrepActionComplete}
+              />
+            )}
+
+            {!showManufacture && !showHaul && !showLaunchPrep && (
               <p className="placeholder-copy">
                 Click Run Process to load a booster onto the manufacture line.
               </p>

@@ -38,12 +38,18 @@ The Execute phase is a **hands-on floor simulation**. The learner operates the p
    - Learner moves the booster from Assembly to the Launch Pad along a **winding outdoor road** (**arrow keys** primary; drag optional).
    - Path corridor is **50% wider than the booster** (short side × 1.5). Full-footprint off-path → **explosion**, then reset to Assembly start.
    - On-screen **re-orient** controls (90° turns / fixed headings) help navigate corners; long axis should follow the corridor.
-   - When the booster **touches the pad**, a **Reorient** button appears; confirming seats the booster correctly on the pad and completes the step (and the full run, while this is the last step).
+   - When the booster **touches the pad**, a **Reorient** button appears; confirming seats the booster correctly on the pad and completes the step → **Proceed to next step** (haul is not the final step in baseline).
+
+3. **Prepare for launch** (`kind: launch-prep`)
+   - Accessible only after haul/reorient is complete and the learner proceeds.
+   - Pad scene with launch tower, strongback, crane, umbilicals, and power panel.
+   - Operator sequence: **(1)** slide strongback control to mate booster to tower · **(2)** crane click sequence to stack payload fairing · **(3)** connect LOX/RP-1 umbilicals and hold-to-fill tanks · **(4)** arm power switches in order.
+   - Completing all four sub-tasks finishes the full unit run (`complete` + completedRuns++).
 
 ### Session / metrics behaviour
 - **Start Session** arms the session; **Run Process** starts a unit at the first step.
 - Top-bar metrics update from the run: **Cycle Time**, **Yield**, **Flow Efficiency**.
-- A full unit run completes only after all process steps for that unit are finished (currently: manufacture + haul/reorient).
+- A full unit run completes only after all process steps for that unit are finished (baseline: manufacture → haul/reorient → launch-prep).
 - Cap full unit runs per session (currently 12) so inefficiency remains visible across repeats.
 - Map and Comparison views remain placeholders until those learning-loop phases are built.
 

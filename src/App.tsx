@@ -8,6 +8,7 @@ import { BASELINE_PROCESS } from './data/baselineProcess'
 import {
   beginRun,
   completeHaulStep,
+  finishLaunchPrepAction,
   finishMachineWork,
   markOnPad,
   metricsFromRun,
@@ -68,6 +69,10 @@ function App() {
     setRun((prev) => completeHaulStep(process, prev))
   }, [process])
 
+  const handleLaunchPrepActionComplete = useCallback(() => {
+    setRun((prev) => finishLaunchPrepAction(process, prev))
+  }, [process])
+
   return (
     <div className="app-shell">
       <TopBar
@@ -88,6 +93,7 @@ function App() {
             onProceedToNextStep={handleProceedToNextStep}
             onReachedPad={handleReachedPad}
             onHaulReorient={handleHaulReorient}
+            onLaunchPrepActionComplete={handleLaunchPrepActionComplete}
           />
         )}
         {activeView === 'map' && <MapView />}

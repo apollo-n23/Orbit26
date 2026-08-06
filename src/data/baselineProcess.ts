@@ -1,10 +1,11 @@
 import type { ProcessVersion } from '../types/process'
-import { HAUL_STEP_TIME } from '../types/process'
+import { HAUL_STEP_TIME, LAUNCH_PREP_STEP_TIME } from '../types/process'
 
 /**
  * Baseline process:
  * 1. Manufacture booster — operate four machines in sequence
  * 2. Integrate payload — haul booster along a constrained path to the pad
+ * 3. Prepare for launch — mate to tower, stack payload, fuel, power up
  */
 export const BASELINE_PROCESS: ProcessVersion = {
   id: 'baseline-v1',
@@ -58,6 +59,13 @@ export const BASELINE_PROCESS: ProcessVersion = {
       name: 'Integrate payload',
       kind: 'haul',
       baseTime: HAUL_STEP_TIME,
+      defectProbability: 0,
+    },
+    {
+      id: 'prepare-for-launch',
+      name: 'Prepare for launch',
+      kind: 'launch-prep',
+      baseTime: LAUNCH_PREP_STEP_TIME,
       defectProbability: 0,
     },
   ],

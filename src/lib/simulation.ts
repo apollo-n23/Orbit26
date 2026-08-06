@@ -5,7 +5,7 @@ import type {
   RunState,
   SessionMetrics,
 } from '../types/process'
-import { HAUL_STEP_TIME } from '../types/process'
+import { HAUL_STEP_TIME, LAUNCH_PREP_ACTIONS } from '../types/process'
 
 export function getActiveStep(
   process: ProcessVersion,
@@ -143,7 +143,11 @@ export function markOnPad(prev: RunState): RunState {
   }
 }
 
-/** Operator reoriented on the pad — complete the haul step / full run. */
+/**
+ * Operator reoriented on the pad — complete the haul step.
+ * If this is the last process step, finishes the full unit run; otherwise
+ * enters step_complete so the learner can proceed.
+ */
 export function completeHaulStep(
   process: ProcessVersion,
   prev: RunState,
@@ -172,6 +176,67 @@ export function completeHaulStep(
   return {
     ...prev,
     status: 'step_complete',
+    elapsedTime,
+    valueAddTime,
+  }
+}
+
+/**
+ * Operator finished the next launch-prep sub-task (mate / crane / fuel / power).
+ * Credits that action's time. Completing the last action finishes the step
+ * (and the full unit run when this is the final process step).
+ */
+export function finishLaunchPrepAction(
+  process: ProcessVersion,
+  prev: RunState,
+): RunState {
+  if (prev.status !== 'running') return prev
+
+  const step = getActiveStep(process, prev)
+  if (step?.kind !== 'launch-prep') return prev
+
+  const action = LAUNCH_PREP_ACTIONS[prev.nextMachineIndex]
+  if (!action) return prev
+
+  const completedMachineIds = [...prev.completedMachineIds, action.id]
+  const nextMachineIndex = prev.nextMachineIndex + 1
+  const elapsedTime = prev.elapsedTime + action.workTime
+  const valueAddTime =
+    prev.valueAddTime + Math.round(action.workTime * action.valueAddRatio)
+  const allDone = nextMachineIndex >= LAUNCH_PREP_ACTIONS.length
+
+  if (allDone) {
+    const isLast = prev.currentStepIndex >= process.steps.length - 1
+    if (isLast) {
+      return {
+        ...prev,
+        status: 'complete',
+        activeMachineId: null,
+        nextMachineIndex,
+        completedMachineIds,
+        elapsedTime,
+        valueAddTime,
+        completedRuns: prev.completedRuns + 1,
+        goodRuns: prev.goodRuns + (prev.unitDefective ? 0 : 1),
+      }
+    }
+    return {
+      ...prev,
+      status: 'step_complete',
+      activeMachineId: null,
+      nextMachineIndex,
+      completedMachineIds,
+      elapsedTime,
+      valueAddTime,
+    }
+  }
+
+  return {
+    ...prev,
+    status: 'running',
+    activeMachineId: null,
+    nextMachineIndex,
+    completedMachineIds,
     elapsedTime,
     valueAddTime,
   }

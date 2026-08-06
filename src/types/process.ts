@@ -14,7 +14,7 @@ export interface ProcessMachine {
   workTime: number
 }
 
-export type ProcessStepKind = 'manufacture' | 'haul'
+export type ProcessStepKind = 'manufacture' | 'haul' | 'launch-prep'
 
 /** A single step in the value stream. */
 export interface ProcessStep {
@@ -121,3 +121,50 @@ export const BOOSTER_TRAVEL_MS = 850
 
 /** Time credited when the haul step is completed (minutes). */
 export const HAUL_STEP_TIME = 35
+
+/** Ordered operator actions for the launch-prep step. */
+export interface LaunchPrepAction {
+  id: string
+  name: string
+  /** Simulated work time added to cycle time (minutes). */
+  workTime: number
+  /** Fraction of workTime counted as value-add (0–1). */
+  valueAddRatio: number
+}
+
+/**
+ * Sub-tasks for Prepare for launch:
+ * mate → crane payload → fuel → power-up.
+ */
+export const LAUNCH_PREP_ACTIONS: LaunchPrepAction[] = [
+  {
+    id: 'mate-tower',
+    name: 'Mate booster to tower',
+    workTime: 12,
+    valueAddRatio: 0.75,
+  },
+  {
+    id: 'crane-payload',
+    name: 'Stack payload with crane',
+    workTime: 14,
+    valueAddRatio: 0.85,
+  },
+  {
+    id: 'fuel-vehicle',
+    name: 'Fuel the vehicle',
+    workTime: 16,
+    valueAddRatio: 0.45,
+  },
+  {
+    id: 'power-up',
+    name: 'Power up for launch',
+    workTime: 10,
+    valueAddRatio: 0.7,
+  },
+]
+
+/** Nominal total time for launch-prep (sum of action work times). */
+export const LAUNCH_PREP_STEP_TIME = LAUNCH_PREP_ACTIONS.reduce(
+  (sum, a) => sum + a.workTime,
+  0,
+)
