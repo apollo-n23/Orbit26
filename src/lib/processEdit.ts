@@ -1,5 +1,6 @@
 import type {
   HaulPathPoint,
+  LaunchPrepTech,
   ProcessMachine,
   ProcessStep,
   ProcessVersion,
@@ -120,3 +121,50 @@ export function applyAutoMoveBooster(
     ),
   }
 }
+
+export function resolveLaunchPrepTech(
+  process: ProcessVersion,
+): LaunchPrepTech | null {
+  if (process.launchPrepTech) return process.launchPrepTech
+  const step = process.steps.find((s) => s.kind === 'launch-prep')
+  return step?.launchPrepTech ?? null
+}
+
+/** Set or clear the single launch-prep technology investment (Round 2 redesign). */
+export function applyLaunchPrepTech(
+  process: ProcessVersion,
+  tech: LaunchPrepTech | null,
+): ProcessVersion {
+  return {
+    ...process,
+    launchPrepTech: tech,
+    steps: process.steps.map((s) =>
+      s.kind === 'launch-prep' ? { ...s, launchPrepTech: tech ?? undefined } : s,
+    ),
+  }
+}
+
+export const LAUNCH_PREP_TECH_OPTIONS: {
+  id: LaunchPrepTech
+  name: string
+  summary: string
+}[] = [
+  {
+    id: 'faster-pumps',
+    name: 'Faster fuel pumps',
+    summary:
+      'High-flow LOX/RP-1 pumps fill both tanks almost instantly once umbilicals are connected.',
+  },
+  {
+    id: 'auto-power',
+    name: 'Automatic power-up sequence',
+    summary:
+      'A single master ON arms avionics, flight computers, telemetry, and range safety together.',
+  },
+  {
+    id: 'payload-drone',
+    name: 'Autonomous payload drone',
+    summary:
+      'Replaces the multi-step pad crane with a drone that seats the payload on the stack in one action.',
+  },
+]

@@ -963,6 +963,169 @@
   top: 48%;
 }
 
+.redesign-hint--ok {
+  color: var(--color-orbital-strong);
+}
+
+.redesign-tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.redesign-tech-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background 140ms ease;
+}
+
+.redesign-tech-card:hover {
+  border-color: var(--color-orbital);
+  background: color-mix(in srgb, var(--color-orbital-dim) 40%, var(--color-surface-raised));
+}
+
+.redesign-tech-card--selected {
+  border-color: var(--color-orbital-strong);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital) 50%, transparent);
+  background: color-mix(in srgb, var(--color-orbital-dim) 55%, var(--color-surface-raised));
+}
+
+.redesign-tech-card__name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.redesign-tech-card__summary {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+  flex: 1;
+}
+
+.redesign-tech-card__status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.redesign-tech-card--selected .redesign-tech-card__status {
+  color: var(--color-orbital-strong);
+}
+
+/* Autonomous payload drone (launch-prep tech) */
+.lp-drone {
+  position: absolute;
+  left: calc(42% + 1.2rem);
+  top: 12%;
+  width: 4.5rem;
+  height: 5.5rem;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.45s ease, opacity 0.45s ease;
+}
+
+.lp-drone--active {
+  animation: lp-drone-hover 1.2s ease-in-out infinite;
+}
+
+.lp-drone--clear {
+  opacity: 0.35;
+  transform: translate(2.5rem, -1rem);
+}
+
+.lp-drone__body {
+  position: relative;
+  width: 3.2rem;
+  height: 1.4rem;
+}
+
+.lp-drone__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.4rem;
+  height: 0.7rem;
+  margin: -0.35rem 0 0 -0.7rem;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #6a7688, #3a4554);
+  border: 1px solid #8a96a6;
+}
+
+.lp-drone__rotor {
+  position: absolute;
+  top: 0.15rem;
+  left: -0.15rem;
+  width: 1.35rem;
+  height: 0.2rem;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-orbital) 70%, #ccc);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--color-orbital) 40%, transparent);
+  animation: lp-drone-spin 0.2s linear infinite;
+}
+
+.lp-drone__rotor--r {
+  left: auto;
+  right: -0.15rem;
+}
+
+.lp-drone__cable {
+  width: 2px;
+  height: 1.6rem;
+  background: #8a96a6;
+}
+
+.lp-drone__load {
+  margin-top: -0.1rem;
+}
+
+@keyframes lp-drone-spin {
+  from {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.2);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes lp-drone-hover {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(0.35rem);
+  }
+}
+
+.lp-master-on {
+  min-width: 8rem;
+  min-height: 3rem;
+  font-size: 1.25rem;
+  letter-spacing: 0.2em;
+  font-weight: 800;
+}
+
 /* ── Simulation ──────────────────────────────────────────── */
 
 .sim-header {

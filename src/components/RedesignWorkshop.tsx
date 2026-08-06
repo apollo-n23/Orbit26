@@ -3,13 +3,17 @@ import type { ProcessMachine, ProcessVersion } from '../types/process'
 import {
   applyAutoMoveBooster,
   applyHaulPath,
+  applyLaunchPrepTech,
   applyMachineLineOrder,
   applyMachineParkOffset,
   getHaulStep,
   getManufactureStep,
+  LAUNCH_PREP_TECH_OPTIONS,
   resolveAutoMoveBooster,
+  resolveLaunchPrepTech,
 } from '../lib/processEdit'
 import { Booster } from './Booster'
+import type { LaunchPrepTech } from '../types/process'
 import {
   ROAD_COLS,
   ROAD_ROWS,
@@ -22,7 +26,7 @@ import {
 } from '../lib/roadGrid'
 import { HAUL_PATH, SCENE_HEIGHT, SCENE_WIDTH } from '../lib/pathGeometry'
 
-type RedesignTab = 'manufacture' | 'haul'
+type RedesignTab = 'manufacture' | 'haul' | 'launch-prep'
 
 interface RedesignWorkshopProps {
   initialProcess: ProcessVersion
@@ -53,6 +57,7 @@ export function RedesignWorkshop({
   }, [draft])
 
   const autoMoveBooster = resolveAutoMoveBooster(draft)
+  const launchPrepTech = resolveLaunchPrepTech(draft)
   const endpoints = requiredEndpointCells()
 
   function handleDropOnSlot(targetSlotIndex: number, machineId: string) {
@@ -72,6 +77,14 @@ export function RedesignWorkshop({
 
   function handleToggleAutoMove() {
     setDraft((p) => applyAutoMoveBooster(p, !resolveAutoMoveBooster(p)))
+  }
+
+  function handleSelectLaunchPrepTech(tech: LaunchPrepTech) {
+    setDraft((p) => {
+      const current = resolveLaunchPrepTech(p)
+      // Toggle off if re-selecting the same investment.
+      return applyLaunchPrepTech(p, current === tech ? null : tech)
+    })
   }
 
   function toggleTile(col: number, row: number) {
@@ -158,7 +171,18 @@ export function RedesignWorkshop({
           >
             2 · Haul road
           </button>
-          <span className="redesign-tabs__soon">3–4 · Coming later</span>
+          <button
+            type="button"
+            className={
+              tab === 'launch-prep'
+                ? 'redesign-tabs__btn redesign-tabs__btn--active'
+                : 'redesign-tabs__btn'
+            }
+            onClick={() => setTab('launch-prep')}
+          >
+            3 · Launch prep tech
+          </button>
+          <span className="redesign-tabs__soon">4 · Coming later</span>
         </nav>
 
         {tab === 'manufacture' && (
@@ -228,6 +252,52 @@ export function RedesignWorkshop({
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {tab === 'launch-prep' && (
+          <div className="redesign-prep">
+            <p className="redesign-hint">
+              Invest in <strong>one</strong> pad technology for this round. Your
+              choice applies to all three launches. Select again to clear.
+            </p>
+            <div className="redesign-tech-grid" role="listbox" aria-label="Launch prep technologies">
+              {LAUNCH_PREP_TECH_OPTIONS.map((opt) => {
+                const selected = launchPrepTech === opt.id
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    className={[
+                      'redesign-tech-card',
+                      selected ? 'redesign-tech-card--selected' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={() => handleSelectLaunchPrepTech(opt.id)}
+                  >
+                    <span className="redesign-tech-card__name">{opt.name}</span>
+                    <span className="redesign-tech-card__summary">{opt.summary}</span>
+                    <span className="redesign-tech-card__status">
+                      {selected ? 'Selected' : 'Select investment'}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            {launchPrepTech && (
+              <p className="redesign-hint redesign-hint--ok">
+                Active investment:{' '}
+                <strong>
+                  {
+                    LAUNCH_PREP_TECH_OPTIONS.find((o) => o.id === launchPrepTech)
+                      ?.name
+                  }
+                </strong>
+              </p>
+            )}
           </div>
         )}
 

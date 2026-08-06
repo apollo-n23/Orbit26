@@ -58,7 +58,23 @@ export interface ProcessStep {
    * to the next required station (no drag). Off by default (as-is friction).
    */
   autoMoveBooster?: boolean
+  /**
+   * Launch-prep redesign: single technology investment for this process version.
+   * Mirrors process.launchPrepTech when set on the launch-prep step.
+   */
+  launchPrepTech?: LaunchPrepTech
 }
+
+/**
+ * Round 2 launch-prep technology investments (mutually exclusive — pick one).
+ * - faster-pumps: LOX/RP-1 fill almost instantly
+ * - auto-power: single master ON instead of sequential switches
+ * - payload-drone: one-step drone stack replaces multi-step crane
+ */
+export type LaunchPrepTech =
+  | 'faster-pumps'
+  | 'auto-power'
+  | 'payload-drone'
 
 export interface ProcessVersion {
   id: string
@@ -75,6 +91,10 @@ export interface ProcessVersion {
    * Process-level copy of manufacture auto-move upgrade (mirrors step flag for easy resolve).
    */
   autoMoveBooster?: boolean
+  /**
+   * Launch-prep technology investment chosen in Round 2 redesign (at most one).
+   */
+  launchPrepTech?: LaunchPrepTech | null
 }
 
 export interface SessionMetrics {

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Booster } from './Booster'
-import type { RunState } from '../types/process'
+import type { LaunchPrepTech, RunState } from '../types/process'
 import { LAUNCH_PREP_ACTIONS } from '../types/process'
 
 interface LaunchPrepSceneProps {
   run: RunState
   onActionComplete: () => void
+  /** Round 2 technology investment (at most one). */
+  tech?: LaunchPrepTech | null
 }
 
 const CRANE_STEPS = [
@@ -23,15 +25,23 @@ const POWER_SWITCHES = [
 ] as const
 
 const FILL_RATE_PER_MS = 0.045 // % per ms while holding (~2.2s to fill)
+/** Faster fuel pumps upgrade — near-instant fill while holding. */
+const FAST_FILL_RATE_PER_MS = 1.8
 
 /**
  * Pad-side launch preparation: mate booster to tower, crane-stack payload,
  * fuel umbilicals, power-up checklist. Each sub-task must be completed in order.
+ * Optional Round 2 techs simplify fuel, power, or payload stack.
  */
 export function LaunchPrepScene({
   run,
   onActionComplete,
+  tech = null,
 }: LaunchPrepSceneProps) {
+  const fastPumps = tech === 'faster-pumps'
+  const autoPower = tech === 'auto-power'
+  const payloadDrone = tech === 'payload-drone'
+  const fillRate = fastPumps ? FAST_FILL_RATE_PER_MS : FILL_RATE_PER_MS
   const actionIndex = run.nextMachineIndex
   const locked = run.status === 'complete' || run.status === 'step_complete'
   const canInteract = run.status === 'running' && !locked
@@ -122,7 +132,7 @@ export function LaunchPrepScene({
     }
   }
 
-  // —— Crane: numbered click sequence ——
+  // —— Crane: numbered click sequence (or one-step drone) ——
   function handleCraneStep(step: number) {
     if (!canInteract || actionIndex !== 1 || craneDone) return
     if (step !== craneStep) return
@@ -132,6 +142,20 @@ export function LaunchPrepScene({
       setCraneDone(true)
       completeCurrent()
     }
+  }
+
+  function handleDroneDeploy() {
+    if (!canInteract || actionIndex !== 1 || craneDone || !payloadDrone) return
+    setCraneStep(CRANE_STEPS.length)
+    setCraneDone(true)
+    completeCurrent()
+  }
+
+  function handleMasterPowerOn() {
+    if (!canInteract || actionIndex !== 3 || powerDone || !autoPower) return
+    setPowerArmed(POWER_SWITCHES.map((s) => s.id))
+    setPowerDone(true)
+    completeCurrent()
   }
 
   // —— Fuel: connect umbilicals, hold-to-fill ——
@@ -149,7 +173,7 @@ export function LaunchPrepScene({
     const now = performance.now()
     const dt = Math.min(50, now - fillLastRef.current)
     fillLastRef.current = now
-    const delta = FILL_RATE_PER_MS * dt
+    const delta = fillRate * dt
 
     if (target === 'lox') {
       setLoxFill((prev) => {
@@ -166,7 +190,7 @@ export function LaunchPrepScene({
     }
 
     fillRafRef.current = requestAnimationFrame(tickFill)
-  }, [])
+  }, [fillRate])
 
   function startFill(which: 'lox' | 'rp') {
     if (!canInteract || actionIndex !== 2 || fuelDone) return
@@ -219,7 +243,11 @@ export function LaunchPrepScene({
       (i === 3 && powerDone) ||
       i < actionIndex
     const active = canInteract && i === actionIndex && !done
-    return { action, done, active, index: i }
+    let label = action.name
+    if (i === 1 && payloadDrone) label = 'Stack payload with drone'
+    if (i === 2 && fastPumps) label = 'Fuel the vehicle (high-flow pumps)'
+    if (i === 3 && autoPower) label = 'Power up for launch (master ON)'
+    return { action, done, active, index: i, label }
   })
 
   return (
@@ -227,12 +255,14 @@ export function LaunchPrepScene({
       className={[
         'launch-prep-scene',
         stepComplete ? 'launch-prep-scene--ready' : '',
+        payloadDrone ? 'launch-prep-scene--drone' : '',
+        tech ? `launch-prep-scene--tech-${tech}` : '',
       ]
         .filter(Boolean)
         .join(' ')}
     >
       <div className="launch-prep-scene__checklist" aria-label="Launch prep tasks">
-        {checklist.map(({ action, done, active, index }) => (
+        {checklist.map(({ action, done, active, index, label }) => (
           <div
             key={action.id}
             className={[
@@ -246,7 +276,7 @@ export function LaunchPrepScene({
             <span className="lp-check__num" aria-hidden="true">
               {done ? '✓' : index + 1}
             </span>
-            <span className="lp-check__label">{action.name}</span>
+            <span className="lp-check__label">{label}</span>
           </div>
         ))}
       </div>
@@ -305,32 +335,56 @@ export function LaunchPrepScene({
           )}
         </div>
 
-        {/* Mobile crane */}
-        <div
-          className={[
-            'lp-crane',
-            `lp-crane--phase-${craneVisual}`,
-            payloadStacked ? 'lp-crane--clear' : '',
-          ].join(' ')}
-        >
-          <div className="lp-crane__base" />
-          <div className="lp-crane__cab" />
-          <div className="lp-crane__boom">
-            <div className="lp-crane__jib">
-              <div className="lp-crane__cable" />
-              {!payloadStacked && craneVisual >= 2 && (
-                <div className="lp-crane__hook-load">
-                  <span className="lp-payload__fairing lp-payload__fairing--hook" />
-                </div>
-              )}
+        {/* Mobile crane — or autonomous payload drone when upgraded */}
+        {payloadDrone ? (
+          <div
+            className={[
+              'lp-drone',
+              payloadStacked ? 'lp-drone--clear' : '',
+              actionIndex === 1 && !payloadStacked ? 'lp-drone--active' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
+            <div className="lp-drone__body">
+              <span className="lp-drone__rotor" />
+              <span className="lp-drone__rotor lp-drone__rotor--r" />
+              <span className="lp-drone__core" />
             </div>
+            <div className="lp-drone__cable" />
+            {!payloadStacked && (
+              <div className="lp-drone__load">
+                <span className="lp-payload__fairing lp-payload__fairing--hook" />
+              </div>
+            )}
           </div>
-          {craneVisual < 2 && !payloadStacked && (
-            <div className="lp-crane__ground-load">
-              <span className="lp-payload__fairing" />
+        ) : (
+          <div
+            className={[
+              'lp-crane',
+              `lp-crane--phase-${craneVisual}`,
+              payloadStacked ? 'lp-crane--clear' : '',
+            ].join(' ')}
+          >
+            <div className="lp-crane__base" />
+            <div className="lp-crane__cab" />
+            <div className="lp-crane__boom">
+              <div className="lp-crane__jib">
+                <div className="lp-crane__cable" />
+                {!payloadStacked && craneVisual >= 2 && (
+                  <div className="lp-crane__hook-load">
+                    <span className="lp-payload__fairing lp-payload__fairing--hook" />
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+            {craneVisual < 2 && !payloadStacked && (
+              <div className="lp-crane__ground-load">
+                <span className="lp-payload__fairing" />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Fuel farm + umbilicals (tank end → booster hull) */}
         <div
@@ -400,34 +454,60 @@ export function LaunchPrepScene({
 
         {canInteract && actionIndex === 1 && (
           <div className="lp-panel">
-            <p className="lp-panel__title">2 · Stack payload with crane</p>
-            <p className="lp-panel__hint">
-              Operate the pad crane in sequence to lift the payload fairing and
-              place it on the booster.
+            <p className="lp-panel__title">
+              {payloadDrone
+                ? '2 · Stack payload with drone'
+                : '2 · Stack payload with crane'}
             </p>
-            <div className="lp-crane-controls" role="group" aria-label="Crane sequence">
-              {CRANE_STEPS.map((step, i) => {
-                const isNext = i === craneStep
-                const isDone = i < craneStep
-                return (
-                  <button
-                    key={step.id}
-                    type="button"
-                    className={[
-                      'btn btn--ghost lp-crane-btn',
-                      isNext ? 'lp-crane-btn--next' : '',
-                      isDone ? 'lp-crane-btn--done' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    disabled={!isNext}
-                    onClick={() => handleCraneStep(i)}
-                  >
-                    {isDone ? `✓ ${step.label}` : step.label}
-                  </button>
-                )
-              })}
-            </div>
+            {payloadDrone ? (
+              <>
+                <p className="lp-panel__hint">
+                  Command the autonomous payload drone to lift the fairing and
+                  seat it on the booster in one action.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={handleDroneDeploy}
+                >
+                  Deploy payload drone
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="lp-panel__hint">
+                  Operate the pad crane in sequence to lift the payload fairing
+                  and place it on the booster.
+                </p>
+                <div
+                  className="lp-crane-controls"
+                  role="group"
+                  aria-label="Crane sequence"
+                >
+                  {CRANE_STEPS.map((step, i) => {
+                    const isNext = i === craneStep
+                    const isDone = i < craneStep
+                    return (
+                      <button
+                        key={step.id}
+                        type="button"
+                        className={[
+                          'btn btn--ghost lp-crane-btn',
+                          isNext ? 'lp-crane-btn--next' : '',
+                          isDone ? 'lp-crane-btn--done' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        disabled={!isNext}
+                        onClick={() => handleCraneStep(i)}
+                      >
+                        {isDone ? `✓ ${step.label}` : step.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -435,8 +515,9 @@ export function LaunchPrepScene({
           <div className="lp-panel">
             <p className="lp-panel__title">3 · Fuel the vehicle</p>
             <p className="lp-panel__hint">
-              Connect LOX and RP-1 umbilicals, then hold each fill control until
-              tanks are full.
+              {fastPumps
+                ? 'Connect LOX and RP-1 umbilicals, then hold fill — high-flow pumps fill almost instantly.'
+                : 'Connect LOX and RP-1 umbilicals, then hold each fill control until tanks are full.'}
             </p>
             <div className="lp-fuel-grid">
               <div className="lp-fuel-col">
@@ -512,36 +593,58 @@ export function LaunchPrepScene({
         {canInteract && actionIndex === 3 && (
           <div className="lp-panel">
             <p className="lp-panel__title">4 · Power up for launch</p>
-            <p className="lp-panel__hint">
-              Arm launch systems in order — only the next switch is enabled.
-            </p>
-            <div className="lp-power-row" role="group" aria-label="Power checklist">
-              {POWER_SWITCHES.map((sw, i) => {
-                const isArmed = powerArmed.includes(sw.id)
-                const isNext = powerArmed.length === i
-                return (
-                  <button
-                    key={sw.id}
-                    type="button"
-                    className={[
-                      'lp-switch',
-                      isArmed ? 'lp-switch--on' : '',
-                      isNext ? 'lp-switch--next' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    disabled={!isNext}
-                    onClick={() => handlePowerSwitch(sw.id, i)}
-                    aria-pressed={isArmed}
-                  >
-                    <span className="lp-switch__toggle" aria-hidden="true" />
-                    <span className="lp-switch__label">
-                      {i + 1}. {sw.label}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
+            {autoPower ? (
+              <>
+                <p className="lp-panel__hint">
+                  Automatic power-up sequence installed — arm all buses with one
+                  master control.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn--primary lp-master-on"
+                  onClick={handleMasterPowerOn}
+                >
+                  ON
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="lp-panel__hint">
+                  Arm launch systems in order — only the next switch is enabled.
+                </p>
+                <div
+                  className="lp-power-row"
+                  role="group"
+                  aria-label="Power checklist"
+                >
+                  {POWER_SWITCHES.map((sw, i) => {
+                    const isArmed = powerArmed.includes(sw.id)
+                    const isNext = powerArmed.length === i
+                    return (
+                      <button
+                        key={sw.id}
+                        type="button"
+                        className={[
+                          'lp-switch',
+                          isArmed ? 'lp-switch--on' : '',
+                          isNext ? 'lp-switch--next' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        disabled={!isNext}
+                        onClick={() => handlePowerSwitch(sw.id, i)}
+                        aria-pressed={isArmed}
+                      >
+                        <span className="lp-switch__toggle" aria-hidden="true" />
+                        <span className="lp-switch__label">
+                          {i + 1}. {sw.label}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
 

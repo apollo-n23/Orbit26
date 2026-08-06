@@ -37,9 +37,10 @@ Learning is split into **rounds**. Each round is a self-contained play session w
 - **Config:** `ROUND_CONFIGS[2]` with `allowsRedesign: true`.
 - **Flow:** learner first enters a **redesign phase** (`RedesignWorkshop`) before the three launches. Edits are saved onto that round’s `ProcessVersion`, then play uses the redesigned process.
 - **Redesign (implemented so far):**
-  1. **Manufacture** — drag stations to reorder **line positions**; set **parkOffset** (distance from belt). Operate `sequence` stays on each machine.
-  2. **Haul road** — paint road tiles on a grid (or **Straight road**); must connect Assembly → Launch Pad; stored as step `haulPath` and used by `IntegratePayloadScene`.
-  3. Steps 3–4 redesign UI — **not yet** (placeholder “coming later”).
+  1. **Manufacture** — drag stations to reorder **line positions**; set **parkOffset**; optional **auto-transfer** booster upgrade (hover booster → enable).
+  2. **Haul road** — paint road tiles (or **Straight road**); stored as `haulPath` / `haulPathOverride`.
+  3. **Launch prep tech** — invest in **one** of: faster fuel pumps · automatic power-up (single ON) · autonomous payload drone (one-step stack). Stored as `launchPrepTech`.
+  4. Launch sequence redesign — **not yet**.
 - **Do not** delete Round 2 or fold it into Round 1; keep configs independently editable.
 - **Complete headline:** “Round 2 complete”.
 - **State isolation:** each round mount uses a fresh `RoundSession` (`key={round.id}`).

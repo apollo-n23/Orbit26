@@ -18,7 +18,11 @@ import {
   getStepMachines,
   hasNextStep,
 } from '../lib/simulation'
-import { resolveAutoMoveBooster, resolveHaulPath } from '../lib/processEdit'
+import {
+  resolveAutoMoveBooster,
+  resolveHaulPath,
+  resolveLaunchPrepTech,
+} from '../lib/processEdit'
 
 interface SimulationViewProps {
   process: ProcessVersion
@@ -69,6 +73,10 @@ export function SimulationView({
   )
   const autoMoveBooster = useMemo(
     () => resolveAutoMoveBooster(process),
+    [process],
+  )
+  const launchPrepTech = useMemo(
+    () => resolveLaunchPrepTech(process),
     [process],
   )
   const inActiveRun =
@@ -268,6 +276,7 @@ export function SimulationView({
             {showLaunchPrep && (
               <LaunchPrepScene
                 run={run}
+                tech={launchPrepTech}
                 onActionComplete={onLaunchPrepActionComplete}
               />
             )}
