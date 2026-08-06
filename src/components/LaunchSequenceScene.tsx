@@ -1,13 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { RunState } from '../types/process'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ProcessVersion, RunState } from '../types/process'
 import {
-  LAUNCH_SEQ_GO_STATIONS,
-  LAUNCH_SEQ_KEY_INDEX,
-  LAUNCH_SEQ_LIFTOFF_INDEX,
-} from '../types/process'
+  resolveLaunchSeqConfig,
+  type ResolvedLaunchSeqConfig,
+} from '../lib/processEdit'
 
 interface LaunchSequenceSceneProps {
   run: RunState
+  /**
+   * Active process version — redesign fields
+   * (`launchSeqRemovedIds`, `launchSeqRealignIds`) drive GO list and layout.
+   */
+  process: ProcessVersion
+  /** Optional pre-resolved config; when omitted, resolved from `process`. */
+  config?: ResolvedLaunchSeqConfig
   onActionComplete: () => void
 }
 
@@ -23,11 +29,22 @@ const LIFTOFF_MS = 3200
 /**
  * Mission-control launch sequence: clear GO stations in order, hold-to-turn
  * the launch key, then watch the vehicle leave the pad.
+ *
+ * Round 2 redesign: removed stations are omitted from the poll; realigned
+ * stations drop staggered/misaligned GO layout friction.
  */
 export function LaunchSequenceScene({
   run,
+  process,
+  config: configProp,
   onActionComplete,
 }: LaunchSequenceSceneProps) {
+  const config = useMemo(
+    () => configProp ?? resolveLaunchSeqConfig(process),
+    [configProp, process],
+  )
+  const { goStations, realignedGoIds, keyIndex, liftoffIndex } = config
+
   const actionIndex = run.nextMachineIndex
   const locked = run.status === 'complete' || run.status === 'step_complete'
   const canInteract = run.status === 'running' && !locked
@@ -102,7 +119,7 @@ export function LaunchSequenceScene({
   function handleGo(stationIndex: number) {
     if (!canInteract) return
     if (actionIndex !== stationIndex) return
-    if (stationIndex >= LAUNCH_SEQ_GO_STATIONS.length) return
+    if (stationIndex >= goStations.length) return
     completeCurrent()
   }
 
@@ -127,7 +144,7 @@ export function LaunchSequenceScene({
   }, [completeCurrent])
 
   function startKeyHold() {
-    if (!canInteract || actionIndex !== LAUNCH_SEQ_KEY_INDEX || keyDone) return
+    if (!canInteract || actionIndex !== keyIndex || keyDone) return
     if (keyProgress >= 100) return
     // Resume from partial progress if released early.
     const resumeMs = (keyProgress / 100) * KEY_HOLD_MS
@@ -141,7 +158,7 @@ export function LaunchSequenceScene({
   // cleanup would clear the timer, and completeCurrent would never fire.
   useEffect(() => {
     if (!canInteract) return
-    if (actionIndex !== LAUNCH_SEQ_LIFTOFF_INDEX) return
+    if (actionIndex !== liftoffIndex) return
     if (run.status === 'complete') return
     if (run.completedMachineIds.includes('liftoff')) return
 
@@ -160,18 +177,27 @@ export function LaunchSequenceScene({
         liftoffTimerRef.current = null
       }
     }
-  }, [canInteract, actionIndex, run.status, run.completedMachineIds, completeCurrent])
+  }, [
+    canInteract,
+    actionIndex,
+    liftoffIndex,
+    run.status,
+    run.completedMachineIds,
+    completeCurrent,
+  ])
 
-  const allGosDone = actionIndex >= LAUNCH_SEQ_KEY_INDEX || locked
-  const showKey = allGosDone && !launched && (actionIndex === LAUNCH_SEQ_KEY_INDEX || keyDone || launching)
-  const showLaunching = launching || (actionIndex === LAUNCH_SEQ_LIFTOFF_INDEX && !launched)
+  const allGosDone = actionIndex >= keyIndex || locked
+  const showKey =
+    allGosDone && !launched && (actionIndex === keyIndex || keyDone || launching)
+  const showLaunching = launching || (actionIndex === liftoffIndex && !launched)
   const showLaunched = launched || locked
 
-  const goRows = LAUNCH_SEQ_GO_STATIONS.map((station, i) => {
+  const goRows = goStations.map((station, i) => {
     const done =
       run.completedMachineIds.includes(station.id) || i < actionIndex || locked
     const active = canInteract && i === actionIndex && !done
-    return { station, done, active, index: i }
+    const realigned = realignedGoIds.has(station.id)
+    return { station, done, active, realigned, index: i }
   })
 
   return (
@@ -318,7 +344,7 @@ export function LaunchSequenceScene({
           </div>
 
           <div className="mc-go-board" role="list" aria-label="GO stations">
-            {goRows.map(({ station, done, active, index }) => (
+            {goRows.map(({ station, done, active, realigned, index }) => (
               <div
                 key={station.id}
                 role="listitem"
@@ -326,6 +352,7 @@ export function LaunchSequenceScene({
                   'mc-go-row',
                   done ? 'mc-go-row--go' : '',
                   active ? 'mc-go-row--active' : '',
+                  realigned ? 'mc-go-row--realigned' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -398,7 +425,7 @@ export function LaunchSequenceScene({
                   ? { ['--mc-key-rot' as string]: `${(keyProgress / 100) * 90}deg` }
                   : undefined
               }
-              disabled={!canInteract || actionIndex !== LAUNCH_SEQ_KEY_INDEX || keyDone}
+              disabled={!canInteract || actionIndex !== keyIndex || keyDone}
               onPointerDown={(e) => {
                 e.preventDefault()
                 ;(e.currentTarget as HTMLButtonElement).setPointerCapture(e.pointerId)

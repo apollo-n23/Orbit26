@@ -4427,6 +4427,13 @@
   transform: rotate(1.15deg);
 }
 
+/* Round 2 redesign: realigned stations drop staggered spacing / tilt friction. */
+.mc-go-row--realigned {
+  margin-left: 0;
+  transform: none;
+  width: 100%;
+}
+
 .mc-go-row--active {
   border-color: var(--color-orbital);
   background: color-mix(in srgb, var(--color-orbital-dim) 55%, var(--color-surface-raised));
@@ -4536,6 +4543,14 @@
 .mc-go-row:nth-child(3n) .mc-go-btn {
   margin-right: 0.05rem;
   transform: translateX(0.45rem) translateY(0.1rem);
+}
+
+/* Realigned GO buttons sit flush — easier to hit in order. */
+.mc-go-row--realigned .mc-go-btn {
+  margin-right: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  transform: none;
 }
 
 .mc-go-row--active .mc-go-btn:not(:disabled) {

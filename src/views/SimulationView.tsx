@@ -6,10 +6,6 @@ import { LaunchSequenceScene } from '../components/LaunchSequenceScene'
 import type { ProcessVersion, RunState } from '../types/process'
 import {
   LAUNCH_PREP_ACTIONS,
-  LAUNCH_SEQ_ACTIONS,
-  LAUNCH_SEQ_GO_STATIONS,
-  LAUNCH_SEQ_KEY_INDEX,
-  LAUNCH_SEQ_LIFTOFF_INDEX,
   MACHINE_CYCLE_MS,
   MAX_RUNS_PER_SESSION,
 } from '../types/process'
@@ -22,6 +18,7 @@ import {
   resolveAutoMoveBooster,
   resolveHaulPath,
   resolveLaunchPrepTech,
+  resolveLaunchSeqConfig,
 } from '../lib/processEdit'
 
 interface SimulationViewProps {
@@ -77,6 +74,11 @@ export function SimulationView({
   )
   const launchPrepTech = useMemo(
     () => resolveLaunchPrepTech(process),
+    [process],
+  )
+  /** GO list / key / liftoff indices from redesign (or baseline). */
+  const launchSeqConfig = useMemo(
+    () => resolveLaunchSeqConfig(process),
     [process],
   )
   const inActiveRun =
@@ -198,17 +200,18 @@ export function SimulationView({
     if (step?.kind === 'launch-sequence') {
       if (run.status === 'running') {
         const idx = run.nextMachineIndex
-        if (idx < LAUNCH_SEQ_GO_STATIONS.length) {
-          const station = LAUNCH_SEQ_GO_STATIONS[idx]
-          return `Mission control: ${station.callsign} — report GO (${idx + 1} of ${LAUNCH_SEQ_GO_STATIONS.length}).`
+        const { goStations, actions, keyIndex, liftoffIndex } = launchSeqConfig
+        if (idx < goStations.length) {
+          const station = goStations[idx]
+          return `Mission control: ${station.callsign} — report GO (${idx + 1} of ${goStations.length}).`
         }
-        if (idx === LAUNCH_SEQ_KEY_INDEX) {
+        if (idx === keyIndex) {
           return 'All stations GO. Hold and turn the launch enable key to arm ignition.'
         }
-        if (idx === LAUNCH_SEQ_LIFTOFF_INDEX) {
+        if (idx === liftoffIndex) {
           return 'Key armed. Liftoff sequence in progress…'
         }
-        const action = LAUNCH_SEQ_ACTIONS[idx]
+        const action = actions[idx]
         if (action) return action.name
       }
       if (run.status === 'step_complete') {
@@ -311,7 +314,10 @@ export function SimulationView({
 
             {showLaunchSequence && (
               <LaunchSequenceScene
+                key={`launch-seq-${process.id}-${launchSeqConfig.goStations.map((s) => s.id).join('-')}-${[...launchSeqConfig.realignedGoIds].join('-')}`}
                 run={run}
+                process={process}
+                config={launchSeqConfig}
                 onActionComplete={onLaunchSequenceActionComplete}
               />
             )}
