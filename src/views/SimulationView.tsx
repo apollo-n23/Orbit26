@@ -124,7 +124,7 @@ export function SimulationView({
     }
     if (step?.kind === 'manufacture') {
       if (run.status === 'running' && required) {
-        return `Booster moves to station ${required.sequence}. Operate ${required.name} when it arrives (sequence ${required.sequence} of ${machines.length}).`
+        return `Drag the booster to station ${required.sequence} (${required.name}), then click the machine to operate (sequence ${required.sequence} of ${machines.length}).`
       }
       if (run.status === 'machine_working' && run.activeMachineId) {
         const active = machines.find((m) => m.id === run.activeMachineId)

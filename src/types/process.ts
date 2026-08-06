@@ -146,7 +146,7 @@ export const MACHINE_RETREAT_MS = 750
 export const MACHINE_CYCLE_MS =
   MACHINE_APPROACH_MS + MACHINE_WORK_MS + MACHINE_RETREAT_MS
 
-/** Booster travel between station stops along the belt (ms). */
+/** Snap / settle animation when the booster is dropped on a station stop (ms). */
 export const BOOSTER_TRAVEL_MS = 850
 
 /** Time credited when the haul step is completed (minutes). */
