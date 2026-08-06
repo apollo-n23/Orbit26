@@ -3590,7 +3590,9 @@
 .mc-go-board {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  /* Wide vertical gaps force deliberate travel between GO clicks (as-is waste). */
+  gap: 1.35rem;
+  padding: 0.35rem 0.15rem 0.75rem;
 }
 
 .mc-go-row {
@@ -3606,6 +3608,38 @@
     border-color 0.15s ease,
     background 0.15s ease,
     box-shadow 0.15s ease;
+  /* Per-row stagger so active GO buttons are not in a straight column. */
+  width: calc(100% - 1.1rem);
+}
+
+.mc-go-row:nth-child(1) {
+  margin-left: 0.15rem;
+  transform: rotate(-0.6deg);
+}
+
+.mc-go-row:nth-child(2) {
+  margin-left: 1.35rem;
+  transform: rotate(0.9deg);
+}
+
+.mc-go-row:nth-child(3) {
+  margin-left: 0.45rem;
+  transform: rotate(-1.1deg);
+}
+
+.mc-go-row:nth-child(4) {
+  margin-left: 1.75rem;
+  transform: rotate(0.5deg);
+}
+
+.mc-go-row:nth-child(5) {
+  margin-left: 0.25rem;
+  transform: rotate(-0.8deg);
+}
+
+.mc-go-row:nth-child(6) {
+  margin-left: 1.15rem;
+  transform: rotate(1.15deg);
 }
 
 .mc-go-row--active {
@@ -3699,6 +3733,24 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   font-family: var(--font-mono);
+  /* Extra travel: button not always flush to the same edge of the row. */
+  justify-self: end;
+}
+
+.mc-go-row:nth-child(odd) .mc-go-btn {
+  margin-right: 0.15rem;
+  margin-top: 0.2rem;
+}
+
+.mc-go-row:nth-child(even) .mc-go-btn {
+  margin-right: 0.85rem;
+  margin-bottom: 0.15rem;
+  transform: translateX(-0.35rem);
+}
+
+.mc-go-row:nth-child(3n) .mc-go-btn {
+  margin-right: 0.05rem;
+  transform: translateX(0.45rem) translateY(0.1rem);
 }
 
 .mc-go-row--active .mc-go-btn:not(:disabled) {
