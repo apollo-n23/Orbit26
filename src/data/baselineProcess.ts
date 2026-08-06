@@ -34,6 +34,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
           kind: 'robot-arm',
           workTime: 12,
           parkOffset: 1.1,
+          accessCode: '4821',
         },
         {
           id: 'seam-welder',
@@ -43,6 +44,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
           kind: 'welder',
           workTime: 14,
           parkOffset: 2.9,
+          accessCode: '7390',
         },
         {
           id: 'trim-laser',
@@ -52,6 +54,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
           kind: 'laser',
           workTime: 10,
           parkOffset: 0.55,
+          accessCode: '1564',
         },
         {
           id: 'fit-arm',
@@ -61,6 +64,7 @@ export const BASELINE_PROCESS: ProcessVersion = {
           kind: 'robot-arm',
           workTime: 12,
           parkOffset: 2.15,
+          accessCode: '9057',
         },
       ],
     },

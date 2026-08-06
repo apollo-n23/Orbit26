@@ -133,6 +133,8 @@ export function ManufactureScene({
   const [snappedLinePos, setSnappedLinePos] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   const [dropFeedback, setDropFeedback] = useState<DropFeedback>(null)
+  /** Per-machine 4-digit access code drafts (operator entry). */
+  const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({})
 
   const lineRef = useRef<HTMLDivElement>(null)
   const lastGoodLeftRef = useRef(ENTRANCE_LEFT_PCT)
@@ -157,16 +159,22 @@ export function ManufactureScene({
       setBoosterLeftPct(ENTRANCE_LEFT_PCT)
       setSnappedLinePos(null)
       setDropFeedback(null)
+      setCodeDrafts({})
       lastGoodLeftRef.current = ENTRANCE_LEFT_PCT
       lastGoodSnapRef.current = null
       return
     }
 
     // Fresh manufacture step: place booster at the entrance for the operator to drag.
-    if (run.status === 'running' && run.nextMachineIndex === 0 && run.completedMachineIds.length === 0) {
+    if (
+      run.status === 'running' &&
+      run.nextMachineIndex === 0 &&
+      run.completedMachineIds.length === 0
+    ) {
       setBoosterLeftPct(ENTRANCE_LEFT_PCT)
       setSnappedLinePos(null)
       setDropFeedback(null)
+      setCodeDrafts({})
       lastGoodLeftRef.current = ENTRANCE_LEFT_PCT
       lastGoodSnapRef.current = null
     }
@@ -299,12 +307,25 @@ export function ManufactureScene({
     }
   }
 
+  function codeMatches(machine: ProcessMachine): boolean {
+    const draft = codeDrafts[machine.id] ?? ''
+    return draft === machine.accessCode
+  }
+
+  function handleCodeChange(machineId: string, raw: string) {
+    // Digits only, max 4
+    const next = raw.replace(/\D/g, '').slice(0, 4)
+    setCodeDrafts((prev) => ({ ...prev, [machineId]: next }))
+  }
+
   function renderMachine(machine: ProcessMachine) {
     const isActive = run.activeMachineId === machine.id
-    const isRequired =
-      canInteract && required?.id === machine.id && boosterArrived
-    const isWaitingBooster =
-      canInteract && required?.id === machine.id && !boosterArrived
+    const isCurrentRequired = canInteract && required?.id === machine.id
+    const isWaitingBooster = isCurrentRequired && !boosterArrived
+    const codeOk = codeMatches(machine)
+    /** May activate only when current, booster present, code correct, not mid-cycle. */
+    const canActivate =
+      isCurrentRequired && boosterArrived && codeOk && run.status === 'running'
     const isDone = run.completedMachineIds.includes(machine.id)
     const isWorkingPhase = isActive && machinePhase === 'working'
     const isAtLine =
@@ -312,12 +333,17 @@ export function ManufactureScene({
       (machinePhase === 'approaching' || machinePhase === 'working')
     const isRetreating = isActive && machinePhase === 'retreating'
     const isLocked =
-      !isRequired && !isActive && !isDone && !isWaitingBooster
+      !isCurrentRequired && !isActive && !isDone
 
     const offset = parkOffsetOf(machine)
+    const draft = codeDrafts[machine.id] ?? ''
+    const codeInputEnabled =
+      isCurrentRequired && run.status === 'running' && !isDone
 
     let hint: string | null = null
-    if (isRequired) hint = 'Click to operate'
+    if (canActivate) hint = 'Code accepted — activate'
+    else if (isCurrentRequired && boosterArrived && !codeOk)
+      hint = 'Enter access code'
     else if (isWaitingBooster) hint = 'Drag booster here'
     else if (isActive && machinePhase === 'approaching') hint = 'Approaching…'
     else if (isWorkingPhase) hint = 'Working…'
@@ -332,18 +358,21 @@ export function ManufactureScene({
           {
             gridColumn: machine.linePosition + 1,
             ['--park-offset']: `${offset}rem`,
-            // Give drop path room proportional to park distance.
             ['--drop-min-height']: `${Math.max(1.5, offset + 0.4)}rem`,
           } as CSSProperties
         }
       >
-        <button
-          type="button"
+        <div
           className={[
             'factory-machine',
             `factory-machine--${machine.kind}`,
-            isRequired ? 'factory-machine--required' : '',
-            isWaitingBooster ? 'factory-machine--awaiting' : '',
+            canActivate ? 'factory-machine--required' : '',
+            isWaitingBooster || (isCurrentRequired && !boosterArrived)
+              ? 'factory-machine--awaiting'
+              : '',
+            isCurrentRequired && boosterArrived && !codeOk
+              ? 'factory-machine--code-entry'
+              : '',
             isWorkingPhase ? 'factory-machine--working' : '',
             isAtLine ? 'factory-machine--at-line' : '',
             isRetreating ? 'factory-machine--retreating' : '',
@@ -359,23 +388,57 @@ export function ManufactureScene({
               ['--machine-travel-ms']: `${MACHINE_APPROACH_MS}ms`,
             } as CSSProperties
           }
-          disabled={!isRequired}
-          onClick={() => onMachineClick(machine.id)}
-          aria-label={`${machine.sequence}. ${machine.name}${
-            isRequired
-              ? ' — click to operate'
-              : isDone
-                ? ' — complete'
-                : isWaitingBooster
-                  ? ' — drag booster to this stop first'
-                  : ''
-          }`}
         >
           <span className="factory-machine__badge" aria-hidden="true">
             {machine.sequence}
           </span>
           <MachineVisual kind={machine.kind} />
           <span className="factory-machine__label">{machine.name}</span>
+
+          {!isDone && !isActive && (
+            <label className="factory-machine__code">
+              <span className="factory-machine__code-label">Access code</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                spellCheck={false}
+                maxLength={4}
+                pattern="[0-9]*"
+                className={[
+                  'factory-machine__code-input',
+                  codeOk && isCurrentRequired
+                    ? 'factory-machine__code-input--ok'
+                    : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                value={draft}
+                disabled={!codeInputEnabled}
+                placeholder="····"
+                aria-label={`Access code for ${machine.name}`}
+                onChange={(e) => handleCodeChange(machine.id, e.target.value)}
+                onPointerDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && canActivate) {
+                    e.preventDefault()
+                    onMachineClick(machine.id)
+                  }
+                }}
+              />
+            </label>
+          )}
+
+          {canActivate && (
+            <button
+              type="button"
+              className="btn btn--primary factory-machine__activate"
+              onClick={() => onMachineClick(machine.id)}
+            >
+              Activate
+            </button>
+          )}
+
           {hint && (
             <span
               className={[
@@ -388,7 +451,7 @@ export function ManufactureScene({
               {hint}
             </span>
           )}
-        </button>
+        </div>
         <div className="station-bay__drop" aria-hidden="true" />
       </div>
     )
@@ -400,7 +463,14 @@ export function ManufactureScene({
   } else if (dropFeedback === 'miss') {
     feedbackCopy = 'Drop on a station stop on the belt.'
   } else if (showDropHint && required) {
-    feedbackCopy = `Drag the booster to station ${required.sequence} (${required.name}).`
+    feedbackCopy = `Drag the booster to station ${required.sequence} (${required.name}), then enter its access code.`
+  } else if (
+    canInteract &&
+    required &&
+    boosterArrived &&
+    !codeMatches(required)
+  ) {
+    feedbackCopy = `Enter access code ${required.accessCode} on ${required.name}, then Activate.`
   }
 
   return (
@@ -413,6 +483,24 @@ export function ManufactureScene({
         .join(' ')}
     >
       <div className="manufacture-scene__sky" aria-hidden="true" />
+
+      {required && !stepDone && (
+        <div
+          className="manufacture-code-banner"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="manufacture-code-banner__kicker">
+            Station access code
+          </span>
+          <span className="manufacture-code-banner__body">
+            Station {required.sequence} · {required.name}
+          </span>
+          <span className="manufacture-code-banner__code" aria-label="Access code">
+            {required.accessCode}
+          </span>
+        </div>
+      )}
 
       <div className="manufacture-floor">
         <div

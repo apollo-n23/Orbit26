@@ -17,6 +17,11 @@ export interface ProcessMachine {
    * Larger values park further from the belt; approach travels that distance to the line.
    */
   parkOffset: number
+  /**
+   * Four-digit station access code the operator must enter before Activate is offered.
+   * Displayed in the manufacture access-code banner for the current required station.
+   */
+  accessCode: string
 }
 
 export type ProcessStepKind =
