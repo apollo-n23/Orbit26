@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import type { ProcessMachine, RunState } from '../types/process'
 import {
   BOOSTER_TRAVEL_MS,
@@ -111,6 +111,13 @@ export function ManufactureScene({
 
     // Stay put while a machine is operating on the booster already under it.
     if (run.status === 'machine_working') {
+      setBoosterLinePos(targetLinePos)
+      setBoosterArrived(true)
+      return
+    }
+
+    // Manufacture finished — hold at the final station (no re-travel flicker).
+    if (run.status === 'step_complete') {
       setBoosterLinePos(targetLinePos)
       setBoosterArrived(true)
       return
@@ -247,6 +254,12 @@ export function ManufactureScene({
       ]
         .filter(Boolean)
         .join(' ')}
+      style={
+        {
+          // Keep machine approach/retreat CSS in lockstep with timing constants.
+          ['--machine-travel-ms']: `${MACHINE_APPROACH_MS}ms`,
+        } as CSSProperties
+      }
     >
       <div className="manufacture-scene__sky" aria-hidden="true" />
 

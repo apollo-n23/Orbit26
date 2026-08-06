@@ -41,8 +41,8 @@ const ORIENTATIONS = [
 /** Scene units per second while an arrow key is held. */
 const MOVE_SPEED = 140
 
-/** How long the explosion plays before reset (ms). */
-const EXPLODE_MS = 560
+/** How long the explosion plays before reset (ms). Keep in sync with App.css haul-explode-* (0.55s). */
+const EXPLODE_MS = 550
 
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'])
 
@@ -220,12 +220,13 @@ export function IntegratePayloadScene({
     window.addEventListener('blur', onBlur)
     raf = window.requestAnimationFrame(tick)
 
+    const heldKeys = keysRef.current
     return () => {
       window.cancelAnimationFrame(raf)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('blur', onBlur)
-      keysRef.current.clear()
+      heldKeys.clear()
     }
   }, [run.status, seated, tryMoveTo])
 

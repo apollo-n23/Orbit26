@@ -15,8 +15,10 @@ export function getActiveStep(
   return process.steps[run.currentStepIndex] ?? null
 }
 
+/** Machines for a manufacture step, sorted by operator sequence (1 → 2 → …). */
 export function getStepMachines(step: ProcessStep | null): ProcessMachine[] {
-  return step?.machines ?? []
+  const machines = step?.machines ?? []
+  return [...machines].sort((a, b) => a.sequence - b.sequence)
 }
 
 export function hasNextStep(

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { ManufactureScene } from '../components/ManufactureScene'
 import { IntegratePayloadScene } from '../components/IntegratePayloadScene'
 import type { ProcessVersion, RunState } from '../types/process'
@@ -39,7 +39,7 @@ export function SimulationView({
     runsRemaining > 0
 
   const step = getActiveStep(process, run)
-  const machines = getStepMachines(step)
+  const machines = useMemo(() => getStepMachines(step), [step])
   const required = machines[run.nextMachineIndex]
   const inActiveRun =
     sessionActive &&

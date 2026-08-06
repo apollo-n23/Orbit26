@@ -28,14 +28,15 @@ The Execute phase is a **hands-on floor simulation**. The learner operates the p
 ### Current process steps (baseline)
 1. **Manufacture booster** (`kind: manufacture`)
    - Booster on a production line with **four machines** (robot arms, welder, laser).
-   - Learner must click machines in **indicated sequence (1 → 2 → 3 → 4)**.
-   - Only the next machine is enabled; each click plays a short work animation, then unlocks the next.
+   - Physical left-to-right station order may be out of sequence (baseline: **2, 1, 4, 3**); logical click order remains **1 → 2 → 3 → 4**.
+   - Booster travels along the belt to the next required station before that machine unlocks.
+   - Only the next machine is enabled once the booster arrives; on operate: approach line → work animation → retreat to park, then unlock the next.
    - When all four finish, the step is complete and **Proceed to next step** is offered (if a following step exists).
 
 2. **Integrate payload** (`kind: haul`)
    - Accessible only after manufacture is complete and the learner proceeds.
-   - Learner **drags** the booster from Assembly to the Launch Pad along a **winding path**.
-   - Path corridor is **50% wider than the booster** (short side × 1.5). Leaving the path **resets** the booster to the start.
+   - Learner moves the booster from Assembly to the Launch Pad along a **winding outdoor road** (**arrow keys** primary; drag optional).
+   - Path corridor is **50% wider than the booster** (short side × 1.5). Full-footprint off-path → **explosion**, then reset to Assembly start.
    - On-screen **re-orient** controls (90° turns / fixed headings) help navigate corners; long axis should follow the corridor.
    - When the booster **touches the pad**, a **Reorient** button appears; confirming seats the booster correctly on the pad and completes the step (and the full run, while this is the last step).
 
