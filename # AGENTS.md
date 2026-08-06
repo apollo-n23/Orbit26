@@ -28,12 +28,14 @@ Each round is a self-contained session: process config, lead-time board, chrome,
 - **Route:** `#/round/1` (default).
 - **Config:** `ROUND_CONFIGS[1]` — baseline inefficient process; **no** redesign phase.
 - **Complete:** “As-is round complete” + lap times + Continue / share link to Round 2.
+- **Persist average:** when all 3 launches are logged, save **Round 1 average lead time** via `saveRound1AverageLeadTimeMs` (`localStorage` key `orbit26.round1.avgLeadTimeMs` in `lib/roundMetrics.ts`).
 
 ### Round 2 — Redesign then execute
 - **Route:** `#/round/2` (tutor-shareable deep link).
 - **Config:** `allowsRedesign: true`.
 - **Flow:** `phase: redesign` → `RedesignWorkshop` → confirm (with **are-you-sure**) → `phase: play` (3 launches) → orbit complete.
-- **State isolation:** fresh `RoundSession` per `round.id`; redesign must **not** be wiped after lock-in (reset only on round id change).
+- **Data comparison:** load Round 1 average on mount (`loadRound1AverageLeadTimeMs`); Data tab shows **Round 1 average lead time**; after Round 2's three launches, show **Round 2 average** and **vs Round 1 average** (faster/slower).
+- **State isolation:** fresh `RoundSession` per `round.id`; redesign must **not** be wiped after lock-in (reset only on round id change). Lap logs do not carry across rounds; **only** Round 1 average is carried via localStorage.
 - **Do not** delete Round 2 or merge it into Round 1.
 
 ### Round 2 redesign workshop (`RedesignWorkshop.tsx`)
