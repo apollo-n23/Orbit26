@@ -9,8 +9,8 @@ Tone: Professional, precise, operational. Light narrative framing only. No carto
 
 ## Core Learning Loop (must be preserved)
 1. **Execute** — Visualised, interactive process steps (not auto-play lists). Feel friction and waste as lead time.
-2. **Data** — Lap-style board of lead times (and road cost when redesigned). Process mapping is **outside** this app (no Map tab).
-3. **Rounds** — Round 1 = as-is (3 launches); Round 2 = redesign then 3 launches; compare outcomes.
+2. **Data** — Lap-style board of lead times (and road cost when redesigned). Process mapping is **outside** this app (no Map tab). **No Comparison tab** — comparison of rounds happens on the Data board (e.g. Round 1 average vs Round 2).
+3. **Rounds** — Round 1 = as-is (3 launches); Round 2 = redesign then 3 launches; compare outcomes on Data.
 4. **Redesign / Validate** — Round 2 workshop locks improvements into the process used for that round’s launches.
 
 ---
@@ -80,6 +80,8 @@ Resolve via `resolveLaunchPrepTech(process)`. Scene must re-read tech when the l
 | `processEdit.ts`, `roadGrid.ts` | Apply/resolve redesign fields |
 | `OrbitCompleteScene.tsx` | End-of-round cutaway |
 | `SiteBrand.tsx` | Top banner brand lockup |
+| `lib/roundMetrics.ts` | Round 1 avg lead time save/load; averages for Data compare |
+| Views | **Simulation** · **Data** only (**Comparison tab removed**) |
 
 ---
 
@@ -174,7 +176,8 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 - Full DMAIC / stats suite / multiplayer
 - Full instructor authoring (tutor **share links** in scope)
 - Mobile-first / in-app process map / waste-tagging UI
-- Cross-round cloud persistence
+- Comparison tab (removed; use Data board for Round 1 vs Round 2 averages)
+- Cross-round cloud persistence (localStorage Round 1 average → Round 2 Data is in scope)
 
 ## Working Style
 - Small incremental working steps; keep app runnable.
@@ -182,4 +185,4 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 
 ## Git Practices
 - Local Git active; meaningful commits; clean working tree.
-- **No remote** configured (local-only for now).
+- Remote may be configured (e.g. `origin` → GitHub); prefer push only when the user asks.

@@ -1,10 +1,21 @@
 import type { LeadTimeEntry } from '../types/process'
 import { formatLeadTime } from '../lib/simulation'
+import {
+  averageLeadTimeMs,
+  leadTimeImprovementMs,
+} from '../lib/roundMetrics'
 
 interface DataViewProps {
   entries: LeadTimeEntry[]
   rocketsGoal?: number
   roundLabel?: string
+  /** Round id (1 or 2) for comparison UI. */
+  roundId?: number
+  /**
+   * Round 1 average lead time in ms (from localStorage after Round 1 completes).
+   * Shown on Round 2 Data tab; used for post–Round-2 comparison.
+   */
+  round1AverageMs?: number | null
 }
 
 function formatRoadCost(cost: number | undefined): string {
@@ -16,6 +27,8 @@ export function DataView({
   entries,
   rocketsGoal = 3,
   roundLabel,
+  roundId = 1,
+  round1AverageMs = null,
 }: DataViewProps) {
   const bestMs =
     entries.length > 0
@@ -23,9 +36,23 @@ export function DataView({
       : null
 
   const ordered = [...entries].sort((a, b) => b.runNumber - a.runNumber)
+  const thisRoundAvgMs = averageLeadTimeMs(entries)
+  const roundComplete = entries.length >= rocketsGoal
 
   const hasAnyRoadCost = entries.some((e) => e.roadCost != null)
   const roadCostSample = entries.find((e) => e.roadCost != null)?.roadCost
+
+  const showRound1Baseline = roundId === 2 && round1AverageMs != null
+  const showRound2Compare =
+    roundId === 2 &&
+    roundComplete &&
+    thisRoundAvgMs != null &&
+    round1AverageMs != null
+
+  const improvementMs =
+    showRound2Compare && thisRoundAvgMs != null && round1AverageMs != null
+      ? leadTimeImprovementMs(round1AverageMs, thisRoundAvgMs)
+      : null
 
   return (
     <section className="view-panel" aria-labelledby="data-heading">
@@ -41,13 +68,69 @@ export function DataView({
       <div className="view-panel__body data-body">
         <div className="lead-board__progress" aria-live="polite">
           Rockets launched: <strong>{entries.length}</strong> / {rocketsGoal}
-          {entries.length >= rocketsGoal ? ' · Round complete' : ''}
+          {roundComplete ? ' · Round complete' : ''}
         </div>
+
+        {(showRound1Baseline || thisRoundAvgMs != null) && (
+          <div className="lead-board__compare" aria-live="polite">
+            {showRound1Baseline && (
+              <div className="lead-board__stat lead-board__stat--baseline">
+                <span className="lead-board__stat-label">
+                  Round 1 average lead time
+                </span>
+                <span className="lead-board__stat-value">
+                  {formatLeadTime(round1AverageMs / 1000)}
+                </span>
+              </div>
+            )}
+            {thisRoundAvgMs != null && entries.length > 0 && (
+              <div className="lead-board__stat">
+                <span className="lead-board__stat-label">
+                  {roundId === 2
+                    ? 'Round 2 average lead time'
+                    : 'Round average lead time'}
+                </span>
+                <span className="lead-board__stat-value">
+                  {formatLeadTime(thisRoundAvgMs / 1000)}
+                  {!roundComplete && entries.length < rocketsGoal
+                    ? ' · running'
+                    : ''}
+                </span>
+              </div>
+            )}
+            {showRound2Compare && improvementMs != null && (
+              <div
+                className={[
+                  'lead-board__stat',
+                  improvementMs > 0
+                    ? 'lead-board__stat--better'
+                    : improvementMs < 0
+                      ? 'lead-board__stat--worse'
+                      : 'lead-board__stat--same',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                <span className="lead-board__stat-label">
+                  vs Round 1 average
+                </span>
+                <span className="lead-board__stat-value">
+                  {improvementMs > 0
+                    ? `−${formatLeadTime(improvementMs / 1000)} (faster)`
+                    : improvementMs < 0
+                      ? `+${formatLeadTime((-improvementMs) / 1000)} (slower)`
+                      : 'Same average'}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {ordered.length === 0 ? (
           <p className="placeholder-copy">
-            No lead times logged yet. Start a session and complete full process
-            runs to launch. Each successful launch adds a lap here.
+            {showRound1Baseline
+              ? 'Round 1 average is shown above. Complete launches this round to build the Round 2 board and compare averages.'
+              : 'No lead times logged yet. Start a session and complete full process runs to launch. Each successful launch adds a lap here.'}
           </p>
         ) : (
           <div className="lead-board">

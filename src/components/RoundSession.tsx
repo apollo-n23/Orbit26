@@ -5,7 +5,6 @@ import { ViewNav } from './ViewNav'
 import { RedesignWorkshop } from './RedesignWorkshop'
 import { SimulationView } from '../views/SimulationView'
 import { DataView } from '../views/DataView'
-import { ComparisonView } from '../views/ComparisonView'
 import { OrbitCompleteScene } from '../views/OrbitCompleteScene'
 import {
   beginRun,
@@ -25,6 +24,10 @@ import type { LeadTimeEntry, ProcessVersion, RunState } from '../types/process'
 import { INITIAL_RUN_STATE } from '../types/process'
 import type { RoundConfig } from '../types/round'
 import { ROCKETS_PER_ROUND, hashForRound } from '../types/round'
+import {
+  loadRound1AverageLeadTimeMs,
+  saveRound1AverageLeadTimeMs,
+} from '../lib/roundMetrics'
 
 type RoundPhase = 'redesign' | 'play' | 'orbit-complete'
 
@@ -46,6 +49,10 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
   const [leadTimeLog, setLeadTimeLog] = useState<LeadTimeEntry[]>([])
   const [now, setNow] = useState(() => Date.now())
   const lastLoggedRunRef = useRef(0)
+  /** Round 1 average (ms) for Round 2 Data comparison — from localStorage. */
+  const [round1AverageMs, setRound1AverageMs] = useState<number | null>(() =>
+    round.id === 2 ? loadRound1AverageLeadTimeMs() : null,
+  )
 
   // Reset only when navigating to a different round id.
   // Do NOT depend on round.process — that would wipe a confirmed redesign
@@ -58,6 +65,9 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     setRun(INITIAL_RUN_STATE)
     setLeadTimeLog([])
     lastLoggedRunRef.current = 0
+    setRound1AverageMs(
+      round.id === 2 ? loadRound1AverageLeadTimeMs() : null,
+    )
     // round fields read intentionally only when round.id changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round.id])
@@ -79,6 +89,10 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     setLeadTimeLog((prev) => {
       const next = [...prev, entry]
       if (next.length >= ROCKETS_PER_ROUND) {
+        // Persist Round 1 average so Round 2 Data can compare.
+        if (round.id === 1) {
+          saveRound1AverageLeadTimeMs(next)
+        }
         window.setTimeout(() => setPhase('orbit-complete'), 600)
       }
       return next
@@ -89,6 +103,7 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     run.runEndedAt,
     run.runStartedAt,
     process.roadCost,
+    round.id,
   ])
 
   const metrics = useMemo(() => metricsFromRun(run, now), [run, now])
@@ -225,9 +240,10 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
             entries={leadTimeLog}
             rocketsGoal={ROCKETS_PER_ROUND}
             roundLabel={round.label}
+            roundId={round.id}
+            round1AverageMs={round.id === 2 ? round1AverageMs : null}
           />
         )}
-        {activeView === 'comparison' && <ComparisonView />}
       </main>
     </div>
   )

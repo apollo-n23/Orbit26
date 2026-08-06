@@ -428,6 +428,40 @@
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
+.lead-board__compare {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.lead-board__stat--baseline {
+  border-color: color-mix(in srgb, var(--color-amber) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--color-amber-dim) 50%, var(--color-surface-raised));
+}
+
+.lead-board__stat--better {
+  border-color: color-mix(in srgb, #3d9b6a 50%, var(--color-border));
+  background: color-mix(in srgb, rgba(61, 155, 106, 0.15) 60%, var(--color-surface-raised));
+}
+
+.lead-board__stat--better .lead-board__stat-value {
+  color: #5ecf96;
+}
+
+.lead-board__stat--worse {
+  border-color: color-mix(in srgb, #c45c5c 45%, var(--color-border));
+  background: color-mix(in srgb, rgba(196, 92, 92, 0.12) 60%, var(--color-surface-raised));
+}
+
+.lead-board__stat--worse .lead-board__stat-value {
+  color: #e88a8a;
+}
+
+.lead-board__stat--same .lead-board__stat-value {
+  color: var(--color-text-muted);
+}
+
 /* ── Orbit complete (end of round) ───────────────────────── */
 
 .app-main--orbit {
