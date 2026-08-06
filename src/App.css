@@ -1634,15 +1634,16 @@
   white-space: nowrap;
 }
 
-/* Payload fairing on stack */
+/* Payload fairing seated on booster nose (slight overlap for clean stack join) */
 .lp-payload {
   position: absolute;
-  top: -1.85rem;
+  top: -1.65rem;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
+  z-index: 2;
   animation: lp-payload-seat 0.45s ease-out;
 }
 
@@ -1679,27 +1680,28 @@
   }
 }
 
-/* Crane */
+/* Crane — parked just right of mated stack so swing/lower seats fairing on nose */
 .lp-crane {
   position: absolute;
-  right: 8%;
+  /* Mated booster center ~42%; crane cab sits immediately outboard */
+  left: calc(42% + 1.55rem);
   bottom: 22%;
-  width: 7rem;
+  width: 4.6rem;
   height: 70%;
   z-index: 4;
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 .lp-crane--clear {
-  opacity: 0.45;
-  transform: translateX(0.5rem);
+  opacity: 0.4;
+  transform: translateX(0.85rem);
 }
 
 .lp-crane__base {
   position: absolute;
-  left: 0.4rem;
+  left: 0.15rem;
   bottom: 0;
-  width: 2.8rem;
+  width: 2.4rem;
   height: 0.7rem;
   background: #4a5564;
   border-radius: 2px;
@@ -1707,10 +1709,10 @@
 
 .lp-crane__cab {
   position: absolute;
-  left: 0.7rem;
+  left: 0.4rem;
   bottom: 0.65rem;
-  width: 1.6rem;
-  height: 1.3rem;
+  width: 1.45rem;
+  height: 1.25rem;
   background: linear-gradient(180deg, var(--color-amber) 0%, #a87810 100%);
   border-radius: 3px 3px 2px 2px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -1718,34 +1720,40 @@
 
 .lp-crane__boom {
   position: absolute;
-  left: 1.3rem;
-  bottom: 1.8rem;
-  width: 0.35rem;
-  height: 55%;
+  left: 0.95rem;
+  bottom: 1.75rem;
+  width: 0.32rem;
+  height: 58%;
   background: #6a7584;
   transform-origin: bottom center;
   transition: transform 0.4s ease;
 }
 
+/* Stowed / extend: boom leans slightly outboard (away from vehicle) */
 .lp-crane--phase-0 .lp-crane__boom,
 .lp-crane--phase-1 .lp-crane__boom {
-  transform: rotate(-18deg);
+  transform: rotate(14deg);
 }
 
+/* Lift: near-upright over ground load just outboard of cab */
 .lp-crane--phase-2 .lp-crane__boom {
-  transform: rotate(-8deg);
+  transform: rotate(6deg);
 }
 
+/*
+ * Swing / lower: hard inboard lean so jib free end (cable) sits over
+ * mated booster center (~1.5–2.5rem left of boom base).
+ */
 .lp-crane--phase-3 .lp-crane__boom,
 .lp-crane--phase-4 .lp-crane__boom {
-  transform: rotate(-42deg);
+  transform: rotate(-46deg);
 }
 
 .lp-crane__jib {
   position: absolute;
   left: 50%;
   top: 0;
-  width: 3.2rem;
+  width: 2.2rem;
   height: 0.28rem;
   background: #7a8594;
   transform-origin: left center;
@@ -1753,24 +1761,25 @@
 }
 
 .lp-crane--phase-0 .lp-crane__jib {
-  width: 1.6rem;
-  transform: rotate(-5deg);
+  width: 1.15rem;
+  transform: rotate(10deg);
 }
 
 .lp-crane--phase-1 .lp-crane__jib {
-  width: 3.2rem;
-  transform: rotate(-8deg);
+  width: 2rem;
+  transform: rotate(6deg);
 }
 
 .lp-crane--phase-2 .lp-crane__jib {
-  width: 3.2rem;
-  transform: rotate(-12deg);
+  width: 2rem;
+  transform: rotate(2deg);
 }
 
+/* Short jib — free end lands on stack axis, not past the far side of the hull */
 .lp-crane--phase-3 .lp-crane__jib,
 .lp-crane--phase-4 .lp-crane__jib {
-  width: 4rem;
-  transform: rotate(-20deg);
+  width: 1.75rem;
+  transform: rotate(-12deg);
 }
 
 .lp-crane__cable {
@@ -1778,88 +1787,225 @@
   right: 0;
   top: 0;
   width: 2px;
-  height: 1.6rem;
+  height: 1.5rem;
   background: #9aa6b5;
-  transition: height 0.4s ease;
+  transition: height 0.4s ease, opacity 0.3s ease;
 }
 
 .lp-crane--phase-2 .lp-crane__cable {
-  height: 1.1rem;
+  height: 0.9rem;
 }
 
+/* Hold high over nose after swing */
 .lp-crane--phase-3 .lp-crane__cable {
-  height: 2.4rem;
+  height: 1.05rem;
 }
 
+/* Lower: cable drops fairing onto the nose cone */
 .lp-crane--phase-4 .lp-crane__cable {
-  height: 0.4rem;
-  opacity: 0;
+  height: 2.4rem;
+  opacity: 0.3;
 }
 
 .lp-crane__hook-load {
   position: absolute;
-  right: -0.7rem;
+  right: -0.72rem;
   top: 100%;
   transition: opacity 0.3s ease;
 }
 
 .lp-crane__ground-load {
   position: absolute;
-  left: 3.2rem;
+  left: 2.15rem;
   bottom: 0.2rem;
 }
 
-/* Umbilicals */
+/* Fuel farm + umbilicals — tanks on pad side, lines meet mated hull */
 .lp-umbilicals {
   position: absolute;
-  left: 28%;
-  bottom: 28%;
-  width: 3.5rem;
-  height: 3rem;
+  /* Span from fuel farm (left) to mated booster left face (~42% − half width) */
+  left: calc(42% - 7.1rem);
+  bottom: 26%;
+  width: 6.35rem;
+  height: 4.4rem;
   z-index: 2;
   pointer-events: none;
 }
 
-.lp-umbilical {
+.lp-tank {
   position: absolute;
   left: 0;
-  width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  opacity: 0.25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+  width: 1.35rem;
+}
+
+.lp-tank--lox {
+  top: 0.1rem;
+}
+
+.lp-tank--rp {
+  bottom: 0.05rem;
+}
+
+.lp-tank__body {
+  display: block;
+  width: 1.2rem;
+  height: 1.55rem;
+  border-radius: 40% 40% 6px 6px;
+  border: 1px solid color-mix(in srgb, #fff 18%, transparent);
+  box-shadow:
+    inset 0 -6px 10px rgba(0, 0, 0, 0.28),
+    0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.lp-tank--lox .lp-tank__body {
+  background: linear-gradient(180deg, #8ec4ef 0%, #3a7eb8 45%, #245a88 100%);
+}
+
+.lp-tank--rp .lp-tank__body {
+  background: linear-gradient(180deg, #e8c46a 0%, #c49218 45%, #8a6410 100%);
+}
+
+.lp-tank__label {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--color-text-muted);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.lp-tank--lox .lp-tank__label {
+  color: #8ec4ef;
+}
+
+.lp-tank--rp .lp-tank__label {
+  color: #e0b84a;
+}
+
+.lp-umbilical {
+  position: absolute;
+  left: 1.25rem;
+  height: 5px;
+  border-radius: 3px;
+  opacity: 0.28;
   transform-origin: left center;
-  transition: opacity 0.3s ease, background 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    background 0.3s ease,
+    width 0.35s ease,
+    box-shadow 0.3s ease;
+  /* Default: short, not yet mated to vehicle */
+  width: 42%;
 }
 
 .lp-umbilical--lox {
-  top: 30%;
-  background: #5ba0db;
-  transform: rotate(-18deg);
+  top: 0.95rem;
+  background: linear-gradient(90deg, #5ba0db, #7ab8e8);
+  transform: rotate(-6deg);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #5ba0db 35%, transparent);
 }
 
 .lp-umbilical--rp {
-  top: 55%;
-  background: var(--color-amber);
-  transform: rotate(12deg);
+  bottom: 1.05rem;
+  background: linear-gradient(90deg, #c49218, #e0b84a);
+  transform: rotate(7deg);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-amber) 35%, transparent);
 }
 
+/* Connected: line reaches vehicle port on booster hull */
 .lp-umbilicals--lox .lp-umbilical--lox,
 .lp-umbilicals--rp .lp-umbilical--rp {
-  opacity: 0.9;
+  opacity: 0.95;
+  width: calc(100% - 1.55rem);
 }
 
-.lp-umbilicals--flowing .lp-umbilical {
-  box-shadow: 0 0 8px currentColor;
-  animation: lp-umbilical-pulse 1.2s ease-in-out infinite;
+.lp-umbilical__port {
+  position: absolute;
+  right: 0.05rem;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 2px;
+  opacity: 0.2;
+  border: 1px solid transparent;
+  transition:
+    opacity 0.3s ease,
+    background 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
 }
 
-@keyframes lp-umbilical-pulse {
+.lp-umbilical__port--lox {
+  top: 0.72rem;
+  background: #3a6a90;
+}
+
+.lp-umbilical__port--rp {
+  bottom: 0.88rem;
+  background: #8a6410;
+}
+
+.lp-umbilicals--lox .lp-umbilical__port--lox,
+.lp-umbilicals--rp .lp-umbilical__port--rp {
+  opacity: 1;
+  border-color: color-mix(in srgb, #fff 35%, transparent);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 6px currentColor;
+}
+
+.lp-umbilicals--lox .lp-umbilical__port--lox {
+  background: #5ba0db;
+  color: #5ba0db;
+}
+
+.lp-umbilicals--rp .lp-umbilical__port--rp {
+  background: var(--color-amber);
+  color: var(--color-amber);
+}
+
+.lp-umbilicals--lox-flow .lp-umbilical--lox {
+  animation: lp-umbilical-pulse-lox 1.1s ease-in-out infinite;
+}
+
+.lp-umbilicals--rp-flow .lp-umbilical--rp {
+  animation: lp-umbilical-pulse-rp 1.1s ease-in-out infinite;
+}
+
+.lp-umbilicals--full .lp-umbilical {
+  animation: none;
+  opacity: 0.88;
+}
+
+.lp-umbilicals--full .lp-umbilical__port {
+  opacity: 1;
+}
+
+@keyframes lp-umbilical-pulse-lox {
   0%,
   100% {
-    opacity: 0.7;
+    opacity: 0.75;
+    box-shadow: 0 0 4px #5ba0db55;
   }
   50% {
     opacity: 1;
+    box-shadow: 0 0 10px #5ba0db;
+  }
+}
+
+@keyframes lp-umbilical-pulse-rp {
+  0%,
+  100% {
+    opacity: 0.75;
+    box-shadow: 0 0 4px color-mix(in srgb, var(--color-amber) 40%, transparent);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 10px var(--color-amber);
   }
 }
 

@@ -332,19 +332,41 @@ export function LaunchPrepScene({
           )}
         </div>
 
-        {/* Fuel umbilicals visual */}
+        {/* Fuel farm + umbilicals (tank end → booster hull) */}
         <div
           className={[
             'lp-umbilicals',
             loxConnected || fueled ? 'lp-umbilicals--lox' : '',
             rpConnected || fueled ? 'lp-umbilicals--rp' : '',
-            fueled ? 'lp-umbilicals--flowing' : '',
+            loxConnected && loxFill > 0 && loxFill < 100
+              ? 'lp-umbilicals--lox-flow'
+              : '',
+            rpConnected && rpFill > 0 && rpFill < 100
+              ? 'lp-umbilicals--rp-flow'
+              : '',
+            fueled ? 'lp-umbilicals--full' : '',
           ]
             .filter(Boolean)
             .join(' ')}
         >
+          <div className="lp-tank lp-tank--lox" title="LOX supply">
+            <span className="lp-tank__body" />
+            <span className="lp-tank__label">LOX</span>
+          </div>
+          <div className="lp-tank lp-tank--rp" title="RP-1 supply">
+            <span className="lp-tank__body" />
+            <span className="lp-tank__label">RP-1</span>
+          </div>
           <span className="lp-umbilical lp-umbilical--lox" />
           <span className="lp-umbilical lp-umbilical--rp" />
+          <span
+            className="lp-umbilical__port lp-umbilical__port--lox"
+            title="LOX vehicle port"
+          />
+          <span
+            className="lp-umbilical__port lp-umbilical__port--rp"
+            title="RP-1 vehicle port"
+          />
         </div>
 
         {/* Power glow when armed */}
