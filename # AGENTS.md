@@ -89,21 +89,31 @@ Order is fixed in `src/data/baselineProcess.ts`. Do not reorder without an expli
   2. **Crane** payload onto the stack (numbered crane sequence)  
   3. **Fuel** — connect umbilicals, hold-to-fill LOX/RP-1  
   4. **Power up** — arm switches in order  
-- Completing the last sub-task finishes the **full unit run** (`complete` + `completedRuns` / `goodRuns`).
+- Completing the last sub-task → `step_complete` → **Proceed to Launch sequence** (launch-prep is **not** the final baseline step).
+
+### 4. Launch sequence (`kind: launch-sequence`)
+**Scene:** `LaunchSequenceScene.tsx` — mission control room (consoles, pad live feed).
+
+- Only after launch-prep + Proceed.
+- Operator actions **in order** (reuses run `nextMachineIndex` / `completedMachineIds`; constants in `types/process.ts`):
+  1. **GO poll** — Guidance → Capcom → Fuel/Propulsion → Avionics → Range Safety → Weather (only the current station is armed)  
+  2. **Launch enable key** — hold-to-turn physical key control  
+  3. **Liftoff cutaway** — pad feed rocket leaves the tower (CSS animation)  
+- Completing liftoff finishes the **full unit run** (`complete` + `completedRuns` / `goodRuns` via `completeUnitRun`, freezes wall-clock cycle time).
 
 ---
 
 ## Adding a new Execute step (checklist)
 
-Use this when extending the baseline process (e.g. a fourth step after launch-prep).
+Use this when extending the baseline process (e.g. a fifth step after launch-sequence).
 
 1. **Types** — Extend `ProcessStepKind` in `src/types/process.ts`; add any step-specific constants/actions.
 2. **Process data** — Append a step to `BASELINE_PROCESS.steps` in `src/data/baselineProcess.ts` (`id`, `name`, `kind`, `baseTime`, optional config).
-3. **Scene** — New component under `src/components/` with **operator-driven** interactions (match the hands-on style of steps 1–3). Give the scene a distinct visual environment if it is a new location.
+3. **Scene** — New component under `src/components/` with **operator-driven** interactions (match the hands-on style of existing steps). Give the scene a distinct visual environment if it is a new location.
 4. **Simulation** — In `src/lib/simulation.ts`:
    - Previous last step must end in `step_complete` + Proceed (not `complete`) when a next step exists.
-   - New step’s finish handler: `step_complete` if more steps follow, else `complete` + increment run counts.
-5. **UI wiring** — `SimulationView.tsx` status copy, show/hide scene, Proceed button; `App.tsx` handlers; styles in `App.css` under a clear namespace (avoid clobbering manufacture / haul / launch-prep).
+   - New step’s finish handler: `step_complete` if more steps follow, else `completeUnitRun` (last step).
+5. **UI wiring** — `SimulationView.tsx` status copy, show/hide scene, Proceed button; `App.tsx` handlers; styles in `App.css` under a clear namespace (e.g. `launch-seq` / `mc-`; avoid clobbering manufacture / haul / launch-prep).
 6. **Docs** — Update this file’s baseline step list.
 7. **Verify** — `npm run build`; keep the app runnable; commit with a clear message.
 
