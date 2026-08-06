@@ -123,7 +123,11 @@ export interface RunState {
   goodRuns: number
 }
 
-export const MAX_RUNS_PER_SESSION = 12
+/**
+ * Max full unit launches per learning round (assembly → liftoff).
+ * Prefer ROCKETS_PER_ROUND from types/round.ts in new code.
+ */
+export const MAX_RUNS_PER_SESSION = 3
 
 export const EMPTY_METRICS: SessionMetrics = {
   leadTime: null,

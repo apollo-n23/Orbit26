@@ -3,15 +3,20 @@ import { formatLeadTime } from '../lib/simulation'
 
 interface DataViewProps {
   entries: LeadTimeEntry[]
+  rocketsGoal?: number
+  roundLabel?: string
 }
 
-export function DataView({ entries }: DataViewProps) {
+export function DataView({
+  entries,
+  rocketsGoal = 3,
+  roundLabel,
+}: DataViewProps) {
   const bestMs =
     entries.length > 0
       ? Math.min(...entries.map((e) => e.durationMs))
       : null
 
-  // Newest run at the top (lap board style).
   const ordered = [...entries].sort((a, b) => b.runNumber - a.runNumber)
 
   return (
@@ -19,24 +24,31 @@ export function DataView({ entries }: DataViewProps) {
       <header className="view-panel__header">
         <h2 id="data-heading">Data</h2>
         <p className="view-panel__lede">
-          Lead time board — each completed launch cycle (assembly through
-          liftoff) logs end-to-end process time. Improve the process, beat your
-          best lap.
+          {roundLabel ? `${roundLabel} — ` : ''}
+          Lead time board for this round. Goal: log {rocketsGoal} full launch
+          cycles (assembly through liftoff). Newest runs at the top.
         </p>
       </header>
 
       <div className="view-panel__body data-body">
+        <div className="lead-board__progress" aria-live="polite">
+          Rockets launched: <strong>{entries.length}</strong> / {rocketsGoal}
+          {entries.length >= rocketsGoal ? ' · Round complete' : ''}
+        </div>
+
         {ordered.length === 0 ? (
           <p className="placeholder-copy">
-            No lead times logged yet. Start a session, run the full process to
-            launch, and each completed unit will appear here.
+            No lead times logged yet. Start a session and complete full process
+            runs to launch. Each successful launch adds a lap here.
           </p>
         ) : (
           <div className="lead-board">
-            <div className="lead-board__summary" aria-live="polite">
+            <div className="lead-board__summary">
               <div className="lead-board__stat">
                 <span className="lead-board__stat-label">Runs logged</span>
-                <span className="lead-board__stat-value">{entries.length}</span>
+                <span className="lead-board__stat-value">
+                  {entries.length}/{rocketsGoal}
+                </span>
               </div>
               <div className="lead-board__stat lead-board__stat--best">
                 <span className="lead-board__stat-label">Best lead time</span>
@@ -49,7 +61,7 @@ export function DataView({ entries }: DataViewProps) {
             <table className="lead-board__table">
               <thead>
                 <tr>
-                  <th scope="col">Run</th>
+                  <th scope="col">Rocket</th>
                   <th scope="col">Lead time</th>
                   <th scope="col">Delta vs best</th>
                   <th scope="col">Logged</th>
@@ -72,7 +84,9 @@ export function DataView({ entries }: DataViewProps) {
                     <tr
                       key={`${entry.runNumber}-${entry.completedAt}`}
                       className={
-                        isBest ? 'lead-board__row lead-board__row--best' : 'lead-board__row'
+                        isBest
+                          ? 'lead-board__row lead-board__row--best'
+                          : 'lead-board__row'
                       }
                     >
                       <td className="lead-board__run">

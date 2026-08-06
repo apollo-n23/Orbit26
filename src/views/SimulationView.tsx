@@ -23,6 +23,9 @@ interface SimulationViewProps {
   process: ProcessVersion
   run: RunState
   sessionActive: boolean
+  /** Launches required this round (default MAX_RUNS_PER_SESSION). */
+  maxRuns?: number
+  roundTitle?: string
   onRunProcess: () => void
   onMachineClick: (machineId: string) => void
   onMachineWorkFinished: () => void
@@ -37,6 +40,8 @@ export function SimulationView({
   process,
   run,
   sessionActive,
+  maxRuns = MAX_RUNS_PER_SESSION,
+  roundTitle,
   onRunProcess,
   onMachineClick,
   onMachineWorkFinished,
@@ -46,7 +51,7 @@ export function SimulationView({
   onLaunchPrepActionComplete,
   onLaunchSequenceActionComplete,
 }: SimulationViewProps) {
-  const runsRemaining = MAX_RUNS_PER_SESSION - run.completedRuns
+  const runsRemaining = maxRuns - run.completedRuns
   const canRun =
     sessionActive &&
     (run.status === 'idle' || run.status === 'complete') &&
@@ -192,13 +197,15 @@ export function SimulationView({
           <h2 id="simulation-heading">Simulation</h2>
           <p className="view-panel__lede">
             {step
-              ? `Process step ${run.currentStepIndex + 1}/${process.steps.length}: ${step.name}`
-              : 'Execute the current process on the production floor.'}
+              ? `${roundTitle ? `${roundTitle} · ` : ''}Process step ${run.currentStepIndex + 1}/${process.steps.length}: ${step.name}`
+              : roundTitle
+                ? `${roundTitle} — launch ${maxRuns} rockets to complete the round.`
+                : `Launch ${maxRuns} rockets to complete the round.`}
           </p>
         </div>
         <div className="sim-header__controls">
           <span className="sim-run-count" aria-live="polite">
-            Runs {run.completedRuns}/{MAX_RUNS_PER_SESSION}
+            Launches {run.completedRuns}/{maxRuns}
           </span>
           <button
             type="button"

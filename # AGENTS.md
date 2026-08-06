@@ -8,10 +8,10 @@ Setting: Orb-it, a fictional satellite constellation company. Learners act as pr
 Tone: Professional, precise, operational. Light narrative framing only. No cartoonish or overly playful language.
 
 ## Core Learning Loop (must be preserved)
-1. **Execute** — Learner runs the current (initially inefficient) process through **visualised, interactive process steps** (not an auto-playing checklist). Focus: experience and improve **lead time** (end-to-end assembly → launch).
-2. **Data** — Review logged lead times across runs (lap board). Process mapping / waste tagging is handled **outside** this app for now.
-3. **Redesign** — Learner edits the process (remove, merge, resequence, limited parallel paths or automation) — later.
-4. **Validate** — Redesigned process is re-run; lead times compared on the Data board; new options unlock over sessions.
+1. **Execute** — Learner runs the current (initially inefficient) process through **visualised, interactive process steps**. Focus: experience and improve **lead time** (end-to-end assembly → launch).
+2. **Data** — Review logged lead times (lap board). Process mapping is **outside** this app.
+3. **Rounds** — Learning is split into rounds. Round 1 is the **as-is** process. Goal per round: **launch 3 rockets** (3 full process cycles → 3 lead times on the Data board). When 3 launches complete, show the orbit cutaway (**“As-is round complete”** for Round 1). Round 2 is a separate route for tutor-linked progression (starts as a baseline copy; redesign later).
+4. **Redesign / Validate** — Later rounds improve the process and re-measure lead time.
 
 ---
 
@@ -47,10 +47,14 @@ Full unit completion happens only on the **last** process step (baseline: launch
 - **Start Session** arms the session; **Run Process** starts a unit at step index 0 (`beginRun`).
 - Top bar (live from run state):
   - **Lead Time** only — wall-clock `m:ss` end-to-end from Run Process (`runStartedAt`) through launch (`completeUnitRun` sets `runEndedAt` and freezes the display). Primary learning measure. Do **not** reintroduce Yield or Flow Efficiency on the chrome.
-- Cap full unit runs per session (**12**) so baseline inefficiency stays visible across repeats.
-- **Primary views:** Simulation · **Data** · Comparison.
-  - **Data** — ongoing lead-time board (motorsport lap style): each completed full cycle (assembly → launch) appends one entry; show run #, lead time, delta vs best, best highlighted. Process mapping is **out of scope** here (done separately — do not reintroduce a Map tab).
-  - **Comparison** — still a placeholder until Validate/compare UX is built.
+- **Rockets per round: 3** (`ROCKETS_PER_ROUND` / `MAX_RUNS_PER_SESSION`). After the third launch, the round ends and the **orbit complete** scene appears (Round 1: “As-is round complete”).
+- **Primary views (during play):** Simulation · **Data** · Comparison.
+  - **Data** — lead-time board for the **current round** (goal: 3 laps); each launch appends an entry.
+  - **Comparison** — placeholder for later.
+- **Routing (hash, shareable for tutors):**
+  - `#/round/1` (default) — Round 1 as-is  
+  - `#/round/2` — Round 2 (baseline process copy for now; deep-linkable)  
+  Config: `src/data/rounds.ts`, `src/types/round.ts`. Shell: `RoundSession.tsx`. Orbit cutaway: `OrbitCompleteScene.tsx`.
 
 ---
 
