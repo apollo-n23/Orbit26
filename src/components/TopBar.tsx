@@ -1,5 +1,6 @@
 import type { SessionMetrics } from '../types/process'
 import { formatLeadTime } from '../lib/simulation'
+import { SiteBrand } from './SiteBrand'
 
 interface TopBarProps {
   metrics: SessionMetrics
@@ -20,15 +21,9 @@ export function TopBar({
 }: TopBarProps) {
   return (
     <header className="top-bar">
-      <div className="top-bar__brand">
-        <span className="top-bar__mark" aria-hidden="true" />
-        <div className="top-bar__titles">
-          <h1 className="top-bar__title">Orb-it</h1>
-          <p className="top-bar__subtitle">
-            {roundLabel ?? 'Process Excellence Simulator'}
-          </p>
-        </div>
-      </div>
+      <SiteBrand
+        subtitle={roundLabel ?? 'Process Excellence Simulator'}
+      />
 
       <dl className="top-bar__metrics">
         <div className="metric">

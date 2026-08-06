@@ -28,6 +28,24 @@
   min-width: 0;
 }
 
+.top-bar__logo {
+  height: 2.15rem;
+  width: auto;
+  max-width: min(9.5rem, 28vw);
+  object-fit: contain;
+  object-position: left center;
+  flex-shrink: 0;
+  display: block;
+}
+
+.top-bar__brand-divider {
+  width: 1px;
+  height: 1.85rem;
+  flex-shrink: 0;
+  background: var(--color-border-strong);
+  opacity: 0.9;
+}
+
 .top-bar__mark {
   width: 0.65rem;
   height: 0.65rem;
@@ -54,6 +72,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.top-bar--round-done {
+  grid-template-columns: 1fr;
 }
 
 .top-bar__metrics {

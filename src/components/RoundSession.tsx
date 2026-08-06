@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TopBar } from './TopBar'
+import { SiteBrand } from './SiteBrand'
 import { ViewNav } from './ViewNav'
 import { RedesignWorkshop } from './RedesignWorkshop'
 import { SimulationView } from '../views/SimulationView'
@@ -159,13 +160,7 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     return (
       <div className="app-shell">
         <header className="top-bar top-bar--round-done">
-          <div className="top-bar__brand">
-            <span className="top-bar__mark" aria-hidden="true" />
-            <div className="top-bar__titles">
-              <h1 className="top-bar__title">Orb-it</h1>
-              <p className="top-bar__subtitle">{round.label}</p>
-            </div>
-          </div>
+          <SiteBrand subtitle={round.label} />
         </header>
         <main className="app-main app-main--orbit">
           <OrbitCompleteScene
@@ -183,13 +178,7 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     return (
       <div className="app-shell">
         <header className="top-bar top-bar--round-done">
-          <div className="top-bar__brand">
-            <span className="top-bar__mark" aria-hidden="true" />
-            <div className="top-bar__titles">
-              <h1 className="top-bar__title">Orb-it</h1>
-              <p className="top-bar__subtitle">{round.label} · Redesign</p>
-            </div>
-          </div>
+          <SiteBrand subtitle={`${round.label} · Redesign`} />
         </header>
         <main className="app-main">
           <RedesignWorkshop
