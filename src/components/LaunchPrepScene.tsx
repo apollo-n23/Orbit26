@@ -527,7 +527,8 @@ export function LaunchPrepScene({
           <div className="lp-panel lp-panel--complete">
             <p className="lp-panel__title">Launch preparation complete</p>
             <p className="lp-panel__hint">
-              Vehicle is stacked, fueled, and powered. Unit run finished.
+              Vehicle is stacked, fueled, and powered. Proceed to Launch
+              sequence.
             </p>
           </div>
         )}

@@ -36,6 +36,11 @@ export function LaunchSequenceScene({
   const keyRafRef = useRef<number | null>(null)
   const keyStartRef = useRef(0)
   const liftoffTimerRef = useRef<number | null>(null)
+  /** Stable latest callbacks for timers (avoids restarting liftoff when identities change). */
+  const onActionCompleteRef = useRef(onActionComplete)
+  const canInteractRef = useRef(canInteract)
+  onActionCompleteRef.current = onActionComplete
+  canInteractRef.current = canInteract
 
   const [keyProgress, setKeyProgress] = useState(0)
   const [keyDone, setKeyDone] = useState(false)
@@ -89,10 +94,10 @@ export function LaunchSequenceScene({
   }, [run.completedMachineIds, run.status])
 
   const completeCurrent = useCallback(() => {
-    if (!canInteract || finishGuardRef.current) return
+    if (!canInteractRef.current || finishGuardRef.current) return
     finishGuardRef.current = true
-    onActionComplete()
-  }, [canInteract, onActionComplete])
+    onActionCompleteRef.current()
+  }, [])
 
   function handleGo(stationIndex: number) {
     if (!canInteract) return
@@ -132,27 +137,30 @@ export function LaunchSequenceScene({
   }
 
   // When key is armed, begin liftoff cutaway once parent advances to liftoff index.
+  // Do not depend on `launching` state: setLaunching(true) would re-run this effect,
+  // cleanup would clear the timer, and completeCurrent would never fire.
   useEffect(() => {
     if (!canInteract) return
     if (actionIndex !== LAUNCH_SEQ_LIFTOFF_INDEX) return
-    if (launching || launched) return
-    if (finishGuardRef.current) return
+    if (run.status === 'complete') return
+    if (run.completedMachineIds.includes('liftoff')) return
 
     setLaunching(true)
-    liftoffTimerRef.current = window.setTimeout(() => {
+    const timerId = window.setTimeout(() => {
       liftoffTimerRef.current = null
       setLaunched(true)
       setLaunching(false)
       completeCurrent()
     }, LIFTOFF_MS)
+    liftoffTimerRef.current = timerId
 
     return () => {
-      if (liftoffTimerRef.current != null) {
-        window.clearTimeout(liftoffTimerRef.current)
+      window.clearTimeout(timerId)
+      if (liftoffTimerRef.current === timerId) {
         liftoffTimerRef.current = null
       }
     }
-  }, [canInteract, actionIndex, launching, launched, completeCurrent])
+  }, [canInteract, actionIndex, run.status, run.completedMachineIds, completeCurrent])
 
   const allGosDone = actionIndex >= LAUNCH_SEQ_KEY_INDEX || locked
   const showKey = allGosDone && !launched && (actionIndex === LAUNCH_SEQ_KEY_INDEX || keyDone || launching)

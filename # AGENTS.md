@@ -41,8 +41,11 @@ The Execute phase is a **hands-on floor / field simulation**. The learner operat
 Full unit completion happens only on the **last** process step. Intermediate steps end in `step_complete` + Proceed.
 
 ### Session / metrics
-- **Start Session** arms the session; **Run Process** starts a unit at step index 0.
-- Top bar: **Cycle Time**, **Yield**, **Flow Efficiency** (live from run state).
+- **Start Session** arms the session; **Run Process** starts a unit at step index 0 (`beginRun`).
+- Top bar (live from run state):
+  - **Cycle Time** — wall-clock `m:ss` from Run Process (`runStartedAt`) until the unit finishes (`completeUnitRun` sets `runEndedAt` and freezes the display). Not process work-minutes.
+  - **Yield** — good runs / completed runs.
+  - **Flow Efficiency** — process value-add minutes / process work minutes (still simulation-based).
 - Cap full unit runs per session (**12**) so baseline inefficiency stays visible across repeats.
 - Map and Comparison views remain placeholders until those learning-loop phases are built.
 
