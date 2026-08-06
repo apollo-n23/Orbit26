@@ -1,0 +1,79 @@
+/* Orb-it design tokens — dark professional UI */
+:root {
+  --color-bg: #0f1216;
+  --color-surface: #171b21;
+  --color-surface-raised: #1e242c;
+  --color-border: #2a323d;
+  --color-border-strong: #3a4554;
+
+  --color-text: #e8edf4;
+  --color-text-muted: #9aa6b5;
+  --color-text-dim: #6b7685;
+
+  --color-orbital: #3b82c4;
+  --color-orbital-strong: #5ba0db;
+  --color-orbital-dim: rgba(59, 130, 196, 0.18);
+
+  --color-amber: #d4a017;
+  --color-amber-dim: rgba(212, 160, 23, 0.15);
+
+  --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  --top-bar-height: 4rem;
+  --view-nav-height: 2.75rem;
+
+  color-scheme: dark;
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+dt {
+  margin: 0;
+}
