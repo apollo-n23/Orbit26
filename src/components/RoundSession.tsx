@@ -69,7 +69,9 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
 
   useEffect(() => {
     if (run.status !== 'complete') return
-    const entry = leadTimeEntryFromRun(run)
+    const entry = leadTimeEntryFromRun(run, {
+      roadCost: process.roadCost,
+    })
     if (!entry) return
     if (entry.runNumber <= lastLoggedRunRef.current) return
     lastLoggedRunRef.current = entry.runNumber
@@ -80,7 +82,13 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
       }
       return next
     })
-  }, [run.status, run.completedRuns, run.runEndedAt, run.runStartedAt])
+  }, [
+    run.status,
+    run.completedRuns,
+    run.runEndedAt,
+    run.runStartedAt,
+    process.roadCost,
+  ])
 
   const metrics = useMemo(() => metricsFromRun(run, now), [run, now])
   const roundComplete = leadTimeLog.length >= ROCKETS_PER_ROUND

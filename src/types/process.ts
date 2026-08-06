@@ -88,6 +88,11 @@ export interface ProcessVersion {
    */
   haulPathOverride?: HaulPathPoint[]
   /**
+   * Road construction cost from Round 2 haul redesign (cost points).
+   * Formula: billable tiles × ROAD_COST_PER_TILE (endpoints free). Fixed for the round once confirmed.
+   */
+  roadCost?: number
+  /**
    * Process-level copy of manufacture auto-move upgrade (mirrors step flag for easy resolve).
    */
   autoMoveBooster?: boolean
@@ -116,6 +121,11 @@ export interface LeadTimeEntry {
   durationMs: number
   /** `Date.now()` when the unit completed (launch finished). */
   completedAt: number
+  /**
+   * Road construction cost (points) for the process used on this run.
+   * Same value for all launches in a redesign round when cost is fixed at confirm.
+   */
+  roadCost?: number
 }
 
 /**

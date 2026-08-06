@@ -364,11 +364,21 @@ export function formatLeadTime(totalSeconds: number | null): string {
 /** @deprecated Prefer formatLeadTime — alias for older call sites. */
 export const formatCycleTime = formatLeadTime
 
+/** Optional process metrics attached when logging a completed unit. */
+export interface LeadTimeEntryExtras {
+  /** Road construction cost points from redesign (same for all launches if fixed at confirm). */
+  roadCost?: number
+}
+
 /** Build a Data-tab board entry from a just-completed unit run. */
-export function leadTimeEntryFromRun(run: RunState): {
+export function leadTimeEntryFromRun(
+  run: RunState,
+  extras?: LeadTimeEntryExtras,
+): {
   runNumber: number
   durationMs: number
   completedAt: number
+  roadCost?: number
 } | null {
   if (
     run.status !== 'complete' ||
@@ -382,6 +392,7 @@ export function leadTimeEntryFromRun(run: RunState): {
     runNumber: run.completedRuns,
     durationMs: Math.max(0, run.runEndedAt - run.runStartedAt),
     completedAt: run.runEndedAt,
+    ...(extras?.roadCost !== undefined ? { roadCost: extras.roadCost } : {}),
   }
 }
 

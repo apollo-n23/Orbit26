@@ -17,11 +17,12 @@ import type { LaunchPrepTech } from '../types/process'
 import {
   ROAD_COLS,
   ROAD_ROWS,
+  ROAD_COST_PER_TILE,
   cellKey,
   pathFromRoadTiles,
   rasterizePath,
   requiredEndpointCells,
-  straightRoadTiles,
+  roadCostFromTiles,
   type CellKey,
 } from '../lib/roadGrid'
 import { HAUL_PATH, SCENE_HEIGHT, SCENE_WIDTH } from '../lib/pathGeometry'
@@ -59,6 +60,7 @@ export function RedesignWorkshop({
   const autoMoveBooster = resolveAutoMoveBooster(draft)
   const launchPrepTech = resolveLaunchPrepTech(draft)
   const endpoints = requiredEndpointCells()
+  const roadCost = useMemo(() => roadCostFromTiles(roadTiles), [roadTiles])
 
   function handleDropOnSlot(targetSlotIndex: number, machineId: string) {
     if (!machineId) return
@@ -89,7 +91,7 @@ export function RedesignWorkshop({
 
   function toggleTile(col: number, row: number) {
     const key = cellKey(col, row)
-    // Endpoints stay on.
+    // Endpoints stay on (free baseline — not billable, not removable).
     if (key === endpoints.start || key === endpoints.end) return
     setRoadTiles((prev) => {
       const next = new Set(prev)
@@ -100,30 +102,23 @@ export function RedesignWorkshop({
     setRoadError(null)
   }
 
-  function paintStraight() {
-    setRoadTiles(straightRoadTiles())
-    setRoadError(null)
-  }
-
-  function resetWindingRoad() {
-    setRoadTiles(rasterizePath(HAUL_PATH))
-    setRoadError(null)
-  }
-
   function handleConfirm() {
     const path = pathFromRoadTiles(roadTiles)
     if (!path || path.length < 2) {
       setRoadError(
-        'Road must connect Assembly to the Launch Pad. Paint a continuous path (or use Straight road).',
+        'Road must connect Assembly to the Launch Pad. Paint a continuous path between both ends.',
       )
       setTab('haul')
       return
     }
-    // Always start from a fresh clone of the manufacture draft, then stamp the road.
-    const withRoad = applyHaulPath(structuredClone(draft), path)
+    // Always start from a fresh clone of the manufacture draft, then stamp the road + cost.
+    const cost = roadCostFromTiles(roadTiles)
+    const withRoad = applyHaulPath(structuredClone(draft), path, cost)
     const stored = withRoad.haulPathOverride ?? getHaulStep(withRoad)?.haulPath
     if (!stored || stored.length < 2) {
-      setRoadError('Could not save road layout. Try Straight road, then confirm again.')
+      setRoadError(
+        'Could not save road layout. Paint a continuous path from Assembly to Launch Pad, then confirm again.',
+      )
       setTab('haul')
       return
     }
@@ -138,6 +133,14 @@ export function RedesignWorkshop({
           <p className="view-panel__lede">
             {roundLabel} — improve the layout before the three launches. Changes
             are saved for this round only.
+          </p>
+          <p className="redesign-road-cost" aria-live="polite">
+            Road cost:{' '}
+            <strong className="redesign-road-cost__value">{roadCost}</strong>
+            <span className="redesign-road-cost__unit">
+              {' '}
+              pts ({ROAD_COST_PER_TILE} per tile; endpoints free)
+            </span>
           </p>
         </div>
         <div className="sim-header__controls">
@@ -305,17 +308,14 @@ export function RedesignWorkshop({
           <div className="redesign-haul">
             <p className="redesign-hint">
               Click tiles to paint or erase road. Assembly exit and Launch Pad
-              tiles stay fixed. Path must connect both ends. Use{' '}
-              <strong>Straight road</strong> for a short corridor.
+              tiles stay fixed and free. Each other road tile costs{' '}
+              {ROAD_COST_PER_TILE} pts. Path must connect both ends.
             </p>
-            <div className="redesign-haul__tools">
-              <button type="button" className="btn btn--ghost" onClick={paintStraight}>
-                Straight road
-              </button>
-              <button type="button" className="btn btn--ghost" onClick={resetWindingRoad}>
-                Reset winding road
-              </button>
-            </div>
+            <p className="redesign-road-cost redesign-road-cost--haul" aria-live="polite">
+              Road cost:{' '}
+              <strong className="redesign-road-cost__value">{roadCost}</strong>
+              <span className="redesign-road-cost__unit"> pts</span>
+            </p>
             {roadError && (
               <p className="redesign-error" role="alert">
                 {roadError}

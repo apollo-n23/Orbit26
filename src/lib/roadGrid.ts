@@ -134,7 +134,7 @@ export function pathFromRoadTiles(tiles: Set<CellKey>): Point[] | null {
   return points
 }
 
-/** Paint a straight orthognal corridor from assembly to pad (learner shortcut). */
+/** Paint a straight orthognal corridor from assembly to pad (utility / tests). */
 export function straightRoadTiles(): Set<CellKey> {
   const { start, end } = requiredEndpointCells()
   const a = parseCellKey(start)
@@ -153,4 +153,26 @@ export function straightRoadTiles(): Set<CellKey> {
     cells.add(cellKey(c, r))
   }
   return cells
+}
+
+/**
+ * Cost points charged per painted road tile (excluding fixed endpoints).
+ * Formula: roadCost = billableRoadTileCount(tiles) × ROAD_COST_PER_TILE
+ * Assembly exit + Launch Pad tiles are free (not removable).
+ */
+export const ROAD_COST_PER_TILE = 10
+
+/** Count road tiles that cost points (all painted tiles except the two endpoints). */
+export function billableRoadTileCount(tiles: Set<CellKey>): number {
+  const { start, end } = requiredEndpointCells()
+  let n = 0
+  for (const k of tiles) {
+    if (k !== start && k !== end) n += 1
+  }
+  return n
+}
+
+/** Total road construction cost for the painted tile set. */
+export function roadCostFromTiles(tiles: Set<CellKey>): number {
+  return billableRoadTileCount(tiles) * ROAD_COST_PER_TILE
 }

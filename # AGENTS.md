@@ -38,7 +38,7 @@ Learning is split into **rounds**. Each round is a self-contained play session w
 - **Flow:** learner first enters a **redesign phase** (`RedesignWorkshop`) before the three launches. Edits are saved onto that round’s `ProcessVersion`, then play uses the redesigned process.
 - **Redesign (implemented so far):**
   1. **Manufacture** — drag stations to reorder **line positions**; set **parkOffset**; optional **auto-transfer** booster upgrade (hover booster → enable).
-  2. **Haul road** — paint road tiles (or **Straight road**); stored as `haulPath` / `haulPathOverride`.
+  2. **Haul road** — paint/erase road tiles only (Assembly + Pad endpoints fixed & free). No instant-road shortcuts. Cost: `billableTiles × 10` pts → `process.roadCost`; copied onto each `LeadTimeEntry.roadCost` when a launch is logged.
   3. **Launch prep tech** — invest in **one** of: faster fuel pumps · automatic power-up (single ON) · autonomous payload drone (one-step stack). Stored as `launchPrepTech`.
   4. Launch sequence redesign — **not yet**.
 - **Do not** delete Round 2 or fold it into Round 1; keep configs independently editable.
@@ -92,7 +92,7 @@ The Execute phase is a **hands-on floor / field simulation**. Prefer spatial sce
 - Top bar:
   - **Lead Time** — wall-clock `m:ss` end-to-end until launch (`runEndedAt`). Primary metric. **No** Yield or Flow Efficiency on chrome.
   - **Launches** — `completed / 3` for the round.
-- **Data** — lap board for **this round only** (run #, lead time, delta vs best, best tag). Goal: 3 rockets.
+- **Data** — lap board for **this round only** (run #, lead time, road cost when set, delta vs best, best tag). Goal: 3 rockets.
 - **Comparison** — placeholder.
 - After 3 launches → **Orbit complete** scene (not more Run Process).
 

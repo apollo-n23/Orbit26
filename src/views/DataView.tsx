@@ -7,6 +7,11 @@ interface DataViewProps {
   roundLabel?: string
 }
 
+function formatRoadCost(cost: number | undefined): string {
+  if (cost == null) return '—'
+  return `${cost} pts`
+}
+
 export function DataView({
   entries,
   rocketsGoal = 3,
@@ -18,6 +23,9 @@ export function DataView({
       : null
 
   const ordered = [...entries].sort((a, b) => b.runNumber - a.runNumber)
+
+  const hasAnyRoadCost = entries.some((e) => e.roadCost != null)
+  const roadCostSample = entries.find((e) => e.roadCost != null)?.roadCost
 
   return (
     <section className="view-panel" aria-labelledby="data-heading">
@@ -56,6 +64,14 @@ export function DataView({
                   {formatLeadTime(bestMs != null ? bestMs / 1000 : null)}
                 </span>
               </div>
+              {hasAnyRoadCost && (
+                <div className="lead-board__stat">
+                  <span className="lead-board__stat-label">Road cost</span>
+                  <span className="lead-board__stat-value">
+                    {formatRoadCost(roadCostSample)}
+                  </span>
+                </div>
+              )}
             </div>
 
             <table className="lead-board__table">
@@ -63,6 +79,7 @@ export function DataView({
                 <tr>
                   <th scope="col">Rocket</th>
                   <th scope="col">Lead time</th>
+                  <th scope="col">Road cost</th>
                   <th scope="col">Delta vs best</th>
                   <th scope="col">Logged</th>
                 </tr>
@@ -97,6 +114,9 @@ export function DataView({
                       </td>
                       <td className="lead-board__time">
                         {formatLeadTime(entry.durationMs / 1000)}
+                      </td>
+                      <td className="lead-board__road-cost">
+                        {formatRoadCost(entry.roadCost)}
                       </td>
                       <td className="lead-board__delta">
                         {isBest
