@@ -4427,8 +4427,9 @@
   transform: rotate(1.15deg);
 }
 
-/* Round 2 redesign: realigned stations drop staggered spacing / tilt friction. */
-.mc-go-row--realigned {
+/* Round 2 redesign: realigned stations drop staggered spacing / tilt friction.
+   Double class beats `.mc-go-row:nth-child(n)` (0,2,0) so realign actually wins. */
+.mc-go-row.mc-go-row--realigned {
   margin-left: 0;
   transform: none;
   width: 100%;
@@ -4545,8 +4546,9 @@
   transform: translateX(0.45rem) translateY(0.1rem);
 }
 
-/* Realigned GO buttons sit flush — easier to hit in order. */
-.mc-go-row--realigned .mc-go-btn {
+/* Realigned GO buttons sit flush — easier to hit in order.
+   Double class matches nth-child button rules (0,2,1) and wins by source order. */
+.mc-go-row.mc-go-row--realigned .mc-go-btn {
   margin-right: 0;
   margin-top: 0;
   margin-bottom: 0;

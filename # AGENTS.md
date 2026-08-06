@@ -40,7 +40,7 @@ Learning is split into **rounds**. Each round is a self-contained play session w
   1. **Manufacture** — drag stations to reorder **line positions**; set **parkOffset**; optional **auto-transfer** booster upgrade (hover booster → enable).
   2. **Haul road** — paint/erase road tiles only (Assembly + Pad endpoints fixed & free). No instant-road shortcuts. Cost: `billableTiles × 10` pts → `process.roadCost`; copied onto each `LeadTimeEntry.roadCost` when a launch is logged.
   3. **Launch prep tech** — invest in **one** of: faster fuel pumps · automatic power-up (single ON) · autonomous payload drone (one-step stack). Stored as `launchPrepTech`.
-  4. Launch sequence redesign — **not yet**.
+  4. **Launch sequence** — realign GO stations (cut misalignment friction in play); optional **Range Safety** deletion from the poll; criticality info panels. Stored as `launchSeqRealignIds` / `launchSeqRemovedIds` (process + step). Play resolves via `resolveLaunchSeqConfig`.
 - **Do not** delete Round 2 or fold it into Round 1; keep configs independently editable.
 - **Complete headline:** “Round 2 complete”.
 - **State isolation:** each round mount uses a fresh `RoundSession` (`key={round.id}`).
