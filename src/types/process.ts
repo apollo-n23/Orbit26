@@ -30,6 +30,12 @@ export type ProcessStepKind =
   | 'launch-prep'
   | 'launch-sequence'
 
+/** Point in haul scene units (matches pathGeometry SCENE_*). */
+export interface HaulPathPoint {
+  x: number
+  y: number
+}
+
 /** A single step in the value stream. */
 export interface ProcessStep {
   id: string
@@ -42,6 +48,11 @@ export interface ProcessStep {
   isInventory?: boolean
   /** Ordered machines for manufacture steps. */
   machines?: ProcessMachine[]
+  /**
+   * Optional custom haul centerline (scene units). When omitted, use default HAUL_PATH.
+   * Set in Round 2 redesign when the learner paints a road.
+   */
+  haulPath?: HaulPathPoint[]
 }
 
 export interface ProcessVersion {

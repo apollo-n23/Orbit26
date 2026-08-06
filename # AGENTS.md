@@ -34,11 +34,15 @@ Learning is split into **rounds**. Each round is a self-contained play session w
 ### Round 2 — Separate page / deep link (critical for tutors)
 - **Route:** `#/round/2` (e.g. `https://<host>/#/round/2`).
 - Tutors can share this link so a learner **starts at Round 2** without replaying Round 1.
-- **Config:** `ROUND_CONFIGS[2]` (`id: round-2-baseline-copy`).
-- **Process today:** intentional **near-copy of Round 1** (same steps/interactions) with a distinct process `id` / `name` / `version`. **Do not delete Round 2** or fold it back into Round 1.
-- **Future:** Round 2 (and later) will hold redesigned process data / reduced waste; keep the routing and `RoundConfig` shape so tweaks are data + scene-driven, not a new app shell.
-- **Complete headline:** “Round 2 complete” (orbit scene still used; Round 2 does not need a Round 3 button until that round exists).
-- **State isolation:** each round mount uses a fresh `RoundSession` (`key={round.id}`). Lead-time logs **do not** carry across hash navigation; each round has its own board.
+- **Config:** `ROUND_CONFIGS[2]` with `allowsRedesign: true`.
+- **Flow:** learner first enters a **redesign phase** (`RedesignWorkshop`) before the three launches. Edits are saved onto that round’s `ProcessVersion`, then play uses the redesigned process.
+- **Redesign (implemented so far):**
+  1. **Manufacture** — drag stations to reorder **line positions**; set **parkOffset** (distance from belt). Operate `sequence` stays on each machine.
+  2. **Haul road** — paint road tiles on a grid (or **Straight road**); must connect Assembly → Launch Pad; stored as step `haulPath` and used by `IntegratePayloadScene`.
+  3. Steps 3–4 redesign UI — **not yet** (placeholder “coming later”).
+- **Do not** delete Round 2 or fold it into Round 1; keep configs independently editable.
+- **Complete headline:** “Round 2 complete”.
+- **State isolation:** each round mount uses a fresh `RoundSession` (`key={round.id}`).
 
 ### Round architecture (implementation)
 | Piece | Role |

@@ -40,10 +40,11 @@ export const ROUND_CONFIGS: Record<1 | 2, RoundConfig> = {
     completeSubline:
       'Three more satellites are on station. Lead times for this round are on the Data board.',
     hashPath: '#/round/2',
-    // Minimal change for now: same process, distinct identity for later redesign.
+    // Starts from baseline; learner redesigns layout before the three launches.
+    allowsRedesign: true,
     process: cloneBaseline(
-      'round-2-baseline-copy',
-      'Round 2 — Process (baseline copy)',
+      'round-2-redesign',
+      'Round 2 — Redesigned process',
       2,
     ),
   },

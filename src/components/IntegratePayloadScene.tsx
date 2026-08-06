@@ -20,6 +20,8 @@ import type { RunState } from '../types/process'
 
 interface IntegratePayloadSceneProps {
   run: RunState
+  /** Optional redesigned haul centerline; defaults to HAUL_PATH. */
+  haulPath?: Point[]
   onReachedPad: () => void
   /** Mount booster to the launch pad (seats pose + completes haul / auto-advances). */
   onMountToPad: () => void
@@ -62,6 +64,7 @@ function startPose(): HaulPose {
 
 export function IntegratePayloadScene({
   run,
+  haulPath,
   onReachedPad,
   onMountToPad,
   onPathReset,
@@ -80,6 +83,9 @@ export function IntegratePayloadScene({
   const canMoveRef = useRef(false)
   /** Only reset local haul state when (re)entering this step, not every render. */
   const haulEpochRef = useRef<string | null>(null)
+  const activePath = haulPath && haulPath.length >= 2 ? haulPath : HAUL_PATH
+  const pathRef = useRef(activePath)
+  pathRef.current = activePath
 
   const locked =
     run.status === 'awaiting_reorient' ||
@@ -158,7 +164,13 @@ export function IntegratePayloadScene({
     (next: HaulPose): boolean => {
       if (explodingRef.current || !canMoveRef.current) return false
 
-      if (!isBoosterSafe({ x: next.x, y: next.y }, next.rotation)) {
+      if (
+        !isBoosterSafe(
+          { x: next.x, y: next.y },
+          next.rotation,
+          pathRef.current,
+        )
+      ) {
         setDragging(false)
         explodeAndRestart()
         return false
@@ -303,7 +315,13 @@ export function IntegratePayloadScene({
       ...poseRef.current,
       rotation: clampRotation(rotation),
     }
-    if (!isBoosterSafe({ x: next.x, y: next.y }, next.rotation)) {
+    if (
+      !isBoosterSafe(
+        { x: next.x, y: next.y },
+        next.rotation,
+        pathRef.current,
+      )
+    ) {
       explodeAndRestart()
       return
     }
@@ -328,7 +346,7 @@ export function IntegratePayloadScene({
   // Discrete nudge for on-screen pad (and reliability when keys are captured).
   const NUDGE = 12
 
-  const pathPoints = pathPolylinePoints(HAUL_PATH)
+  const pathPoints = pathPolylinePoints(activePath)
 
   return (
     <div className="haul-scene">

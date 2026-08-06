@@ -243,6 +243,9 @@ export function SimulationView({
             {showHaul && (
               <IntegratePayloadScene
                 run={run}
+                haulPath={
+                  process.steps.find((s) => s.kind === 'haul')?.haulPath
+                }
                 onReachedPad={onReachedPad}
                 onMountToPad={onHaulMountToPad}
               />

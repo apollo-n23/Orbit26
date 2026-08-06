@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TopBar } from './TopBar'
 import { ViewNav } from './ViewNav'
+import { RedesignWorkshop } from './RedesignWorkshop'
 import { SimulationView } from '../views/SimulationView'
 import { DataView } from '../views/DataView'
 import { ComparisonView } from '../views/ComparisonView'
@@ -24,7 +25,7 @@ import { INITIAL_RUN_STATE } from '../types/process'
 import type { RoundConfig } from '../types/round'
 import { ROCKETS_PER_ROUND, hashForRound } from '../types/round'
 
-type RoundPhase = 'play' | 'orbit-complete'
+type RoundPhase = 'redesign' | 'play' | 'orbit-complete'
 
 interface RoundSessionProps {
   round: RoundConfig
@@ -34,8 +35,10 @@ interface RoundSessionProps {
 export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
   const [activeView, setActiveView] = useState<AppView>('simulation')
   const [sessionActive, setSessionActive] = useState(false)
-  const [phase, setPhase] = useState<RoundPhase>('play')
-  const [process] = useState<ProcessVersion>(() =>
+  const [phase, setPhase] = useState<RoundPhase>(() =>
+    round.allowsRedesign ? 'redesign' : 'play',
+  )
+  const [process, setProcess] = useState<ProcessVersion>(() =>
     structuredClone(round.process),
   )
   const [run, setRun] = useState<RunState>(INITIAL_RUN_STATE)
@@ -43,15 +46,15 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
   const [now, setNow] = useState(() => Date.now())
   const lastLoggedRunRef = useRef(0)
 
-  // Reset local experience if the round config identity changes (route change).
   useEffect(() => {
     setActiveView('simulation')
     setSessionActive(false)
-    setPhase('play')
+    setPhase(round.allowsRedesign ? 'redesign' : 'play')
+    setProcess(structuredClone(round.process))
     setRun(INITIAL_RUN_STATE)
     setLeadTimeLog([])
     lastLoggedRunRef.current = 0
-  }, [round.id])
+  }, [round.id, round.allowsRedesign, round.process])
 
   useEffect(() => {
     if (!isRunTimerActive(run)) return
@@ -68,7 +71,6 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     setLeadTimeLog((prev) => {
       const next = [...prev, entry]
       if (next.length >= ROCKETS_PER_ROUND) {
-        // Defer phase cut so the final lap is on the board first.
         window.setTimeout(() => setPhase('orbit-complete'), 600)
       }
       return next
@@ -84,15 +86,23 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     return `${window.location.origin}${window.location.pathname}${hashForRound(2)}`
   }, [])
 
+  function handleConfirmRedesign(nextProcess: ProcessVersion) {
+    setProcess(nextProcess)
+    setPhase('play')
+    setSessionActive(false)
+    setRun(INITIAL_RUN_STATE)
+    setActiveView('simulation')
+  }
+
   function handleStartSession() {
-    if (roundComplete) return
+    if (roundComplete || phase !== 'play') return
     setSessionActive(true)
     setActiveView('simulation')
     setRun(INITIAL_RUN_STATE)
   }
 
   function handleRunProcess() {
-    if (!sessionActive || roundComplete) return
+    if (!sessionActive || roundComplete || phase !== 'play') return
     if (run.status !== 'idle' && run.status !== 'complete') return
     if (run.completedRuns >= ROCKETS_PER_ROUND) return
     setNow(Date.now())
@@ -148,6 +158,29 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
             leadTimes={leadTimeLog}
             round2ShareUrl={round2ShareUrl}
             onGoToRound2={round.id === 1 ? onNavigateRound2 : undefined}
+          />
+        </main>
+      </div>
+    )
+  }
+
+  if (phase === 'redesign') {
+    return (
+      <div className="app-shell">
+        <header className="top-bar top-bar--round-done">
+          <div className="top-bar__brand">
+            <span className="top-bar__mark" aria-hidden="true" />
+            <div className="top-bar__titles">
+              <h1 className="top-bar__title">Orb-it</h1>
+              <p className="top-bar__subtitle">{round.label} · Redesign</p>
+            </div>
+          </div>
+        </header>
+        <main className="app-main">
+          <RedesignWorkshop
+            initialProcess={process}
+            roundLabel={round.label}
+            onConfirm={handleConfirmRedesign}
           />
         </main>
       </div>

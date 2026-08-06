@@ -19,6 +19,11 @@ export interface RoundConfig {
   /** Hash path for tutor share links, e.g. `#/round/2` */
   hashPath: string
   process: ProcessVersion
+  /**
+   * When true, learner redesigns allowed process steps before the 3 launches
+   * (Round 2+). Round 1 as-is stays false.
+   */
+  allowsRedesign?: boolean
 }
 
 /** Parse location hash into a round. Default: round 1. */
