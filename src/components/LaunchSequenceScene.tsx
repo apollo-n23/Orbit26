@@ -14,8 +14,11 @@ interface LaunchSequenceSceneProps {
 /** Hold duration to fully turn the launch key (ms). */
 const KEY_HOLD_MS = 1400
 
-/** Liftoff cutaway animation duration before step completes (ms). */
-const LIFTOFF_MS = 2800
+/**
+ * Liftoff cutaway duration before step completes (ms).
+ * Keep in sync with CSS animations that use --mc-liftoff-ms on .mc-pad-view.
+ */
+const LIFTOFF_MS = 3200
 
 /**
  * Mission-control launch sequence: clear GO stations in order, hold-to-turn
@@ -180,11 +183,36 @@ export function LaunchSequenceScene({
           <div className="mc-room__wall">
             <div className="mc-screens">
               <div className="mc-screen mc-screen--main">
-                <div className="mc-screen__label">PAD 1 · LIVE</div>
-                <div className="mc-pad-view">
-                  <div className="mc-pad-view__sky" />
-                  <div className="mc-pad-view__ground" />
-                  <div className="mc-pad-view__tower" />
+                <div className="mc-screen__label">
+                  PAD 1 · LIVE
+                  {(showLaunching || showLaunched) && (
+                    <span className="mc-screen__live-dot" aria-hidden="true" />
+                  )}
+                </div>
+                <div
+                  className={[
+                    'mc-pad-view',
+                    showLaunching ? 'mc-pad-view--liftoff' : '',
+                    showLaunched ? 'mc-pad-view--away' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  style={{ ['--mc-liftoff-ms' as string]: `${LIFTOFF_MS}ms` }}
+                >
+                  <div className="mc-pad-view__sky" aria-hidden="true">
+                    <span className="mc-pad-view__star mc-pad-view__star--a" />
+                    <span className="mc-pad-view__star mc-pad-view__star--b" />
+                    <span className="mc-pad-view__star mc-pad-view__star--c" />
+                  </div>
+                  <div className="mc-pad-view__ground" aria-hidden="true" />
+                  <div className="mc-pad-view__pad" aria-hidden="true" />
+                  <div className="mc-pad-view__tower" aria-hidden="true">
+                    <span className="mc-pad-view__tower-mast" />
+                    <span className="mc-pad-view__tower-arm mc-pad-view__tower-arm--1" />
+                    <span className="mc-pad-view__tower-arm mc-pad-view__tower-arm--2" />
+                    <span className="mc-pad-view__tower-arm mc-pad-view__tower-arm--3" />
+                    <span className="mc-pad-view__tower-base" />
+                  </div>
                   <div
                     className={[
                       'mc-pad-view__rocket',
@@ -196,31 +224,62 @@ export function LaunchSequenceScene({
                       .filter(Boolean)
                       .join(' ')}
                   >
-                    <div className="mc-rocket__flame" />
-                    <div className="mc-rocket__body" />
+                    <div className="mc-rocket__exhaust" aria-hidden="true">
+                      <span className="mc-rocket__flame mc-rocket__flame--outer" />
+                      <span className="mc-rocket__flame mc-rocket__flame--core" />
+                      <span className="mc-rocket__flame mc-rocket__flame--side mc-rocket__flame--l" />
+                      <span className="mc-rocket__flame mc-rocket__flame--side mc-rocket__flame--r" />
+                    </div>
+                    <div className="mc-rocket__body">
+                      <span className="mc-rocket__stripe" />
+                      <span className="mc-rocket__fin mc-rocket__fin--l" />
+                      <span className="mc-rocket__fin mc-rocket__fin--r" />
+                    </div>
                     <div className="mc-rocket__nose" />
                   </div>
                   {(showLaunching || showLaunched) && (
-                    <div className="mc-pad-view__plume" aria-hidden="true" />
+                    <div className="mc-pad-view__fx" aria-hidden="true">
+                      <span className="mc-pad-view__flash" />
+                      <span className="mc-pad-view__glow" />
+                      <span className="mc-pad-view__plume mc-pad-view__plume--main" />
+                      <span className="mc-pad-view__plume mc-pad-view__plume--left" />
+                      <span className="mc-pad-view__plume mc-pad-view__plume--right" />
+                      <span className="mc-pad-view__smoke mc-pad-view__smoke--a" />
+                      <span className="mc-pad-view__smoke mc-pad-view__smoke--b" />
+                      <span className="mc-pad-view__trail" />
+                    </div>
                   )}
                 </div>
               </div>
               <div className="mc-screen mc-screen--telemetry">
                 <div className="mc-screen__label">TELEMETRY</div>
                 <div className="mc-telemetry">
-                  <span>T−{showLaunched ? '00:00' : showLaunching ? '00:00' : 'HOLD'}</span>
-                  <span>{showLaunched ? 'LIFTOFF' : allGosDone ? 'ARMED' : 'POLL'}</span>
+                  <span>
+                    T
+                    {showLaunched || showLaunching ? '+00:00' : '−HOLD'}
+                  </span>
+                  <span>
+                    {showLaunched
+                      ? 'ASCEND'
+                      : showLaunching
+                        ? 'LIFTOFF'
+                        : allGosDone
+                          ? 'ARMED'
+                          : 'POLL'}
+                  </span>
+                  <span>
+                    ALT · {showLaunched ? 'CLR' : showLaunching ? 'RISE' : 'PAD'}
+                  </span>
                   <span>VEH · NOM</span>
-                  <span>RNG · CLR</span>
                 </div>
               </div>
               <div className="mc-screen mc-screen--status">
                 <div className="mc-screen__label">STATUS</div>
                 <div className="mc-status-readout">
                   {showLaunched
-                    ? 'Vehicle clear of tower'
+                    ? 'Vehicle clear of tower — nominal ascent'
                     : showLaunching
-                      ? 'Ignition — liftoff'
+                      ? 'Main engine start — liftoff'
                       : allGosDone
                         ? 'All stations GO — arm key'
                         : 'Launch director poll in progress'}
