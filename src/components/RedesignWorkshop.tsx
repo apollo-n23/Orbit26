@@ -45,6 +45,10 @@ export function RedesignWorkshop({
   )
   const [tab, setTab] = useState<RedesignTab>('manufacture')
   const [roadError, setRoadError] = useState<string | null>(null)
+  /** Booster upgrade panel: open once on hover/focus, then stays until dismissed. */
+  const [upgradePanelOpen, setUpgradePanelOpen] = useState(false)
+  /** Confirm lock-in dialog before starting launches. */
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   const haulDefaultPath = getHaulStep(initialProcess)?.haulPath ?? HAUL_PATH
   const [roadTiles, setRoadTiles] = useState<Set<CellKey>>(() =>
@@ -102,9 +106,10 @@ export function RedesignWorkshop({
     setRoadError(null)
   }
 
-  function handleConfirm() {
+  function validateAndLockIn() {
     const path = pathFromRoadTiles(roadTiles)
     if (!path || path.length < 2) {
+      setShowConfirmDialog(false)
       setRoadError(
         'Road must connect Assembly to the Launch Pad. Paint a continuous path between both ends.',
       )
@@ -120,13 +125,19 @@ export function RedesignWorkshop({
     withRoad = applyLaunchPrepTech(withRoad, selectedTech)
     const stored = withRoad.haulPathOverride ?? getHaulStep(withRoad)?.haulPath
     if (!stored || stored.length < 2) {
+      setShowConfirmDialog(false)
       setRoadError(
         'Could not save road layout. Paint a continuous path from Assembly to Launch Pad, then confirm again.',
       )
       setTab('haul')
       return
     }
+    setShowConfirmDialog(false)
     onConfirm(withRoad)
+  }
+
+  function handleRequestConfirm() {
+    setShowConfirmDialog(true)
   }
 
   return (
@@ -148,13 +159,24 @@ export function RedesignWorkshop({
           </p>
         </div>
         <div className="sim-header__controls">
-          <button type="button" className="btn btn--primary" onClick={handleConfirm}>
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={handleRequestConfirm}
+          >
             Confirm layout & start launches
           </button>
         </div>
       </header>
 
       <div className="view-panel__body redesign-body">
+        <div className="redesign-warning" role="status">
+          <strong>Before you lock in:</strong> work through every redesign tab
+          (manufacture line, haul road, launch prep tech) and finish any upgrades
+          you want. Once you confirm, this layout is fixed for all three launches
+          this round.
+        </div>
+
         <nav className="redesign-tabs" aria-label="Redesign steps">
           <button
             type="button"
@@ -197,8 +219,9 @@ export function RedesignWorkshop({
             <p className="redesign-hint">
               Drag stations left/right to set line order (physical layout). Use
               the distance slider to park each machine closer to or further from
-              the belt. Hover the booster on the line to unlock an auto-transfer
-              upgrade. Operate sequence numbers stay on each machine.
+              the belt. Hover or click the booster on the line to open the
+              auto-transfer upgrade (panel stays open so you can click the
+              button). Operate sequence numbers stay on each machine.
             </p>
             <div className="redesign-mfg__line" aria-label="Production line slots">
               <div className="redesign-mfg__belt" aria-hidden="true" />
@@ -221,17 +244,35 @@ export function RedesignWorkshop({
               <div
                 className={[
                   'redesign-booster-upgrade',
+                  upgradePanelOpen || autoMoveBooster
+                    ? 'redesign-booster-upgrade--open'
+                    : '',
                   autoMoveBooster ? 'redesign-booster-upgrade--on' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
+                onMouseEnter={() => setUpgradePanelOpen(true)}
+                onFocusCapture={() => setUpgradePanelOpen(true)}
               >
                 <div className="redesign-booster-upgrade__unit">
-                  <Booster
-                    className="booster--redesign"
-                    label="Booster — hover for transfer upgrade"
-                  />
-                  <div className="redesign-booster-upgrade__panel">
+                  <button
+                    type="button"
+                    className="redesign-booster-upgrade__hit"
+                    onClick={() => setUpgradePanelOpen(true)}
+                    aria-expanded={upgradePanelOpen || autoMoveBooster}
+                    aria-controls="booster-upgrade-panel"
+                  >
+                    <Booster
+                      className="booster--redesign"
+                      label="Booster — open transfer upgrade"
+                    />
+                  </button>
+                  <div
+                    id="booster-upgrade-panel"
+                    className="redesign-booster-upgrade__panel"
+                    role="region"
+                    aria-label="Booster transfer upgrade"
+                  >
                     <p className="redesign-booster-upgrade__title">
                       {autoMoveBooster
                         ? 'Auto-transfer enabled'
@@ -242,19 +283,30 @@ export function RedesignWorkshop({
                         ? 'After each machine finishes, the booster moves to the next station automatically during launches.'
                         : 'Upgrade the booster so it auto-moves to the next station when a machine completes its task.'}
                     </p>
-                    <button
-                      type="button"
-                      className={
-                        autoMoveBooster
-                          ? 'btn btn--ghost'
-                          : 'btn btn--primary'
-                      }
-                      onClick={handleToggleAutoMove}
-                    >
-                      {autoMoveBooster
-                        ? 'Disable auto-transfer'
-                        : 'Enable auto-transfer'}
-                    </button>
+                    <div className="redesign-booster-upgrade__actions">
+                      <button
+                        type="button"
+                        className={
+                          autoMoveBooster
+                            ? 'btn btn--ghost'
+                            : 'btn btn--primary'
+                        }
+                        onClick={handleToggleAutoMove}
+                      >
+                        {autoMoveBooster
+                          ? 'Disable auto-transfer'
+                          : 'Enable auto-transfer'}
+                      </button>
+                      {upgradePanelOpen && !autoMoveBooster && (
+                        <button
+                          type="button"
+                          className="btn btn--ghost"
+                          onClick={() => setUpgradePanelOpen(false)}
+                        >
+                          Close
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -380,6 +432,43 @@ export function RedesignWorkshop({
           </div>
         )}
       </div>
+
+      {showConfirmDialog && (
+        <div
+          className="redesign-confirm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="redesign-confirm-title"
+        >
+          <div className="redesign-confirm__backdrop" onClick={() => setShowConfirmDialog(false)} />
+          <div className="redesign-confirm__card">
+            <h3 id="redesign-confirm-title" className="redesign-confirm__title">
+              Lock in this layout?
+            </h3>
+            <p className="redesign-confirm__copy">
+              Are you sure you have finished redesigning all process steps you care
+              about? This layout (machines, road, and pad tech) will be used for all
+              three launches and cannot be changed until the round ends.
+            </p>
+            <div className="redesign-confirm__actions">
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => setShowConfirmDialog(false)}
+              >
+                No — keep editing
+              </button>
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={validateAndLockIn}
+              >
+                Yes — lock in &amp; start launches
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

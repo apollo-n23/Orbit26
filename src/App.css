@@ -641,6 +641,66 @@
   gap: var(--space-4);
 }
 
+.redesign-warning {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-amber) 55%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: var(--color-amber-dim);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.redesign-warning strong {
+  color: var(--color-amber);
+}
+
+.redesign-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.redesign-confirm__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 8, 12, 0.72);
+}
+
+.redesign-confirm__card {
+  position: relative;
+  z-index: 1;
+  width: min(26rem, 100%);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.redesign-confirm__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 var(--space-3);
+}
+
+.redesign-confirm__copy {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0 0 var(--space-5);
+}
+
+.redesign-confirm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
 .redesign-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -719,11 +779,20 @@
 }
 
 .redesign-booster-upgrade:hover .booster--redesign,
+.redesign-booster-upgrade--open .booster--redesign,
 .redesign-booster-upgrade--on .booster--redesign {
   transform: scale(0.78);
   filter:
     drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45))
     drop-shadow(0 0 12px color-mix(in srgb, var(--color-orbital) 45%, transparent));
+}
+
+.redesign-booster-upgrade__hit {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
 }
 
 .redesign-booster-upgrade__panel {
@@ -748,13 +817,20 @@
   z-index: 6;
 }
 
-.redesign-booster-upgrade:hover .redesign-booster-upgrade__panel,
-.redesign-booster-upgrade:focus-within .redesign-booster-upgrade__panel,
+/* Persist panel once opened (state class) so users can reach the button. */
+.redesign-booster-upgrade--open .redesign-booster-upgrade__panel,
 .redesign-booster-upgrade--on .redesign-booster-upgrade__panel {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: translateX(-50%) translateY(0);
+}
+
+.redesign-booster-upgrade__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
 }
 
 .redesign-booster-upgrade__title {
