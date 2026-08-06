@@ -39,12 +39,25 @@ const ORIENTATIONS = [
 ] as const
 
 /** Scene units per second while an arrow key is held. */
-const MOVE_SPEED = 140
+const MOVE_SPEED = 160
 
-/** How long the explosion plays before reset (ms). Keep in sync with App.css haul-explode-* (0.55s). */
+/** How long the explosion plays before reset (ms). Keep in sync with App.css. */
 const EXPLODE_MS = 550
 
-const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'])
+const ARROW_CODES = new Set([
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+])
+
+function startPose(): HaulPose {
+  return {
+    x: HAUL_START.x,
+    y: HAUL_START.y,
+    rotation: HAUL_START.rotation,
+  }
+}
 
 export function IntegratePayloadScene({
   run,
@@ -53,30 +66,27 @@ export function IntegratePayloadScene({
   onPathReset,
 }: IntegratePayloadSceneProps) {
   const sceneRef = useRef<HTMLDivElement>(null)
-  const [pose, setPose] = useState<HaulPose>({
-    x: HAUL_START.x,
-    y: HAUL_START.y,
-    rotation: HAUL_START.rotation,
-  })
+  const [pose, setPose] = useState<HaulPose>(startPose)
   const [dragging, setDragging] = useState(false)
   const [exploding, setExploding] = useState(false)
   const [seated, setSeated] = useState(false)
   const dragOffset = useRef<Point>({ x: 0, y: 0 })
   const reachedPadRef = useRef(false)
-  const poseRef = useRef(pose)
+  const poseRef = useRef<HaulPose>(startPose())
   const keysRef = useRef<Set<string>>(new Set())
   const explodingRef = useRef(false)
   const explodeTimerRef = useRef<number | null>(null)
-
-  poseRef.current = pose
+  const canMoveRef = useRef(false)
+  /** Only reset local haul state when (re)entering this step, not every render. */
+  const haulEpochRef = useRef<string | null>(null)
 
   const locked =
     run.status === 'awaiting_reorient' ||
     run.status === 'complete' ||
     run.status === 'step_complete'
   const canMove = run.status === 'running' && !seated && !exploding
-  const showReorient =
-    run.status === 'awaiting_reorient' && !seated
+  canMoveRef.current = canMove
+  const showReorient = run.status === 'awaiting_reorient' && !seated
 
   const clearExplodeTimer = useCallback(() => {
     if (explodeTimerRef.current != null) {
@@ -85,23 +95,33 @@ export function IntegratePayloadScene({
     }
   }, [])
 
-  // Reset haul pose when a new run of this step begins.
+  const applyPose = useCallback((next: HaulPose) => {
+    poseRef.current = next
+    setPose(next)
+  }, [])
+
+  // Enter / re-enter haul step: reset once per epoch.
   useEffect(() => {
-    if (run.status === 'running' && run.currentStepIndex >= 0) {
-      clearExplodeTimer()
-      explodingRef.current = false
-      setExploding(false)
-      setPose({
-        x: HAUL_START.x,
-        y: HAUL_START.y,
-        rotation: HAUL_START.rotation,
-      })
-      setSeated(false)
-      setDragging(false)
-      keysRef.current.clear()
-      reachedPadRef.current = false
-    }
-  }, [run.status, run.currentStepIndex, run.completedRuns, clearExplodeTimer])
+    if (run.status !== 'running' || run.currentStepIndex < 0) return
+
+    const epoch = `${run.currentStepIndex}-${run.completedRuns}`
+    if (haulEpochRef.current === epoch) return
+    haulEpochRef.current = epoch
+
+    clearExplodeTimer()
+    explodingRef.current = false
+    setExploding(false)
+    applyPose(startPose())
+    setSeated(false)
+    setDragging(false)
+    keysRef.current.clear()
+    reachedPadRef.current = false
+
+    // Focus map so arrow keys are clearly received.
+    window.requestAnimationFrame(() => {
+      sceneRef.current?.focus({ preventScroll: true })
+    })
+  }, [run.status, run.currentStepIndex, run.completedRuns, clearExplodeTimer, applyPose])
 
   useEffect(() => () => clearExplodeTimer(), [clearExplodeTimer])
 
@@ -109,12 +129,12 @@ export function IntegratePayloadScene({
     const el = sceneRef.current
     if (!el) return { x: 0, y: 0 }
     const rect = el.getBoundingClientRect()
-    const x = ((clientX - rect.left) / rect.width) * SCENE_WIDTH
-    const y = ((clientY - rect.top) / rect.height) * SCENE_HEIGHT
+    // Map is aspect-locked to SCENE_WIDTH:SCENE_HEIGHT — rect matches viewBox.
+    const x = ((clientX - rect.left) / Math.max(rect.width, 1)) * SCENE_WIDTH
+    const y = ((clientY - rect.top) / Math.max(rect.height, 1)) * SCENE_HEIGHT
     return { x, y }
   }, [])
 
-  /** Off-corridor: play explosion, then return to Assembly start pose. */
   const explodeAndRestart = useCallback(() => {
     if (explodingRef.current) return
     explodingRef.current = true
@@ -125,28 +145,25 @@ export function IntegratePayloadScene({
     clearExplodeTimer()
     explodeTimerRef.current = window.setTimeout(() => {
       explodeTimerRef.current = null
-      setPose({
-        x: HAUL_START.x,
-        y: HAUL_START.y,
-        rotation: HAUL_START.rotation,
-      })
+      applyPose(startPose())
       explodingRef.current = false
       setExploding(false)
       onPathReset?.()
+      sceneRef.current?.focus({ preventScroll: true })
     }, EXPLODE_MS)
-  }, [clearExplodeTimer, onPathReset])
+  }, [clearExplodeTimer, onPathReset, applyPose])
 
   const tryMoveTo = useCallback(
-    (next: HaulPose) => {
-      if (explodingRef.current) return
+    (next: HaulPose): boolean => {
+      if (explodingRef.current || !canMoveRef.current) return false
 
       if (!isBoosterSafe({ x: next.x, y: next.y }, next.rotation)) {
         setDragging(false)
         explodeAndRestart()
-        return
+        return false
       }
 
-      setPose(next)
+      applyPose(next)
 
       if (
         !reachedPadRef.current &&
@@ -157,11 +174,26 @@ export function IntegratePayloadScene({
         keysRef.current.clear()
         onReachedPad()
       }
+      return true
     },
-    [onReachedPad, explodeAndRestart],
+    [onReachedPad, explodeAndRestart, applyPose],
   )
 
-  // Arrow keys: continuous movement while held; block page scroll.
+  const nudge = useCallback(
+    (dx: number, dy: number) => {
+      if (!canMoveRef.current || explodingRef.current) return
+      if (dx === 0 && dy === 0) return
+      const p = poseRef.current
+      tryMoveTo({
+        x: p.x + dx,
+        y: p.y + dy,
+        rotation: p.rotation,
+      })
+    },
+    [tryMoveTo],
+  )
+
+  // Arrow keys: continuous movement while held; update poseRef every tick.
   useEffect(() => {
     if (run.status !== 'running' || seated) {
       keysRef.current.clear()
@@ -169,16 +201,17 @@ export function IntegratePayloadScene({
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (!ARROW_KEYS.has(e.key)) return
-      // Prevent browser scroll while operating the haul scene
+      const code = e.code
+      if (!ARROW_CODES.has(code)) return
       e.preventDefault()
-      if (explodingRef.current) return
-      keysRef.current.add(e.key)
+      e.stopPropagation()
+      if (explodingRef.current || !canMoveRef.current) return
+      keysRef.current.add(code)
     }
 
     const onKeyUp = (e: KeyboardEvent) => {
-      if (!ARROW_KEYS.has(e.key)) return
-      keysRef.current.delete(e.key)
+      if (!ARROW_CODES.has(e.code)) return
+      keysRef.current.delete(e.code)
     }
 
     const onBlur = () => {
@@ -192,7 +225,7 @@ export function IntegratePayloadScene({
       const dt = Math.min(0.05, (now - last) / 1000)
       last = now
 
-      if (!explodingRef.current && keysRef.current.size > 0) {
+      if (canMoveRef.current && !explodingRef.current && keysRef.current.size > 0) {
         let dx = 0
         let dy = 0
         if (keysRef.current.has('ArrowLeft')) dx -= 1
@@ -215,43 +248,45 @@ export function IntegratePayloadScene({
       raf = window.requestAnimationFrame(tick)
     }
 
-    window.addEventListener('keydown', onKeyDown, { passive: false })
-    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('keydown', onKeyDown, { passive: false, capture: true })
+    window.addEventListener('keyup', onKeyUp, { capture: true })
     window.addEventListener('blur', onBlur)
     raf = window.requestAnimationFrame(tick)
 
-    const heldKeys = keysRef.current
     return () => {
       window.cancelAnimationFrame(raf)
-      window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('keydown', onKeyDown, { capture: true })
+      window.removeEventListener('keyup', onKeyUp, { capture: true })
       window.removeEventListener('blur', onBlur)
-      heldKeys.clear()
+      keysRef.current.clear()
     }
   }, [run.status, seated, tryMoveTo])
 
-  function handlePointerDown(e: React.PointerEvent) {
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (!canMove) return
+    e.preventDefault()
     e.currentTarget.setPointerCapture(e.pointerId)
     const scenePt = clientToScene(e.clientX, e.clientY)
+    const p = poseRef.current
     dragOffset.current = {
-      x: pose.x - scenePt.x,
-      y: pose.y - scenePt.y,
+      x: p.x - scenePt.x,
+      y: p.y - scenePt.y,
     }
     setDragging(true)
+    sceneRef.current?.focus({ preventScroll: true })
   }
 
-  function handlePointerMove(e: React.PointerEvent) {
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!dragging || !canMove) return
     const scenePt = clientToScene(e.clientX, e.clientY)
     tryMoveTo({
       x: scenePt.x + dragOffset.current.x,
       y: scenePt.y + dragOffset.current.y,
-      rotation: pose.rotation,
+      rotation: poseRef.current.rotation,
     })
   }
 
-  function handlePointerUp(e: React.PointerEvent) {
+  function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
     if (!dragging) return
     try {
       e.currentTarget.releasePointerCapture(e.pointerId)
@@ -262,28 +297,35 @@ export function IntegratePayloadScene({
   }
 
   function setOrientation(rotation: number) {
-    if (!canMove) return
-    const next = { ...pose, rotation: clampRotation(rotation) }
+    if (!canMoveRef.current || explodingRef.current) return
+    const next = {
+      ...poseRef.current,
+      rotation: clampRotation(rotation),
+    }
     if (!isBoosterSafe({ x: next.x, y: next.y }, next.rotation)) {
       explodeAndRestart()
       return
     }
-    setPose(next)
+    applyPose(next)
+    sceneRef.current?.focus({ preventScroll: true })
   }
 
   function rotateBy(delta: number) {
-    setOrientation(pose.rotation + delta)
+    setOrientation(poseRef.current.rotation + delta)
   }
 
   function handleReorient() {
     setSeated(true)
-    setPose({
+    applyPose({
       x: PAD_SEATED.x,
       y: PAD_SEATED.y,
       rotation: PAD_SEATED.rotation,
     })
     onReorient()
   }
+
+  // Discrete nudge for on-screen pad (and reliability when keys are captured).
+  const NUDGE = 12
 
   const pathPoints = pathPolylinePoints(HAUL_PATH)
 
@@ -332,6 +374,62 @@ export function IntegratePayloadScene({
           </div>
         </div>
 
+        <div className="haul-dpad" aria-label="Move booster">
+          <span className="haul-orient__label">Move</span>
+          <div className="haul-dpad__grid">
+            <span />
+            <button
+              type="button"
+              className="btn btn--ghost haul-dpad__btn"
+              disabled={!canMove}
+              onClick={() => nudge(0, -NUDGE)}
+              aria-label="Move up"
+            >
+              ↑
+            </button>
+            <span />
+            <button
+              type="button"
+              className="btn btn--ghost haul-dpad__btn"
+              disabled={!canMove}
+              onClick={() => nudge(-NUDGE, 0)}
+              aria-label="Move left"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost haul-dpad__btn"
+              disabled={!canMove}
+              onClick={() => sceneRef.current?.focus({ preventScroll: true })}
+              title="Focus map for arrow keys"
+              aria-label="Focus map"
+            >
+              ⌨
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost haul-dpad__btn"
+              disabled={!canMove}
+              onClick={() => nudge(NUDGE, 0)}
+              aria-label="Move right"
+            >
+              →
+            </button>
+            <span />
+            <button
+              type="button"
+              className="btn btn--ghost haul-dpad__btn"
+              disabled={!canMove}
+              onClick={() => nudge(0, NUDGE)}
+              aria-label="Move down"
+            >
+              ↓
+            </button>
+            <span />
+          </div>
+        </div>
+
         {showReorient && (
           <button
             type="button"
@@ -352,9 +450,10 @@ export function IntegratePayloadScene({
         ]
           .filter(Boolean)
           .join(' ')}
-        tabIndex={canMove ? 0 : -1}
+        tabIndex={0}
         role="application"
-        aria-label="Haul map — use arrow keys to move the booster along the road"
+        aria-label="Haul map — arrow keys move the booster along the road"
+        onPointerDown={() => sceneRef.current?.focus({ preventScroll: true })}
       >
         <svg
           className="haul-map__svg"
@@ -363,7 +462,6 @@ export function IntegratePayloadScene({
           aria-hidden="true"
         >
           <defs>
-            {/* Outdoor grass field */}
             <linearGradient id="haul-grass" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#3d7a35" />
               <stop offset="45%" stopColor="#2f6a2a" />
@@ -383,15 +481,11 @@ export function IntegratePayloadScene({
                 strokeWidth="1.2"
                 strokeLinecap="round"
               />
-              <circle cx="16" cy="10" r="1.1" fill="rgba(90, 150, 50, 0.22)" />
-              <circle cx="6" cy="8" r="0.8" fill="rgba(70, 130, 40, 0.18)" />
-              <circle cx="22" cy="16" r="0.9" fill="rgba(100, 160, 55, 0.16)" />
             </pattern>
             <radialGradient id="haul-field-vignette" cx="50%" cy="50%" r="70%">
               <stop offset="50%" stopColor="rgba(0,0,0,0)" />
               <stop offset="100%" stopColor="rgba(10, 28, 8, 0.35)" />
             </radialGradient>
-            {/* Road surface */}
             <linearGradient id="haul-road" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#4a4f56" />
               <stop offset="50%" stopColor="#3d4249" />
@@ -399,7 +493,6 @@ export function IntegratePayloadScene({
             </linearGradient>
           </defs>
 
-          {/* Grassy ground */}
           <rect width={SCENE_WIDTH} height={SCENE_HEIGHT} fill="url(#haul-grass)" />
           <rect
             width={SCENE_WIDTH}
@@ -412,7 +505,6 @@ export function IntegratePayloadScene({
             fill="url(#haul-field-vignette)"
           />
 
-          {/* Transport corridor — asphalt road, 50% wider than booster short side */}
           <polyline
             points={pathPoints}
             fill="none"
@@ -420,16 +512,6 @@ export function IntegratePayloadScene({
             strokeWidth={PATH_WIDTH}
             strokeLinecap="round"
             strokeLinejoin="round"
-          />
-          {/* Road edge lines */}
-          <polyline
-            points={pathPoints}
-            fill="none"
-            stroke="rgba(210, 200, 160, 0.35)"
-            strokeWidth={PATH_WIDTH - 6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            opacity={0.25}
           />
           <polyline
             points={pathPoints}
@@ -441,7 +523,6 @@ export function IntegratePayloadScene({
             strokeLinejoin="round"
           />
 
-          {/* Assembly building */}
           <g className="haul-building">
             <rect
               x="18"
@@ -478,7 +559,6 @@ export function IntegratePayloadScene({
             </text>
           </g>
 
-          {/* Launch pad */}
           <g className="haul-pad">
             <rect
               x={LAUNCH_PAD.x}
@@ -491,9 +571,7 @@ export function IntegratePayloadScene({
                   ? 'rgba(59, 130, 196, 0.35)'
                   : 'rgba(55, 60, 68, 0.95)'
               }
-              stroke={
-                locked || seated ? '#5ba3e0' : '#8a929c'
-              }
+              stroke={locked || seated ? '#5ba3e0' : '#8a929c'}
               strokeWidth="2"
             />
             <circle
@@ -519,7 +597,6 @@ export function IntegratePayloadScene({
           </g>
         </svg>
 
-        {/* HTML booster overlay — arrow keys primary; drag optional */}
         <div
           className={[
             'haul-booster',
@@ -549,7 +626,7 @@ export function IntegratePayloadScene({
               label={
                 seated
                   ? 'Booster seated on launch pad'
-                  : 'Booster — arrow keys to move along the path'
+                  : 'Booster — arrow keys or on-screen controls to move'
               }
             />
           )}

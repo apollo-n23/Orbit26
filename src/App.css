@@ -993,13 +993,42 @@
   gap: var(--space-1);
 }
 
+.haul-dpad {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.haul-dpad__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 2rem);
+  grid-template-rows: repeat(3, 2rem);
+  gap: 2px;
+}
+
+.haul-dpad__btn {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
 .haul-map {
   position: relative;
   flex: 1;
-  min-height: 20rem;
+  width: 100%;
+  max-width: 56rem;
+  margin-inline: auto;
+  /* Lock aspect to scene viewBox so % booster coords match the road SVG */
+  aspect-ratio: 800 / 480;
+  min-height: 0;
+  height: auto;
   border: 1px solid color-mix(in srgb, #4a7a3a 45%, var(--color-border));
   border-radius: var(--radius-md);
-  /* Outdoor field base (SVG grass fills map; this shows if SVG lags) */
   background:
     radial-gradient(ellipse at 20% 30%, rgba(90, 150, 55, 0.35) 0%, transparent 45%),
     radial-gradient(ellipse at 80% 70%, rgba(50, 100, 40, 0.4) 0%, transparent 50%),
@@ -1036,9 +1065,10 @@
 
 .haul-map__svg {
   display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  min-height: 20rem;
 }
 
 .haul-booster {
@@ -1228,9 +1258,8 @@
     min-height: 10rem;
   }
 
-  .haul-map,
-  .haul-map__svg {
-    min-height: 16rem;
+  .haul-map {
+    max-width: 100%;
   }
 }
 
