@@ -1,165 +1,184 @@
 # AGENTS.md — Orb-it Process Excellence Simulator
 
 ## Project Goal
-Build a web-based interactive learning tool that teaches Lean Six Sigma concepts (process mapping, waste identification, process redesign) through short gameplay loops (4–8 minutes).
+Build a web-based interactive learning tool that teaches Lean Six Sigma concepts through short gameplay loops. The **primary learning measure is lead time** — end-to-end time from starting a unit through launch — and how process design changes improve it across rounds.
 
 Setting: Orb-it, a fictional satellite constellation company. Learners act as process engineers improving the satellite integration and launch preparation value stream.
 
 Tone: Professional, precise, operational. Light narrative framing only. No cartoonish or overly playful language.
 
 ## Core Learning Loop (must be preserved)
-1. **Execute** — Learner runs the current (initially inefficient) process through **visualised, interactive process steps**. Focus: experience and improve **lead time** (end-to-end assembly → launch).
-2. **Data** — Review logged lead times (lap board). Process mapping is **outside** this app.
-3. **Rounds** — Learning is split into rounds. Round 1 is the **as-is** process. Goal per round: **launch 3 rockets** (3 full process cycles → 3 lead times on the Data board). When 3 launches complete, show the orbit cutaway (**“As-is round complete”** for Round 1). Round 2 is a separate route for tutor-linked progression (starts as a baseline copy; redesign later).
-4. **Redesign / Validate** — Later rounds improve the process and re-measure lead time.
+1. **Execute** — Run the process through **visualised, interactive process steps** (not an auto-playing checklist). Feel friction and waste as lead time.
+2. **Data** — Review logged lead times on a lap-style board. Process mapping / waste tagging is done **outside** this app (no Map tab).
+3. **Rounds** — Structured progression (see **Rounds model** below). Round 1 = as-is; later rounds redesign and re-measure.
+4. **Redesign / Validate** — Change the process (or open a later round with an improved process) and compare lead times.
+
+---
+
+## Rounds model (settled — focus for multi-round work)
+
+Learning is split into **rounds**. Each round is a self-contained play session with its own process config, lead-time board, and completion scene.
+
+### Goal per round
+- Launch **exactly 3 rockets** (`ROCKETS_PER_ROUND` / `MAX_RUNS_PER_SESSION` = 3).
+- Each full cycle (all process steps through liftoff) logs **one lead time** on that round’s **Data** board.
+- After the **third** launch: stop further Run Process for that round and cut to the **orbit complete** scene (Earth + three satellites on orbit paths).
+
+### Round 1 — As-is
+- **Route:** `#/round/1` (default when hash is empty).
+- **Config:** `ROUND_CONFIGS[1]` in `src/data/rounds.ts` (`id: round-1-as-is`).
+- **Process:** baseline inefficient process (`BASELINE_PROCESS` clone).
+- **Complete headline:** **“As-is round complete”**.
+- After complete: show the three lap times; offer **Continue to Round 2** and a **tutor share URL** for Round 2.
+
+### Round 2 — Separate page / deep link (critical for tutors)
+- **Route:** `#/round/2` (e.g. `https://<host>/#/round/2`).
+- Tutors can share this link so a learner **starts at Round 2** without replaying Round 1.
+- **Config:** `ROUND_CONFIGS[2]` (`id: round-2-baseline-copy`).
+- **Process today:** intentional **near-copy of Round 1** (same steps/interactions) with a distinct process `id` / `name` / `version`. **Do not delete Round 2** or fold it back into Round 1.
+- **Future:** Round 2 (and later) will hold redesigned process data / reduced waste; keep the routing and `RoundConfig` shape so tweaks are data + scene-driven, not a new app shell.
+- **Complete headline:** “Round 2 complete” (orbit scene still used; Round 2 does not need a Round 3 button until that round exists).
+- **State isolation:** each round mount uses a fresh `RoundSession` (`key={round.id}`). Lead-time logs **do not** carry across hash navigation; each round has its own board.
+
+### Round architecture (implementation)
+| Piece | Role |
+|--------|------|
+| `src/App.tsx` | Hash router only (`roundIdFromHash` / `hashForRound`) |
+| `src/types/round.ts` | `RoundId`, `RoundConfig`, `ROCKETS_PER_ROUND`, hash helpers |
+| `src/data/rounds.ts` | `ROUND_CONFIGS` for Round 1 and Round 2 |
+| `src/components/RoundSession.tsx` | Full play chrome for one round (sim, data, complete) |
+| `src/views/OrbitCompleteScene.tsx` | Post-round cutaway + share link UI |
+
+When adding **Round 3+**: extend `RoundId`, add `ROUND_CONFIGS[n]`, teach `roundIdFromHash` the new path, and wire completion CTAs as needed. Prefer cloning/adapting process data over forking the whole session shell.
 
 ---
 
 ## Execute Phase — Interaction Model (settled design)
 
-The Execute phase is a **hands-on floor / field simulation**. The learner operates the process themselves. Prefer spatial scenes and direct manipulation over passive lists or auto-scroll timelines.
+The Execute phase is a **hands-on floor / field simulation**. Prefer spatial scenes and direct manipulation over passive lists or auto-scroll timelines.
 
 ### Principles (do not regress)
 - Each **process step** is its own interactive scene with a clear operator task.
 - The learner must **perform work** (click, drag, keyboard, type codes, sequence controls, hold-to-fill, etc.) — not watch an automated token advance through a list.
+- **Deliberate as-is friction is OK** (e.g. out-of-sequence stations, access codes, misaligned GO buttons) so lead time and waste are felt; redesign rounds should reduce that friction intentionally.
 - **Step transitions (settled):**
-  - **Default:** step finishes → `step_complete` → learner clicks **Proceed to next step**.
-  - **Haul exception:** after **Mount to launch pad**, auto-advance to the next step (`running` at next index) — **no** Proceed click.
-  - **Last step:** finish → `completeUnitRun` (status `complete`, freezes wall-clock Cycle Time). Never complete the unit on an intermediate step.
-- Process definitions live in **React state** as a versioned process (`ProcessVersion` in `App`) so redesign can later swap steps and re-run.
-- Clear affordances: status line copy, numbered badges, banners for required codes, disabled-until-ready controls, short work animations.
-- **Do not** implement Execute as a vertical list of step descriptions that auto-scrolls when the user clicks Run.
-- Scenes should **look distinct** by environment (e.g. indoor charcoal assembly line vs outdoor grassy haul road vs pad/tower vs mission control).
+  - **Default:** step finishes → `step_complete` → **Proceed to next step**.
+  - **Haul exception:** after **Mount to launch pad**, auto-advance to the next step (`running` at next index) — **no** Proceed.
+  - **Last process step:** liftoff → `completeUnitRun` (unit `complete`, freezes **Lead Time**, appends Data board entry). Never `completeUnitRun` on intermediate steps.
+- Process definitions live in **React state** as a versioned process on `RoundSession` (from `RoundConfig.process`) so redesign can swap steps per round.
+- Clear affordances: status line, badges, access-code banner, short work animations.
+- **Do not** implement Execute as a vertical list that auto-scrolls on Run.
+- Scenes should **look distinct** by environment (assembly / grassy haul / pad / mission control).
 
 ### Run status lifecycle
 | Status | Meaning |
 |--------|---------|
 | `idle` | Session may be active; no unit on the floor |
-| `running` | Learner is operating the current step |
-| `machine_working` | Manufacture machine mid approach→work→retreat |
-| `awaiting_reorient` | Haul booster on pad; waiting for **Mount to launch pad** (legacy status id; UI says Mount, not Reorient) |
-| `step_complete` | Current step done; show **Proceed** if more steps remain (not used for haul happy path) |
-| `complete` | All steps for this unit finished via `completeUnitRun` (`completedRuns++`, `runEndedAt` set) |
+| `running` | Operating the current step |
+| `machine_working` | Manufacture approach→work→retreat |
+| `awaiting_reorient` | Haul booster on pad; UI: **Mount to launch pad** (legacy status id) |
+| `step_complete` | Step done; **Proceed** if used (not haul happy path) |
+| `complete` | This **unit** finished via `completeUnitRun` |
 
-Full unit completion happens only on the **last** process step (baseline: launch-sequence liftoff).
+**Round complete** is separate UI phase (`orbit-complete` in `RoundSession`) after **3** unit completes — not a `RunStatus`.
 
-### Session / metrics
-- **Start Session** arms the session; **Run Process** starts a unit at step index 0 (`beginRun`).
-- Top bar (live from run state):
-  - **Lead Time** only — wall-clock `m:ss` end-to-end from Run Process (`runStartedAt`) through launch (`completeUnitRun` sets `runEndedAt` and freezes the display). Primary learning measure. Do **not** reintroduce Yield or Flow Efficiency on the chrome.
-- **Rockets per round: 3** (`ROCKETS_PER_ROUND` / `MAX_RUNS_PER_SESSION`). After the third launch, the round ends and the **orbit complete** scene appears (Round 1: “As-is round complete”).
-- **Primary views (during play):** Simulation · **Data** · Comparison.
-  - **Data** — lead-time board for the **current round** (goal: 3 laps); each launch appends an entry.
-  - **Comparison** — placeholder for later.
-- **Routing (hash, shareable for tutors):**
-  - `#/round/1` (default) — Round 1 as-is  
-  - `#/round/2` — Round 2 (baseline process copy for now; deep-linkable)  
-  Config: `src/data/rounds.ts`, `src/types/round.ts`. Shell: `RoundSession.tsx`. Orbit cutaway: `OrbitCompleteScene.tsx`.
+### Session / metrics (per round)
+- **Start Session** arms play; **Run Process** starts a unit (`beginRun`, `runStartedAt`).
+- Top bar:
+  - **Lead Time** — wall-clock `m:ss` end-to-end until launch (`runEndedAt`). Primary metric. **No** Yield or Flow Efficiency on chrome.
+  - **Launches** — `completed / 3` for the round.
+- **Data** — lap board for **this round only** (run #, lead time, delta vs best, best tag). Goal: 3 rockets.
+- **Comparison** — placeholder.
+- After 3 launches → **Orbit complete** scene (not more Run Process).
 
 ---
 
-## Baseline process steps (current)
+## Baseline process steps (shared template)
 
-Order is fixed in `src/data/baselineProcess.ts`. Do not reorder without an explicit product decision.
+Order is defined on the process version (from `baselineProcess` / per-round clone). Do not reorder without an explicit product decision.
 
 ### 1. Manufacture booster (`kind: manufacture`)
-**Scene:** `ManufactureScene.tsx` — indoor production line (charcoal / orbital UI).
+**Scene:** `ManufactureScene.tsx` — indoor line.
 
-- Four stations with **physical L→R order 2 · 1 · 4 · 3** (`linePosition` 0–3).
-- Operator sequence remains **1 → 2 → 3 → 4** (`sequence`).
-- Booster is **drag-and-drop** along the belt: operator must place it on the next required station stop (no auto-travel between stations). Wrong stop / miss gives feedback and does not unlock the machine.
-- Each station has a **4-digit `accessCode`** (baseline: form-press `4821`, seam-welder `7390`, trim-laser `1564`, fit-arm `9057`).
-- A **banner** at the top of the manufacture scene shows the code for the **current required** station only.
-- Operator types the code into that station’s field. When the code matches **and** the booster is at that stop, **Activate** appears (no bare click-to-run on the machine body).
-- Machines park at **variable** `parkOffset` (rem) from the line — some closer, some further. On Activate (required + booster arrived + correct code):
-  1. Approach the line (travel distance follows parkOffset)  
-  2. Work animation (robot-arm / welder / laser remain distinct)  
-  3. Retreat to park  
-  4. Unlock the next sequence (booster stays put until the operator drags it)  
-- Timing constants in `types/process.ts`: `MACHINE_APPROACH_MS`, `MACHINE_WORK_MS`, `MACHINE_RETREAT_MS`, `MACHINE_CYCLE_MS`, `BOOSTER_TRAVEL_MS`.
-- When all four finish → `step_complete` → **Proceed to next step**.
+- Physical L→R station order **2 · 1 · 4 · 3**; operate **1 → 2 → 3 → 4**.
+- **Drag-and-drop** booster to the next required stop (no auto belt travel).
+- **4-digit `accessCode`** per station; banner shows code for the **current** required station; **Activate** only when code matches **and** booster is at that stop.
+- Baseline codes: form-press `4821`, seam-welder `7390`, trim-laser `1564`, fit-arm `9057`.
+- Variable **`parkOffset`**; Activate → approach → work → retreat; booster stays until dragged again.
+- Finish → `step_complete` → **Proceed**.
 
 ### 2. Integrate payload (`kind: haul`)
-**Scene:** `IntegratePayloadScene.tsx` + `pathGeometry.ts` — outdoor grassy field, asphalt road.
+**Scene:** `IntegratePayloadScene.tsx` + `pathGeometry.ts` — outdoor road.
 
-- Only after manufacture + Proceed.
-- **Primary move:** arrow keys (continuous while held). **Secondary:** on-screen D-pad; drag optional.
-- **Re-orient (in-transit):** toolbar ↺/↻ 90° and fixed headings (0° / 90° / 180° / −90°) for corners — not the pad action.
-- Map is **aspect-locked** to the scene viewBox so booster position matches the road.
-- **Collision / safety (settled):**
-  - Safe: road corridor (visual width = short-side × 1.5) **+ grass margin**, **Assembly building/apron**, **Launch pad**, and **corner fillets** at path vertices.
-  - Unsafe: pure grass (sample outside all safe regions).
-  - Any unsafe footprint sample → **explosion VFX** → reset to Assembly start (not a silent teleport).
-- When booster **touches the pad** → status `awaiting_reorient` → button **Mount to launch pad** (not “Reorient”) seats the booster → **`completeHaulStep` auto-advances** to step 3 (`running`, next index; no haul Proceed UI). Must **not** call `completeUnitRun`.
+- Arrow keys primary; D-pad secondary; drag optional.
+- In-transit **re-orient** controls for corners (not the pad action).
+- Safe: road (+ grass margin), Assembly apron, Launch pad, corner fillets. Pure grass → explode → Assembly reset.
+- Pad: **Mount to launch pad** → **`completeHaulStep` auto-advances** to step 3. No haul Proceed. No `completeUnitRun`.
 
 ### 3. Prepare for launch (`kind: launch-prep`)
-**Scene:** `LaunchPrepScene.tsx` — pad beside launch tower (`lp-` CSS namespace).
+**Scene:** `LaunchPrepScene.tsx` (`lp-` CSS).
 
-- Only after haul mount-to-pad (auto-advance from step 2).
-- Operator sub-tasks **in order** (reuses run `nextMachineIndex` / `completedMachineIds` for progress):
-  1. **Mate** booster to tower (strongback control / slider)  
-  2. **Crane** payload onto the stack (numbered crane sequence 1→4)  
-  3. **Fuel** — connect umbilicals, hold-to-fill LOX/RP-1  
-  4. **Power up** — arm switches in order  
-- **Layout (settled):** crane boom sits **close to the stack** so the payload lowers **onto the booster nose** (not a distant floating crane). LOX/RP-1 have **tank graphics** on the supply end; lines must **visually reach vehicle ports** when connected (not short of the hull).
-- Completing the last sub-task → `step_complete` → **Proceed to Launch sequence** (not the final baseline step).
+- Mate → crane stack → fuel (LOX/RP-1 tanks + lines **to vehicle ports**) → power switches.
+- Crane close to stack so payload seats on the nose.
+- Finish → `step_complete` → **Proceed to Launch sequence**.
 
 ### 4. Launch sequence (`kind: launch-sequence`)
-**Scene:** `LaunchSequenceScene.tsx` — mission control room (consoles, pad live feed; `launch-seq` / `mc-` CSS).
+**Scene:** `LaunchSequenceScene.tsx` (`launch-seq` / `mc-` CSS).
 
-- Only after launch-prep + Proceed.
-- Operator actions **in order** (reuses run `nextMachineIndex` / `completedMachineIds`; constants in `types/process.ts`):
-  1. **GO poll** — Guidance → Capcom → Fuel/Propulsion → Avionics → Range Safety → Weather (only the current station is armed)  
-  2. **Launch enable key** — hold-to-turn physical key control  
-  3. **Liftoff cutaway** — pad feed: tower/pad, plume, climb (CSS; duration ~`LIFTOFF_MS` / 3.2s — keep JS timer and CSS in sync)  
-- Completing liftoff is the **only** baseline path to **full unit run** complete (`completeUnitRun` → freezes wall-clock **Lead Time** and appends one entry to the Data lead-time board).
+- GO poll in order (Guidance → Capcom → Fuel → Avionics → Range Safety → Weather); only current station armed.
+- **As-is friction (settled):** GO rows are **widely spaced** and **slightly misaligned** (offset/rotation) so selecting each GO takes more time/motion — do not “tidy” this away in Round 1 without a redesign decision. Round 2+ may straighten this as an improvement.
+- Hold-to-turn **launch key**, then **liftoff** cutaway (~3.2s; keep JS `LIFTOFF_MS` and CSS in sync).
+- Liftoff → `completeUnitRun` → Lead Time freezes → Data board entry.
 
 ---
 
 ## Adding a new Execute step (checklist)
 
-Use this when extending the baseline process (e.g. a fifth step after launch-sequence).
+1. **Types** — `ProcessStepKind` + constants in `src/types/process.ts`.
+2. **Process data** — `BASELINE_PROCESS` and/or **per-round** process in `src/data/rounds.ts` (Round 2 must stay independently editable).
+3. **Scene** — component under `src/components/`; distinct environment.
+4. **Simulation** — `src/lib/simulation.ts`: intermediate = Proceed or auto-advance; last step only = `completeUnitRun`; never reset `runStartedAt` mid-unit.
+5. **UI** — `SimulationView` / `RoundSession` wiring; CSS namespace.
+6. **Docs** — this file.
+7. **Verify** — `npm run build`; commit.
 
-1. **Types** — Extend `ProcessStepKind` in `src/types/process.ts`; add any step-specific constants/actions.
-2. **Process data** — Append a step to `BASELINE_PROCESS.steps` in `src/data/baselineProcess.ts` (`id`, `name`, `kind`, `baseTime`, optional config).
-3. **Scene** — New component under `src/components/` with **operator-driven** interactions (match the hands-on style of existing steps). Give the scene a distinct visual environment if it is a new location.
-4. **Simulation** — In `src/lib/simulation.ts`:
-   - Previous last step must end in `step_complete` + Proceed **or** an explicit auto-advance (like haul) — never `completeUnitRun` when a next step exists.
-   - New step’s finish handler: `step_complete` / auto-advance if more steps follow, else `completeUnitRun` (last step only).
-   - Wall-clock `runStartedAt` must survive step transitions; only `completeUnitRun` sets `runEndedAt`.
-5. **UI wiring** — `SimulationView.tsx` status copy, show/hide scene, Proceed (where used); `App.tsx` handlers; styles in `App.css` under a clear namespace (e.g. `lp-`, `launch-seq` / `mc-`; avoid clobbering manufacture / haul).
-6. **Docs** — Update this file’s baseline step list and transition rules.
-7. **Verify** — `npm run build`; keep the app runnable; commit with a clear message.
+Prefer CSS/SVG + pointer/keyboard. No heavy game engines.
 
-Prefer CSS/SVG + pointer/keyboard events. No heavy game engines.
+## Adding or changing a round (checklist)
+
+1. Extend `RoundId` and `ROUND_CONFIGS` in `types/round.ts` + `data/rounds.ts`.
+2. Teach `roundIdFromHash` / `hashForRound` the new path.
+3. Supply distinct `process`, labels, and complete copy.
+4. Keep **3 launches** unless product explicitly changes `ROCKETS_PER_ROUND`.
+5. Wire completion CTA / tutor link if a next round exists.
+6. Do not merge round state into a single global log unless product asks for cross-round analytics.
 
 ---
 
 ## Key Constraints
-- Sessions must stay in the 4–8 minute range.
-- Progressive unlocking of improvement levers and analysis tools.
-- Client-side first. Prefer deterministic simulation with light stochastic defects where used.
-- Dark professional UI chrome: charcoal base, orbital blue, restrained amber accents (step interiors may use themed environments).
-- Clean, minimal controls with operational language.
-- Interactive Execute scenes first; polish only where it clarifies the task.
+- Individual unit runs stay short enough that **3 launches** fit a reasonable session; overall workshop may span rounds.
+- Progressive unlocking of improvement levers (later rounds).
+- Client-side first; hash routes for round deep-links (no backend required for Round 2 entry).
+- Dark professional UI chrome; themed step interiors.
+- Operational language; interactive scenes over polish for its own sake.
 
 ## Technical Preferences
 - TypeScript + React (Vite).
-- Process map (Map phase): SVG or lightweight canvas (keep it simple).
-- Execute: React scene components + CSS/SVG; shared process/run state in `App`.
-- Key modules: `src/data/baselineProcess.ts`, `src/lib/simulation.ts`, `src/lib/pathGeometry.ts` (haul), `src/types/process.ts`, `src/views/SimulationView.tsx`.
-- State: React state for current process version and run; local storage for progress later in v1.
+- Hash routing for rounds (`App.tsx`); one `RoundSession` per round id.
+- Key modules: `src/data/baselineProcess.ts`, `src/data/rounds.ts`, `src/types/round.ts`, `src/components/RoundSession.tsx`, `src/lib/simulation.ts`, `src/lib/pathGeometry.ts`, scene components, `src/views/SimulationView.tsx`, `DataView.tsx`, `OrbitCompleteScene.tsx`.
+- Assets (logos, static SVG): prefer `public/` for site-wide files.
 - No heavy game engines.
-- Prioritise clarity and maintainability over visual effects.
+- Clarity and maintainability over visual effects.
 
 ## Out of Scope for v1
 - Full DMAIC project structure
 - Statistical analysis tools
 - Multiplayer / competitive features
-- Instructor authoring tools
+- Full instructor authoring suite (simple tutor **share links** for rounds are in scope)
 - Mobile-first design
-- In-app process mapping / Map tab (mapping done separately)
-- Waste tagging UI and redesign tools (until Redesign / Validate phases)
+- In-app process mapping / Map tab
+- Waste tagging UI (until redesign tooling)
+- Cross-round persistent cloud saves (local isolation per round is fine)
 
 ## Working Style
 - Prefer small, incremental, working steps.
@@ -170,5 +189,5 @@ Prefer CSS/SVG + pointer/keyboard events. No heavy game engines.
 ## Git Practices
 - A **local Git repository** is active in the project root.
 - Commit **meaningful working changes** with clear, concise messages.
-- Keep the **working tree clean** (no leftover uncommitted noise after a task).
+- Keep the **working tree clean**.
 - **No remote** is configured — local-only for now.
