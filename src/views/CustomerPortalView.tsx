@@ -12,6 +12,12 @@ interface CustomerReply {
   isCompany?: boolean
 }
 
+interface CustomerCompany {
+  name: string
+  industry: string
+  bio: string
+}
+
 interface CustomerPost {
   handle: string
   displayName: string
@@ -20,6 +26,8 @@ interface CustomerPost {
   likes: number
   shares: number
   replies: CustomerReply[]
+  /** Who this customer works for — shown in the side panel when the post is expanded. */
+  company: CustomerCompany
 }
 
 function initials(name: string): string {
@@ -32,20 +40,27 @@ function initials(name: string): string {
 /**
  * Fictional social-media complaints from Orb-it's customers, on a fictional
  * platform ("Starfeed"). Static flavor text only — not wired to any real
- * app data. Deliberately in the customers' own voice, including their own
- * units (km) — that's the point: the ask is a plain, memorable number,
- * however engineering happens to measure internally. A handful of threads
- * carry an official Orb-it reply — apologetic, and committing to a named
- * improvement project — using the Orb-it logo as its avatar.
+ * app data. Deliberately in the customers' own voice, in miles — the ask is
+ * a plain, memorable number, however engineering happens to measure
+ * internally. A handful of threads carry an official Orb-it reply —
+ * apologetic, and committing to a named improvement project — using the
+ * Orb-it logo as its avatar. Each post also carries a `company` — a
+ * realistic mix of telecoms, science/research, defence, and other space
+ * customers — shown in a side panel when that post is expanded.
  */
 const POSTS: CustomerPost[] = [
   {
     handle: '@AltitudeAnna',
     displayName: 'Anna Reyes',
     timeAgo: '2h',
-    body: 'Is it too much to ask for our payload to reach 75km? Not 62. Not 90. SEVENTY-FIVE. Every. Single. Time. #Orbit #VoiceOfCustomer',
+    body: 'Is it too much to ask for our payload to reach 75 miles? Not 62. Not 90. SEVENTY-FIVE. Every. Single. Time. #Orbit #VoiceOfCustomer',
     likes: 412,
     shares: 96,
+    company: {
+      name: 'NimbusLink Communications',
+      industry: 'Telecoms',
+      bio: "A regional telecom operator building backhaul capacity for rural 5G. NimbusLink's whole business case rests on a tight relay constellation operating at 75 miles — anything else and the coverage math stops working.",
+    },
     replies: [
       {
         handle: '@SkyBound_Theo',
@@ -68,6 +83,11 @@ const POSTS: CustomerPost[] = [
     body: "Another week, another delay. We were promised weekly launches — at this rate we're lucky to get one a month. Pick up the pace, Orb-it. 🐌",
     likes: 289,
     shares: 54,
+    company: {
+      name: 'Aegis Orbital Logistics',
+      industry: 'Space services (rideshare broker)',
+      bio: "Books payload slots on Orb-it launches on behalf of a dozen smaller clients at once. Every slipped launch cascades into a dozen broken promises down the chain — for Aegis, cadence isn't a nice-to-have, it's the entire product.",
+    },
     replies: [
       {
         handle: '@QuietOrbit_Nia',
@@ -97,6 +117,11 @@ const POSTS: CustomerPost[] = [
     body: "Watched the booster explode on the haul road AGAIN today. That's the third one this quarter. Genuinely not okay to lose hardware on the way to the PAD.",
     likes: 731,
     shares: 210,
+    company: {
+      name: 'Ironhold Defence Systems',
+      industry: 'Defence',
+      bio: "Builds early-warning sensor payloads under a national ministry-of-defence contract. Ironhold's procurement terms have zero tolerance for hardware loss — a booster lost on the haul road is a line item somebody has to explain to a general.",
+    },
     replies: [
       {
         handle: '@GroundControl_Mo',
@@ -123,9 +148,14 @@ const POSTS: CustomerPost[] = [
     handle: '@StarGazer_Sal',
     displayName: 'Sal Whitfield',
     timeAgo: '11h',
-    body: "Why is every launch a different altitude?? Last month it was 61 miles up, this month 88. We don't need a range, we need a number. 75km. That's the ask.",
+    body: "Why is every launch a different altitude?? Last month it was 61 miles up, this month 88. We don't need a range, we need a number. 75 miles. That's the ask.",
     likes: 198,
     shares: 33,
+    company: {
+      name: 'Halcyon Research Institute',
+      industry: 'Science / research',
+      bio: 'An independent atmospheric-science nonprofit flying instrument packages requiring scientific precision most commercial payloads never have to think about — a few miles of altitude drift is enough to ruin months of calibration.',
+    },
     replies: [
       {
         handle: '@ApogeeAmara',
@@ -138,7 +168,7 @@ const POSTS: CustomerPost[] = [
         displayName: 'Orb-it',
         timeAgo: '9h',
         isCompany: true,
-        body: "Fair callout, Sal. We're standing up an improvement project to tighten altitude consistency — 75km, every time, is exactly the target we're working toward.",
+        body: "Fair callout, Sal. We're standing up an improvement project to tighten altitude consistency — 75 miles, every time, is exactly the target we're working toward.",
       },
     ],
   },
@@ -149,6 +179,11 @@ const POSTS: CustomerPost[] = [
     body: 'Manufacturing, haul, prep, sequence… it takes forever to get ONE booster off the ground. Somebody find the bottleneck already.',
     likes: 156,
     shares: 21,
+    company: {
+      name: 'Continental Broadband Networks',
+      industry: 'Telecoms',
+      bio: "Leases capacity across a growing LEO relay network and measures Orb-it's performance the same way it measures its own — end-to-end cycle time, not vibes. Every hour of process waste is an hour Continental's own customers get billed for.",
+    },
     replies: [
       {
         handle: '@LeanLuca',
@@ -172,6 +207,11 @@ const POSTS: CustomerPost[] = [
     body: 'Cadence is a joke right now. Customers need predictable launch windows, not "whenever it\'s ready." Fast AND on schedule — is that so wild?',
     likes: 244,
     shares: 47,
+    company: {
+      name: 'Lumen Constellation Co.',
+      industry: 'Space (commercial imaging constellation)',
+      bio: "Deploying a commercial Earth-imaging constellation one launch at a time. Lumen's whole architecture depends on creating evenly spaced satellite networks — a launch even a little early or late throws the spacing off for the entire fleet, not just one bird.",
+    },
     replies: [
       {
         handle: '@LaunchLagLarry',
@@ -191,15 +231,20 @@ const POSTS: CustomerPost[] = [
     handle: '@MissionControl_Karen',
     displayName: 'Karen Boyle',
     timeAgo: '1d',
-    body: "The altitude swings are the real problem — anywhere from 60 to 90 is not a target, it's a shrug. Give us 75km, nothing else, and I'll stop tweeting about it. Maybe.",
+    body: "The altitude swings are the real problem — anywhere from 60 to 90 is not a target, it's a shrug. Give us 75 miles, nothing else, and I'll stop tweeting about it. Maybe.",
     likes: 503,
     shares: 118,
+    company: {
+      name: 'Arcvale Geophysical Labs',
+      industry: 'Science / research',
+      bio: "Runs gravity-mapping instruments that only mean anything against a known, repeatable orbit. Arcvale's mission planners have one number pinned to the wall — 75 miles — and it requires scientific precision to hold it, launch after launch.",
+    },
     replies: [
       {
         handle: '@StarGazer_Sal',
         displayName: 'Sal Whitfield',
         timeAgo: '23h',
-        body: "We're basically saying the same thing in every thread at this point. 75km. Pick it. Hit it.",
+        body: "We're basically saying the same thing in every thread at this point. 75 miles. Pick it. Hit it.",
       },
       {
         handle: '@OrbitalOlive',
@@ -216,6 +261,11 @@ const POSTS: CustomerPost[] = [
     body: "Paid for a satellite slot months ago. Still waiting. When a booster does go up, it's a coin flip whether it blows up on the haul road first. Speed AND reliability, please — not one or the other.",
     likes: 367,
     shares: 88,
+    company: {
+      name: 'Sentinel Strategic Systems',
+      industry: 'Defence',
+      bio: "A defence-sector prime integrating secure comms relays for a coalition partner. Sentinel's launch windows are tied to broader mission timelines it doesn't control, which makes every Orb-it delay somebody else's crisis too.",
+    },
     replies: [
       {
         handle: '@PayloadPete',
@@ -268,15 +318,28 @@ const HEADER_STARS: {
 
 export function CustomerPortalView() {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  // Whichever post's replies were most recently opened — drives the company
+  // side panel. Cleared when that same post is collapsed again.
+  const [activeCompanyHandle, setActiveCompanyHandle] = useState<
+    string | null
+  >(null)
 
   function toggleExpanded(handle: string) {
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      if (next.has(handle)) next.delete(handle)
-      else next.add(handle)
-      return next
-    })
+    const isOpen = expanded.has(handle)
+    if (isOpen) {
+      setExpanded((prev) => {
+        const next = new Set(prev)
+        next.delete(handle)
+        return next
+      })
+      setActiveCompanyHandle((current) => (current === handle ? null : current))
+    } else {
+      setExpanded((prev) => new Set(prev).add(handle))
+      setActiveCompanyHandle(handle)
+    }
   }
+
+  const activeCompanyPost = POSTS.find((p) => p.handle === activeCompanyHandle)
 
   return (
     <div className="app-shell">
@@ -452,6 +515,36 @@ export function CustomerPortalView() {
                   )
                 })}
               </div>
+
+              <aside
+                className="customer-company-panel"
+                aria-live="polite"
+                aria-label="Customer company profile"
+              >
+                {activeCompanyPost ? (
+                  <div className="customer-company-card">
+                    <p className="customer-company-card__kicker">
+                      Who's behind this post
+                    </p>
+                    <p className="customer-company-card__name">
+                      {activeCompanyPost.company.name}
+                    </p>
+                    <p className="customer-company-card__industry">
+                      {activeCompanyPost.company.industry}
+                    </p>
+                    <p className="customer-company-card__bio">
+                      {activeCompanyPost.company.bio}
+                    </p>
+                    <p className="customer-company-card__attribution">
+                      {activeCompanyPost.displayName} · {activeCompanyPost.handle}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="customer-company-panel__placeholder">
+                    Click a post to see who's behind it.
+                  </p>
+                )}
+              </aside>
             </div>
           </div>
         </section>

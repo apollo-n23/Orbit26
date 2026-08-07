@@ -111,10 +111,12 @@ learning-loop group — a static, read-only "voice of customer" feed.
   (`POSTS` array) — not wired to any real app data (lead times, height,
   defects). Posts complain about launch cadence/delays, altitude
   inconsistency, slow end-to-end process, and boosters exploding on the
-  haul road; several explicitly ask for **exactly 75km**, as fast as
-  possible — deliberately in the customers' own words/units (km) even
-  though the engineering height-achieved metric elsewhere in the app is in
-  miles (voice of customer vs. voice of process). The empty purple space to
+  haul road; several explicitly ask for **exactly 75 miles**, as fast as
+  possible — in the customers' own words, a plain memorable number, however
+  the engineering height-achieved metric elsewhere in the app happens to be
+  randomised (also miles — this page and that metric use the same unit on
+  purpose now; it wasn't always so, see git history if the numbers ever
+  look inconsistent again). The empty purple space to
   the right of the title/tagline (`.customer-platform-header__stars`) is
   filled with a fixed `HEADER_STARS` array of small twinkling dots
   (`@keyframes customer-star-twinkle` — opacity/scale pulse, staggered
@@ -134,6 +136,19 @@ learning-loop group — a static, read-only "voice of customer" feed.
   via `.customer-reply--company`) apologising and committing to a named
   improvement project (cadence, haul-road safety, altitude consistency,
   process cycle time) — a deliberate nod to the app's own Lean/VOC theme.
+- **Company panel** (`.customer-company-panel`, a sticky "small window" to
+  the right of the feed, in what was previously just empty space at wide
+  viewports): each `CustomerPost.company` names who that customer works for
+  — a realistic mix of telecoms, defence, science/research, and other space
+  customers (2 each: NimbusLink/Continental, Ironhold/Sentinel,
+  Halcyon/Arcvale, Aegis Orbital Logistics/Lumen Constellation). Bios
+  scatter callbacks to the app's own themes ("operating at 75 miles",
+  "creating evenly spaced satellite networks", "requiring scientific
+  precision" — verbatim, plus creative variations). Opening a post's replies
+  (`toggleExpanded`) also sets `activeCompanyHandle` to that post, which the
+  panel renders; collapsing that same post clears it back to a placeholder.
+  Only one post's company shows at a time even if several are expanded —
+  whichever was toggled open most recently.
 - Mounted only while `stage === 'customers'`, like `GembaWalkthrough` — no
   state to preserve across hops (the expanded-replies state resets each
   time you leave and come back).
