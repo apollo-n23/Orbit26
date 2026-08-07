@@ -624,6 +624,14 @@ export function IntegratePayloadScene({
               stroke="#5a6574"
               strokeWidth="2"
             />
+            <image
+              href={`${import.meta.env.BASE_URL}OrbitLogo.png`}
+              x="64"
+              y="178"
+              width="18"
+              height="18"
+              opacity="0.9"
+            />
             <rect x="30" y="195" width="28" height="22" fill="#1a222c" />
             <rect x="68" y="195" width="28" height="22" fill="#1a222c" />
             <rect x="30" y="230" width="28" height="22" fill="#1a222c" />

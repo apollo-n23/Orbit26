@@ -20,6 +20,9 @@
   --color-nav-accent: #ff7a33;
   --color-nav-accent-dim: rgba(255, 122, 51, 0.16);
 
+  --color-customer-accent: #b073f0;
+  --color-customer-accent-dim: rgba(176, 115, 240, 0.16);
+
   --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace;
 

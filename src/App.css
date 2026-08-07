@@ -198,9 +198,8 @@
 
 .stage-nav {
   display: flex;
-  justify-content: center;
-  gap: var(--space-2);
   align-items: center;
+  gap: var(--space-3);
   min-height: 3.25rem;
   margin: var(--space-4) var(--space-5);
   padding: var(--space-2) var(--space-4);
@@ -210,6 +209,44 @@
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--color-nav-accent) 30%, transparent),
     0 4px 18px color-mix(in srgb, var(--color-nav-accent) 25%, transparent);
+}
+
+.stage-nav__group {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* Off to the side, deliberately not part of the centered stage group. */
+.stage-nav__customer-btn {
+  flex-shrink: 0;
+  padding: 0.65rem 1.25rem;
+  border: 1px solid var(--color-customer-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-customer-accent-dim);
+  color: var(--color-customer-accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.stage-nav__customer-btn:hover {
+  background: color-mix(in srgb, var(--color-customer-accent) 30%, var(--color-customer-accent-dim));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-customer-accent) 55%, transparent);
+}
+
+.stage-nav__customer-btn--active {
+  background: var(--color-customer-accent);
+  color: #1c1030;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-customer-accent) 75%, transparent);
 }
 
 .stage-nav__item {
@@ -879,6 +916,15 @@
   backdrop-filter: blur(10px);
   text-align: center;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.orbit-complete__brand-mark {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  margin: 0 auto var(--space-3);
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
 .orbit-complete__kicker {
@@ -2212,11 +2258,15 @@
 
 .booster__logo {
   position: absolute;
-  font-size: 0.55rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  color: #2a3340;
-  opacity: 0.85;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1.35rem;
+  height: 1.35rem;
+  object-fit: contain;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.45));
+  pointer-events: none;
 }
 
 .booster__engine {
@@ -2745,7 +2795,8 @@
 }
 
 .booster--haul .booster__logo {
-  font-size: clamp(0.4rem, 1.2vw, 0.55rem);
+  width: clamp(0.85rem, 3vw, 1.1rem);
+  height: clamp(0.85rem, 3vw, 1.1rem);
 }
 
 .booster--haul .booster__ready-tag {
@@ -3348,10 +3399,8 @@
 }
 
 .booster--launch-prep .booster__logo {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-size: 0.55rem;
-  letter-spacing: 0.08em;
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
 .booster--launch-prep .booster__ready-tag {
@@ -5269,6 +5318,110 @@
     grid-template-columns: 1fr;
     gap: var(--space-2);
   }
+}
+
+/* ── Customer Portal — voice-of-customer feed ────────────────── */
+
+.customer-ask {
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-customer-accent) 50%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-customer-accent-dim) 70%, var(--color-surface-raised));
+}
+
+.customer-ask__kicker {
+  margin: 0 0 var(--space-2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-customer-accent);
+}
+
+.customer-ask__copy {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+
+.customer-ask__copy strong {
+  color: var(--color-customer-accent);
+}
+
+.customer-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 42rem;
+  width: 100%;
+  margin: var(--space-4) auto 0;
+}
+
+.customer-post {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
+.customer-post__avatar {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--color-customer-accent) 35%, var(--color-surface));
+  color: var(--color-customer-accent);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.customer-post__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.customer-post__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+
+.customer-post__name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.customer-post__handle,
+.customer-post__time {
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+}
+
+.customer-post__dot {
+  color: var(--color-text-dim);
+}
+
+.customer-post__text {
+  margin: 0 0 var(--space-2);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.customer-post__stats {
+  display: flex;
+  gap: var(--space-4);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
 }
 
 /* Narrow layouts: stack brand / metrics / actions */

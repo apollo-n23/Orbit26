@@ -88,6 +88,28 @@ not a linear Run Process → Proceed playthrough.
   auto-advances `currentStepIndex` into the next step, which would fight
   the step nav. The scene's own "seated" visual already shows arrival.
 
+### Customer Portal (`views/CustomerPortalView.tsx`)
+
+A separate stage, deliberately **outside** the Gemba/Round1/Redesign/Round2
+learning-loop group — a static, read-only "voice of customer" feed.
+
+- **Route:** `#/customers`. `StageNav` renders it as its own
+  `stage-nav__customer-btn` (violet `--color-customer-accent`, distinct from
+  the orange stage-group accent), positioned to the side: `.stage-nav__group`
+  takes `flex: 1` and centers the 4 main stage buttons, leaving the customer
+  button pinned at the far end of the bar rather than in that group.
+- **Content is static flavor text** (`POSTS` array of fictional social posts)
+  — not wired to any real app data (lead times, height, defects). Posts
+  complain about launch cadence/delays, altitude inconsistency, slow
+  end-to-end process, and boosters exploding on the haul road, and a pinned
+  `.customer-ask` banner spells out the ask plainly: launch to **exactly
+  75km**, as fast as possible. Deliberately in the customers' own words/units
+  (km) even though the engineering height-achieved metric elsewhere in the
+  app is in miles — that unit mismatch is the point (voice of customer vs.
+  voice of process).
+- Mounted only while `stage === 'customers'`, like `GembaWalkthrough` — no
+  state to preserve across hops.
+
 ### Launch-prep tech → play behaviour (`launchPrepTech`)
 | Value | Play effect in `LaunchPrepScene` |
 |--------|----------------------------------|
@@ -112,7 +134,8 @@ Resolve via `resolveLaunchPrepTech(process)`. Scene must re-read tech when the l
 | `types/round.ts`, `data/rounds.ts` | Round configs; `AppStage` + `hashForStage` / `stageFromHash` |
 | `RoundSession.tsx` | redesign / play / orbit-complete for one round; accepts `hidden`, `requestedPhase`, `onPhaseChange` |
 | `views/GembaWalkthrough.tsx` | Gemba walk — see below |
-| `StageNav.tsx` | Persistent top nav: Gemba · Round 1 · Redesign · Round 2 |
+| `StageNav.tsx` | Persistent top nav: Gemba · Round 1 · Redesign · Round 2, plus a separately-styled Customer Portal button off to the side |
+| `views/CustomerPortalView.tsx` | Customer Portal — see below |
 | `RedesignWorkshop.tsx` | Round 2 pre-play redesign |
 | `processEdit.ts`, `roadGrid.ts` | Apply/resolve redesign fields |
 | `lib/redesignCost.ts` | Point costs + `RedesignCostBreakdown` builder for the total cost of improvement |
@@ -139,8 +162,9 @@ Persistent top-level nav (`StageNav.tsx`, rendered once in `App.tsx` above which
 
 ## Site chrome & branding (settled)
 
-- **Top banner** on play, redesign, and orbit-complete: **PMI logo** (left) · divider · **Orb-it** + subtitle/round label.
+- **Top banner** on play, redesign, and orbit-complete: **PMI logo** (left) · divider · **Orb-it** + subtitle/round label. Overall app branding is PMI — this banner stays PMI-only, never the Orb-it mark.
 - Logo asset: `public/PMI Logo.svg` → URL `/PMI%20Logo.svg` via `SiteBrand` (`import.meta.env.BASE_URL`).
+- **Orb-it (in-fiction) logo** — `public/OrbitLogo.png` → URL `/OrbitLogo.png`, same `import.meta.env.BASE_URL` pattern. This is the fictional company's own mark, used *inside* the exercise/simulation content (never the top banner): the booster's `.booster__logo` decal (`Booster.tsx` — appears in manufacture, haul, launch-prep, and the redesign workshop, since they all reuse this one component), a small badge on the Assembly building facade in the haul scene (`IntegratePayloadScene.tsx`, SVG `<image>`), and a brand mark on the orbit-complete panel (`OrbitCompleteScene.tsx`). Add further Orb-it-branded touches to other process-step/simulation content freely — just keep the top banner PMI-only.
 - Play top bar metrics: **Lead Time** + **Launches x/3** only (no Yield / Flow Efficiency).
 - Static site assets belong in **`public/`** (not `src/` unless import-bundled).
 

@@ -5,6 +5,8 @@ interface BoosterProps {
   label?: string
 }
 
+const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
+
 /** Shared CSS booster art used in manufacture and haul scenes. */
 export function Booster({
   className = '',
@@ -29,7 +31,12 @@ export function Booster({
       <div className="booster__body">
         <span className="booster__band" />
         <span className="booster__band" />
-        <span className="booster__logo">ORB-IT</span>
+        <img
+          src={ORBIT_LOGO_SRC}
+          alt=""
+          className="booster__logo"
+          draggable={false}
+        />
       </div>
       <div className="booster__engine">
         <span className="booster__nozzle" />

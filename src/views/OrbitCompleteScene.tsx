@@ -73,6 +73,11 @@ export function OrbitCompleteScene({
           .filter(Boolean)
           .join(' ')}
       >
+        <img
+          src={`${import.meta.env.BASE_URL}OrbitLogo.png`}
+          alt="Orb-it"
+          className="orbit-complete__brand-mark"
+        />
         <p className="orbit-complete__kicker">Round {round.id}</p>
         <h2 id="orbit-complete-heading" className="orbit-complete__title">
           {round.completeHeadline}
