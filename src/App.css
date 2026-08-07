@@ -5897,6 +5897,11 @@
   border-radius: var(--radius-sm);
 }
 
+/* Logo doubled in size (40px → 80px) — heading scaled up to match. */
+.home-header h2 {
+  font-size: 2rem;
+}
+
 .intranet-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
@@ -5939,6 +5944,29 @@
 .intranet-tile__description {
   font-size: 0.85rem;
   color: var(--color-text-muted);
+}
+
+/* Marketing image beneath the tiles — full-width hero shot, not a tile. */
+.home-marketing {
+  margin: var(--space-6) 0 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+}
+
+.home-marketing__image {
+  display: block;
+  width: 100%;
+  max-height: 26rem;
+  object-fit: cover;
+}
+
+.home-marketing__caption {
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  text-align: center;
 }
 
 /* ── Training (video placeholder) ────────────────────────── */

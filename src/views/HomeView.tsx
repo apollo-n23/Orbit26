@@ -3,6 +3,7 @@ import { StageNav } from '../components/StageNav'
 import type { AppStage } from '../types/round'
 
 const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
+const ORB_LAUNCH_PAD_SRC = `${import.meta.env.BASE_URL}OrbLaunchPad.png`
 
 interface HomeViewProps {
   activeStage: AppStage
@@ -58,8 +59,8 @@ export function HomeView({ activeStage, onNavigateStage }: HomeViewProps) {
               src={ORBIT_LOGO_SRC}
               alt=""
               className="home-header__logo"
-              width={40}
-              height={40}
+              width={80}
+              height={80}
               decoding="async"
             />
             <div>
@@ -90,6 +91,18 @@ export function HomeView({ activeStage, onNavigateStage }: HomeViewProps) {
                 </button>
               ))}
             </div>
+
+            <figure className="home-marketing">
+              <img
+                src={ORB_LAUNCH_PAD_SRC}
+                alt="An Orb-it launch vehicle standing ready on the pad"
+                className="home-marketing__image"
+                decoding="async"
+              />
+              <figcaption className="home-marketing__caption">
+                Every satellite starts here — on the pad, ready for liftoff.
+              </figcaption>
+            </figure>
           </div>
         </section>
       </main>

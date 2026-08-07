@@ -35,7 +35,8 @@ simulator. `views/HomeView.tsx`. Three tiles, each navigating via
 - All four (`HomeView`, `TrainingView`, `AnnualReportView`, `CreateInvoicesView`) follow the same **mount-only-while-active, no state to preserve** pattern as `GembaWalkthrough`/`CustomerPortalView` — not part of the persistent-`RoundSession` group.
 - Each renders its own PMI banner (`SiteBrand`) + `StageNav` beneath it, same convention as every other page (see "Stage nav" below).
 - `StageNav` gained a **Home** button (`.stage-nav__home-btn`, orbital-blue accent) at the far left, before the centered Gemba/Round 1/Redesign/Round 2 group, so Home is reachable from anywhere — this is the only way back once inside any other stage, since none of the intranet pages are part of the round-based flow.
-- Orb-it logo (`public/OrbitLogo.png`) appears on Home (next to "Welcome back") and on the Annual Report (masthead + footer signature) — in-fiction branding, same convention as the booster decal / Assembly badge / Launch Pad mark.
+- Orb-it logo (`public/OrbitLogo.png`) appears on Home (next to "Welcome back", 80×80 — doubled from its original 40×40, with the "Welcome back" heading scaled up to `2rem` to match) and on the Annual Report (masthead + footer signature) — in-fiction branding, same convention as the booster decal / Assembly badge / Launch Pad mark.
+- **Marketing image** (`public/OrbLaunchPad.png`, a photo-style Orb-it launch vehicle on the pad): rendered on Home below the three tiles as a full-width hero shot (`.home-marketing`), captioned "Every satellite starts here — on the pad, ready for liftoff."
 
 ---
 
