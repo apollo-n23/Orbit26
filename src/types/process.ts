@@ -73,6 +73,11 @@ export interface ProcessStep {
    * (e.g. Range Safety). Mirrors process.launchSeqRemovedIds.
    */
   launchSeqRemovedIds?: string[]
+  /**
+   * Launch-sequence redesign: launch key mechanism lubricated so the
+   * hold-to-turn arming action is near-instant. Mirrors process.keyLubrication.
+   */
+  keyLubrication?: boolean
 }
 
 /**
@@ -106,6 +111,8 @@ export interface RedesignCostBreakdown {
   goRealignCost: number
   /** Launch sequence: cost of removing Range Safety from the poll. */
   rangeRemovalCost: number
+  /** Launch sequence: one-time cost of lubricating the launch key mechanism. */
+  keyLubricationCost: number
   /** Sum of all categories above. */
   total: number
 }
@@ -148,6 +155,11 @@ export interface ProcessVersion {
    * Prefer process-level; may also be mirrored on the launch-sequence step.
    */
   launchSeqRemovedIds?: string[]
+  /**
+   * Launch-sequence redesign (Round 2): launch key mechanism lubricated so
+   * the hold-to-turn arming action is near-instant instead of a long hold.
+   */
+  keyLubrication?: boolean
 }
 
 export interface SessionMetrics {

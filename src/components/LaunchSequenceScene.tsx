@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ProcessVersion, RunState } from '../types/process'
 import {
+  resolveKeyLubrication,
   resolveLaunchSeqConfig,
   type ResolvedLaunchSeqConfig,
 } from '../lib/processEdit'
@@ -19,8 +20,10 @@ interface LaunchSequenceSceneProps {
 
 const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
 
-/** Hold duration to fully turn the launch key (ms). */
-const KEY_HOLD_MS = 1400
+/** Hold duration to fully turn the launch key (ms), as-is. */
+const KEY_HOLD_MS_BASELINE = 1400
+/** Round 2 redesign — key lubrication: near-instant turn. */
+const KEY_HOLD_MS_LUBRICATED = 120
 
 /**
  * Liftoff cutaway duration before step completes (ms).
@@ -46,6 +49,8 @@ export function LaunchSequenceScene({
     [configProp, process],
   )
   const { goStations, realignedGoIds, keyIndex, liftoffIndex } = config
+  const keyLubrication = resolveKeyLubrication(process)
+  const keyHoldMs = keyLubrication ? KEY_HOLD_MS_LUBRICATED : KEY_HOLD_MS_BASELINE
 
   const actionIndex = run.nextMachineIndex
   const locked = run.status === 'complete' || run.status === 'step_complete'
@@ -134,7 +139,7 @@ export function LaunchSequenceScene({
 
   const tickKey = useCallback(() => {
     const elapsed = performance.now() - keyStartRef.current
-    const pct = Math.min(100, (elapsed / KEY_HOLD_MS) * 100)
+    const pct = Math.min(100, (elapsed / keyHoldMs) * 100)
     setKeyProgress(pct)
     if (pct >= 100) {
       keyRafRef.current = null
@@ -143,13 +148,13 @@ export function LaunchSequenceScene({
       return
     }
     keyRafRef.current = requestAnimationFrame(tickKey)
-  }, [completeCurrent])
+  }, [completeCurrent, keyHoldMs])
 
   function startKeyHold() {
     if (!canInteract || actionIndex !== keyIndex || keyDone) return
     if (keyProgress >= 100) return
     // Resume from partial progress if released early.
-    const resumeMs = (keyProgress / 100) * KEY_HOLD_MS
+    const resumeMs = (keyProgress / 100) * keyHoldMs
     keyStartRef.current = performance.now() - resumeMs
     if (keyRafRef.current != null) cancelAnimationFrame(keyRafRef.current)
     keyRafRef.current = requestAnimationFrame(tickKey)
@@ -414,7 +419,9 @@ export function LaunchSequenceScene({
                 {keyDone || showLaunching || showLaunched
                   ? 'ARMED'
                   : showKey
-                    ? 'Hold to turn 90°'
+                    ? keyLubrication
+                      ? 'Hold to turn 90° — lubricated, near-instant'
+                      : 'Hold to turn 90°'
                     : 'Locked until all stations GO'}
               </span>
             </div>

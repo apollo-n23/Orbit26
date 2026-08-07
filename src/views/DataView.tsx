@@ -39,6 +39,10 @@ function RedesignCostSummary({ cost }: { cost: RedesignCostBreakdown }) {
       label: 'Launch sequence — realigns & removals',
       value: cost.goRealignCost + cost.rangeRemovalCost,
     },
+    {
+      label: 'Launch sequence — key lubrication',
+      value: cost.keyLubricationCost,
+    },
   ]
   const accrued = rows.filter((r) => r.value > 0)
 

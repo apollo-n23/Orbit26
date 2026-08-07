@@ -3,6 +3,7 @@ import type { ProcessMachine, ProcessVersion } from '../types/process'
 import {
   applyAutoMoveBooster,
   applyHaulPath,
+  applyKeyLubrication,
   applyLaunchPrepTech,
   applyLaunchSeqRealign,
   applyLaunchSeqRedesign,
@@ -14,6 +15,7 @@ import {
   LAUNCH_PREP_TECH_OPTIONS,
   LAUNCH_SEQ_STATION_CRITICALITY,
   resolveAutoMoveBooster,
+  resolveKeyLubrication,
   resolveLaunchPrepTech,
   resolveLaunchSeqRealignIds,
   resolveLaunchSeqRemovedIds,
@@ -22,6 +24,7 @@ import {
   AUTO_TRANSFER_COST,
   buildCostBreakdown,
   GO_REALIGN_COST,
+  KEY_LUBRICATION_COST,
   LAUNCH_PREP_TECH_COST,
   MACHINE_MOVE_COST,
   movedMachineIds,
@@ -99,6 +102,7 @@ export function RedesignWorkshop({
   const launchSeqRealignIds = resolveLaunchSeqRealignIds(draft)
   const launchSeqRemovedIds = resolveLaunchSeqRemovedIds(draft)
   const rangeRemoved = launchSeqRemovedIds.includes(LAUNCH_SEQ_RANGE_STATION_ID)
+  const keyLubrication = resolveKeyLubrication(draft)
   const endpoints = requiredEndpointCells()
   const roadCost = useMemo(
     () => roadCostFromTiles(roadTiles, baselineRoadTiles),
@@ -199,6 +203,11 @@ export function RedesignWorkshop({
     if (rangeRemoved) setEverRangeRemoved(true)
   }, [rangeRemoved])
 
+  const [everKeyLubricationOn, setEverKeyLubricationOn] = useState(false)
+  useEffect(() => {
+    if (keyLubrication) setEverKeyLubricationOn(true)
+  }, [keyLubrication])
+
   const costBreakdown = useMemo(
     () =>
       buildCostBreakdown({
@@ -211,6 +220,7 @@ export function RedesignWorkshop({
         ),
         goRealignCost: everRealignedGoIds.size * GO_REALIGN_COST,
         rangeRemovalCost: everRangeRemoved ? RANGE_REMOVAL_COST : 0,
+        keyLubricationCost: everKeyLubricationOn ? KEY_LUBRICATION_COST : 0,
       }),
     [
       everMovedMachineIds,
@@ -219,6 +229,7 @@ export function RedesignWorkshop({
       everSelectedTechIds,
       everRealignedGoIds,
       everRangeRemoved,
+      everKeyLubricationOn,
     ],
   )
 
@@ -306,6 +317,16 @@ export function RedesignWorkshop({
     setDraft((p) => applyLaunchSeqRemove(p, LAUNCH_SEQ_RANGE_STATION_ID, false))
   }
 
+  function handleToggleKeyLubrication() {
+    const enabling = !resolveKeyLubrication(draft)
+    if (enabling && !everKeyLubricationOn) {
+      if (blockOverBudget(KEY_LUBRICATION_COST, 'lubricate the launch key')) return
+    } else {
+      setBudgetError(null)
+    }
+    setDraft((p) => applyKeyLubrication(p, enabling))
+  }
+
   function toggleLaunchSeqInfo(stationId: string) {
     setLaunchSeqInfoId((prev) => (prev === stationId ? null : stationId))
   }
@@ -347,12 +368,15 @@ export function RedesignWorkshop({
     const selectedTech = resolveLaunchPrepTech(draft)
     const realignIds = resolveLaunchSeqRealignIds(draft)
     const removedIds = resolveLaunchSeqRemovedIds(draft)
+    const keyLubricationSelected = resolveKeyLubrication(draft)
     // Always start from a fresh clone of the manufacture draft, then stamp the road.
     let withRoad = applyHaulPath(structuredClone(draft), path)
     // Re-stamp launch-prep tech after haul apply (defensive: same field on version + step).
     withRoad = applyLaunchPrepTech(withRoad, selectedTech)
     // Re-stamp launch-sequence redesign (realign + optional Range removal).
     withRoad = applyLaunchSeqRedesign(withRoad, realignIds, removedIds)
+    // Re-stamp key lubrication (defensive: same field on version + step).
+    withRoad = applyKeyLubrication(withRoad, keyLubricationSelected)
     const stored = withRoad.haulPathOverride ?? getHaulStep(withRoad)?.haulPath
     if (!stored || stored.length < 2) {
       setShowConfirmDialog(false)
@@ -440,7 +464,9 @@ export function RedesignWorkshop({
             <li>
               Launch sequence{' '}
               <strong>
-                {costBreakdown.goRealignCost + costBreakdown.rangeRemovalCost}
+                {costBreakdown.goRealignCost +
+                  costBreakdown.rangeRemovalCost +
+                  costBreakdown.keyLubricationCost}
               </strong>
             </li>
           </ul>
@@ -704,6 +730,44 @@ export function RedesignWorkshop({
               info panel for operational criticality. Range Safety can be
               removed from the sequence entirely ({RANGE_REMOVAL_COST} pts).
             </p>
+
+            <button
+              type="button"
+              className={[
+                'redesign-tech-card',
+                'redesign-key-lube',
+                keyLubrication ? 'redesign-tech-card--selected' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={handleToggleKeyLubrication}
+              aria-pressed={keyLubrication}
+              disabled={
+                !keyLubrication &&
+                !everKeyLubricationOn &&
+                KEY_LUBRICATION_COST > remainingBudget
+              }
+            >
+              <span className="redesign-tech-card__name">Key lubrication</span>
+              <span className="redesign-tech-card__summary">
+                A cheap, simple fix for the final step: lubricate the launch
+                key mechanism so the hold-to-turn arming action is almost
+                instantaneous instead of a long deliberate hold.
+              </span>
+              <span className="redesign-tech-card__cost">
+                {KEY_LUBRICATION_COST} pts
+                {!keyLubrication && everKeyLubricationOn ? ' · already spent' : ''}
+                {!keyLubrication &&
+                !everKeyLubricationOn &&
+                KEY_LUBRICATION_COST > remainingBudget
+                  ? ' · over budget'
+                  : ''}
+              </span>
+              <span className="redesign-tech-card__status">
+                {keyLubrication ? 'Enabled' : 'Enable'}
+              </span>
+            </button>
+
             <ul className="redesign-seq__list" aria-label="GO stations">
               {LAUNCH_SEQ_GO_STATIONS.map((station) => {
                 const removed = launchSeqRemovedIds.includes(station.id)

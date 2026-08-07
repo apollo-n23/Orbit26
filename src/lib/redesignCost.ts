@@ -18,6 +18,8 @@ export const MACHINE_MOVE_COST = 15
 export const AUTO_TRANSFER_COST = 40
 export const GO_REALIGN_COST = 10
 export const RANGE_REMOVAL_COST = 35
+/** Key lubrication: a cheap, simple mechanical fix with an outsized payoff. */
+export const KEY_LUBRICATION_COST = 15
 
 export const LAUNCH_PREP_TECH_COST: Record<LaunchPrepTech, number> = {
   'faster-pumps': 20,
@@ -72,6 +74,7 @@ export function buildCostBreakdown(parts: {
   launchPrepTechCost: number
   goRealignCost: number
   rangeRemovalCost: number
+  keyLubricationCost: number
 }): RedesignCostBreakdown {
   return {
     ...parts,
@@ -81,7 +84,8 @@ export function buildCostBreakdown(parts: {
       parts.roadCost +
       parts.launchPrepTechCost +
       parts.goRealignCost +
-      parts.rangeRemovalCost,
+      parts.rangeRemovalCost +
+      parts.keyLubricationCost,
   }
 }
 
@@ -92,4 +96,5 @@ export const EMPTY_COST_BREAKDOWN: RedesignCostBreakdown = buildCostBreakdown({
   launchPrepTechCost: 0,
   goRealignCost: 0,
   rangeRemovalCost: 0,
+  keyLubricationCost: 0,
 })

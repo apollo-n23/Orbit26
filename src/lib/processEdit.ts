@@ -339,6 +339,29 @@ export function applyLaunchSeqRemoveRange(
   return applyLaunchSeqRemove(process, LAUNCH_SEQ_RANGE_STATION_ID, removed)
 }
 
+/** Whether the launch key mechanism is lubricated (Round 2 redesign). */
+export function resolveKeyLubrication(process: ProcessVersion): boolean {
+  if (process.keyLubrication === true) return true
+  return getLaunchSeqStep(process)?.keyLubrication === true
+}
+
+/**
+ * Enable/disable key lubrication (Round 2 redesign): near-instant hold-to-turn
+ * arming instead of the long as-is hold.
+ */
+export function applyKeyLubrication(
+  process: ProcessVersion,
+  enabled: boolean,
+): ProcessVersion {
+  return {
+    ...process,
+    keyLubrication: enabled,
+    steps: process.steps.map((s) =>
+      s.kind === 'launch-sequence' ? { ...s, keyLubrication: enabled } : s,
+    ),
+  }
+}
+
 /**
  * Resolved launch-sequence play config from redesign fields.
  * Round 1 / unset fields → full baseline GO list, no realign (as-is friction).
