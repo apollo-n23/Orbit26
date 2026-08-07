@@ -551,47 +551,62 @@ export function IntegratePayloadScene({
             {/*
               Fixed decorative obstacle in the open grass pocket between the
               Assembly building and the road's loop around it (scene rect
-              x=280–360, y=280–360 — matches roadGrid.ts TREE_CLUSTER_CELLS,
-              cols 7–8 / rows 7–8). Purely visual: this pocket is already
-              outside the drivable safe corridor, and the matching grid
-              cells are locked from being painted as road in the Round 2
-              redesign workshop.
+              x=280–360, y=240–360 — matches roadGrid.ts TREE_CLUSTER_CELLS,
+              cols 7–8 / rows 6–8, a 2x3 block). Purely visual: this pocket
+              is already outside the drivable safe corridor, and the
+              matching grid cells are locked from being painted as road in
+              the Round 2 redesign workshop.
             */}
             {[
-              { cx: 300, cy: 306, r: 15 },
-              { cx: 337, cy: 297, r: 12 },
-              { cx: 315, cy: 337, r: 14 },
-              { cx: 347, cy: 331, r: 11 },
+              { cx: 340, cy: 250, r: 17 },
+              { cx: 298, cy: 258, r: 20 },
+              { cx: 302, cy: 300, r: 21 },
+              { cx: 343, cy: 293, r: 17 },
+              { cx: 316, cy: 336, r: 19 },
+              { cx: 350, cy: 330, r: 16 },
             ].map((tree, i) => (
               <g key={i} transform={`translate(${tree.cx}, ${tree.cy})`}>
                 <ellipse
                   cx="0"
-                  cy={tree.r * 0.85}
-                  rx={tree.r * 0.9}
-                  ry={tree.r * 0.28}
-                  fill="rgba(8, 20, 6, 0.35)"
+                  cy={tree.r * 0.9}
+                  rx={tree.r * 1.0}
+                  ry={tree.r * 0.32}
+                  fill="rgba(6, 16, 5, 0.4)"
                 />
                 <rect
-                  x={-tree.r * 0.16}
-                  y={tree.r * 0.35}
-                  width={tree.r * 0.32}
-                  height={tree.r * 0.6}
+                  x={-tree.r * 0.2}
+                  y={tree.r * 0.3}
+                  width={tree.r * 0.4}
+                  height={tree.r * 0.7}
+                  rx={tree.r * 0.05}
                   fill="#5b3a22"
-                  stroke="#3e2716"
-                  strokeWidth="1"
-                />
-                <circle
-                  r={tree.r}
-                  fill="#276029"
-                  stroke="#153d18"
+                  stroke="#2e1c10"
                   strokeWidth="1.5"
                 />
                 <circle
-                  cx={-tree.r * 0.28}
-                  cy={-tree.r * 0.28}
-                  r={tree.r * 0.45}
-                  fill="#3d8a3a"
+                  r={tree.r * 1.08}
+                  fill="#0f2b12"
                   opacity="0.55"
+                />
+                <circle
+                  r={tree.r}
+                  fill="#2c6b2c"
+                  stroke="#123714"
+                  strokeWidth="2.25"
+                />
+                <circle
+                  cx={-tree.r * 0.05}
+                  cy={-tree.r * 0.05}
+                  r={tree.r * 0.72}
+                  fill="#3c8a3a"
+                  opacity="0.8"
+                />
+                <circle
+                  cx={-tree.r * 0.32}
+                  cy={-tree.r * 0.32}
+                  r={tree.r * 0.4}
+                  fill="#57b054"
+                  opacity="0.75"
                 />
               </g>
             ))}
