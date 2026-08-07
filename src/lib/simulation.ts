@@ -2,6 +2,7 @@ import type {
   ProcessMachine,
   ProcessStep,
   ProcessVersion,
+  RedesignCostBreakdown,
   RunState,
   SessionMetrics,
 } from '../types/process'
@@ -370,8 +371,8 @@ export const formatCycleTime = formatLeadTime
 
 /** Optional process metrics attached when logging a completed unit. */
 export interface LeadTimeEntryExtras {
-  /** Road construction cost points from redesign (same for all launches if fixed at confirm). */
-  roadCost?: number
+  /** Redesign cost breakdown (same for all launches if fixed at confirm). */
+  costBreakdown?: RedesignCostBreakdown
 }
 
 /** Build a Data-tab board entry from a just-completed unit run. */
@@ -382,7 +383,7 @@ export function leadTimeEntryFromRun(
   runNumber: number
   durationMs: number
   completedAt: number
-  roadCost?: number
+  costBreakdown?: RedesignCostBreakdown
 } | null {
   if (
     run.status !== 'complete' ||
@@ -396,7 +397,9 @@ export function leadTimeEntryFromRun(
     runNumber: run.completedRuns,
     durationMs: Math.max(0, run.runEndedAt - run.runStartedAt),
     completedAt: run.runEndedAt,
-    ...(extras?.roadCost !== undefined ? { roadCost: extras.roadCost } : {}),
+    ...(extras?.costBreakdown !== undefined
+      ? { costBreakdown: extras.costBreakdown }
+      : {}),
   }
 }
 

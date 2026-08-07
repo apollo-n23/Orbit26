@@ -8,7 +8,7 @@ import {
   type AppStage,
   type RoundId,
 } from './types/round'
-import type { LeadTimeEntry } from './types/process'
+import type { LeadTimeEntry, RedesignCostBreakdown } from './types/process'
 import './App.css'
 
 /**
@@ -29,6 +29,11 @@ function App() {
   // localStorage snapshot.
   const [round1Entries, setRound1Entries] = useState<LeadTimeEntry[]>([])
   const [round2Entries, setRound2Entries] = useState<LeadTimeEntry[]>([])
+  // Round 2's confirmed redesign cost breakdown (null until Confirm), lifted
+  // the same way so either round's Data tab can show it live.
+  const [round2Cost, setRound2Cost] = useState<RedesignCostBreakdown | null>(
+    null,
+  )
 
   useEffect(() => {
     // Normalise empty hash to round 1 so the URL is shareable.
@@ -69,6 +74,14 @@ function App() {
     [],
   )
 
+  const handleCostBreakdownChange = useCallback(
+    (roundId: RoundId, cost: RedesignCostBreakdown | null) => {
+      // Only Round 2 ever has a redesign cost (Round 1 has no redesign).
+      if (roundId === 2) setRound2Cost(cost)
+    },
+    [],
+  )
+
   const round1 = getRoundConfig(1)
   const round2 = getRoundConfig(2)
 
@@ -85,6 +98,8 @@ function App() {
           roundLabel: round2.label,
           entries: round2Entries,
         }}
+        onCostBreakdownChange={handleCostBreakdownChange}
+        otherRoundCostBreakdown={round2Cost}
       />
       <RoundSession
         round={round2}
@@ -99,6 +114,7 @@ function App() {
           roundLabel: round1.label,
           entries: round1Entries,
         }}
+        onCostBreakdownChange={handleCostBreakdownChange}
       />
     </>
   )

@@ -20,7 +20,12 @@ import {
   startMachineWork,
 } from '../lib/simulation'
 import type { AppView } from '../types/views'
-import type { LeadTimeEntry, ProcessVersion, RunState } from '../types/process'
+import type {
+  LeadTimeEntry,
+  ProcessVersion,
+  RedesignCostBreakdown,
+  RunState,
+} from '../types/process'
 import { INITIAL_RUN_STATE } from '../types/process'
 import type { RoundConfig, RoundId } from '../types/round'
 import { ROCKETS_PER_ROUND, hashForRound } from '../types/round'
@@ -53,6 +58,13 @@ interface RoundSessionProps {
     roundLabel: string
     entries: LeadTimeEntry[]
   }
+  /** Reports this round's confirmed redesign cost so the other round's Data tab can show it too. */
+  onCostBreakdownChange?: (
+    roundId: RoundId,
+    cost: RedesignCostBreakdown | null,
+  ) => void
+  /** The OTHER round's confirmed redesign cost, for this round's Data tab. */
+  otherRoundCostBreakdown?: RedesignCostBreakdown | null
 }
 
 export function RoundSession({
@@ -63,6 +75,8 @@ export function RoundSession({
   onPhaseChange,
   onLeadTimeLogChange,
   otherRoundEntries,
+  onCostBreakdownChange,
+  otherRoundCostBreakdown,
 }: RoundSessionProps) {
   const [activeView, setActiveView] = useState<AppView>('simulation')
   const [sessionActive, setSessionActive] = useState(false)
@@ -145,6 +159,11 @@ export function RoundSession({
     onLeadTimeLogChange?.(round.id, leadTimeLog)
   }, [leadTimeLog, round.id, onLeadTimeLogChange])
 
+  // Same for the confirmed redesign cost breakdown (undefined until Confirm).
+  useEffect(() => {
+    onCostBreakdownChange?.(round.id, process.costBreakdown ?? null)
+  }, [process.costBreakdown, round.id, onCostBreakdownChange])
+
   useEffect(() => {
     if (!isRunTimerActive(run)) return
     const id = window.setInterval(() => setNow(Date.now()), 200)
@@ -154,7 +173,7 @@ export function RoundSession({
   useEffect(() => {
     if (run.status !== 'complete') return
     const entry = leadTimeEntryFromRun(run, {
-      roadCost: process.roadCost,
+      costBreakdown: process.costBreakdown,
     })
     if (!entry) return
     if (entry.runNumber <= lastLoggedRunRef.current) return
@@ -175,7 +194,7 @@ export function RoundSession({
     run.completedRuns,
     run.runEndedAt,
     run.runStartedAt,
-    process.roadCost,
+    process.costBreakdown,
     round.id,
   ])
 
@@ -332,6 +351,11 @@ export function RoundSession({
                   ]
             }
             rocketsGoal={ROCKETS_PER_ROUND}
+            round2CostBreakdown={
+              round.id === 2
+                ? process.costBreakdown ?? null
+                : otherRoundCostBreakdown ?? null
+            }
           />
         )}
       </main>

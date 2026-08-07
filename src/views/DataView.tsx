@@ -1,4 +1,4 @@
-import type { LeadTimeEntry } from '../types/process'
+import type { LeadTimeEntry, RedesignCostBreakdown } from '../types/process'
 import { formatLeadTime } from '../lib/simulation'
 import { averageLeadTimeMs, launchDurationsMs } from '../lib/roundMetrics'
 import { RoundLeadTimeCompare } from '../components/RoundLeadTimeCompare'
@@ -14,11 +14,67 @@ interface DataViewProps {
   /** Both rounds' live entries, e.g. [round1Section, round2Section]. */
   rounds: RoundLeadTimeSection[]
   rocketsGoal?: number
+  /** Round 2's confirmed redesign cost breakdown, or null before Confirm. */
+  round2CostBreakdown?: RedesignCostBreakdown | null
 }
 
-function formatRoadCost(cost: number | undefined): string {
+function formatCost(cost: number | undefined): string {
   if (cost == null) return '—'
   return `${cost} pts`
+}
+
+/** Cost of improvement summary: total + breakdown by source, for Round 2. */
+function RedesignCostSummary({ cost }: { cost: RedesignCostBreakdown }) {
+  const rows: { label: string; value: number }[] = [
+    { label: 'Manufacture — machine moves', value: cost.machineMoveCost },
+    {
+      label: 'Manufacture — auto-transfer upgrade',
+      value: cost.autoTransferCost,
+    },
+    { label: 'Haul road — tiles', value: cost.roadCost },
+    { label: 'Launch prep — technology', value: cost.launchPrepTechCost },
+    {
+      label: 'Launch sequence — realigns & removals',
+      value: cost.goRealignCost + cost.rangeRemovalCost,
+    },
+  ]
+  const accrued = rows.filter((r) => r.value > 0)
+
+  return (
+    <div className="lead-board__round-section">
+      <h3 className="lead-board__round-heading">
+        Total cost of improvement — Round 2
+      </h3>
+      <p className="view-panel__lede">
+        Builds as you invest in redesign upgrades. Only removing road tiles
+        brings it back down — every other investment is permanent for the
+        round once selected.
+      </p>
+      <div className="lead-board__summary">
+        <div className="lead-board__stat lead-board__stat--best">
+          <span className="lead-board__stat-label">Total cost</span>
+          <span className="lead-board__stat-value">
+            {formatCost(cost.total)}
+          </span>
+        </div>
+        {accrued.length === 0 ? (
+          <div className="lead-board__stat">
+            <span className="lead-board__stat-label">Breakdown</span>
+            <span className="lead-board__stat-value">No cost yet</span>
+          </div>
+        ) : (
+          accrued.map((row) => (
+            <div className="lead-board__stat" key={row.label}>
+              <span className="lead-board__stat-label">{row.label}</span>
+              <span className="lead-board__stat-value">
+                {formatCost(row.value)}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
 }
 
 /** One round's lead-time board: progress line + summary + table, or a placeholder. */
@@ -34,8 +90,8 @@ function RoundLeadBoard({
     entries.length > 0 ? Math.min(...entries.map((e) => e.durationMs)) : null
   const ordered = [...entries].sort((a, b) => b.runNumber - a.runNumber)
   const roundComplete = entries.length >= rocketsGoal
-  const hasAnyRoadCost = entries.some((e) => e.roadCost != null)
-  const roadCostSample = entries.find((e) => e.roadCost != null)?.roadCost
+  const hasAnyCost = entries.some((e) => e.costBreakdown != null)
+  const costSample = entries.find((e) => e.costBreakdown != null)?.costBreakdown
 
   return (
     <div className="lead-board__round-section">
@@ -66,11 +122,11 @@ function RoundLeadBoard({
                 {formatLeadTime(bestMs != null ? bestMs / 1000 : null)}
               </span>
             </div>
-            {hasAnyRoadCost && (
+            {hasAnyCost && (
               <div className="lead-board__stat">
-                <span className="lead-board__stat-label">Road cost</span>
+                <span className="lead-board__stat-label">Redesign cost</span>
                 <span className="lead-board__stat-value">
-                  {formatRoadCost(roadCostSample)}
+                  {formatCost(costSample?.total)}
                 </span>
               </div>
             )}
@@ -81,7 +137,7 @@ function RoundLeadBoard({
               <tr>
                 <th scope="col">Rocket</th>
                 <th scope="col">Lead time</th>
-                <th scope="col">Road cost</th>
+                <th scope="col">Redesign cost</th>
                 <th scope="col">Delta vs best</th>
                 <th scope="col">Logged</th>
               </tr>
@@ -116,7 +172,7 @@ function RoundLeadBoard({
                       {formatLeadTime(entry.durationMs / 1000)}
                     </td>
                     <td className="lead-board__road-cost">
-                      {formatRoadCost(entry.roadCost)}
+                      {formatCost(entry.costBreakdown?.total)}
                     </td>
                     <td className="lead-board__delta">
                       {isBest ? '—' : `+${formatLeadTime(deltaMs / 1000)}`}
@@ -133,7 +189,11 @@ function RoundLeadBoard({
   )
 }
 
-export function DataView({ rounds, rocketsGoal = 3 }: DataViewProps) {
+export function DataView({
+  rounds,
+  rocketsGoal = 3,
+  round2CostBreakdown = null,
+}: DataViewProps) {
   const round1 = rounds.find((r) => r.roundId === 1)
   const round2 = rounds.find((r) => r.roundId === 2)
 
@@ -167,6 +227,10 @@ export function DataView({ rounds, rocketsGoal = 3 }: DataViewProps) {
             round1LaunchesMs={launchDurationsMs(round1.entries)}
             round2LaunchesMs={launchDurationsMs(round2.entries)}
           />
+        )}
+
+        {round2CostBreakdown && (
+          <RedesignCostSummary cost={round2CostBreakdown} />
         )}
 
         {rounds.map((section) => (

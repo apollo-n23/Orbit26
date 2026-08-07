@@ -1312,6 +1312,86 @@
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
+/* ── Redesign: total cost of improvement banner (prominent, all tabs) ──── */
+
+.redesign-cost-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-amber) 50%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-amber-dim) 65%, var(--color-surface-raised));
+}
+
+.redesign-cost-banner__total {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.redesign-cost-banner__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.redesign-cost-banner__value {
+  font-family: var(--font-mono);
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--color-amber);
+  letter-spacing: 0.01em;
+}
+
+.redesign-cost-banner__unit {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-dim);
+  margin-left: 0.15rem;
+}
+
+.redesign-cost-banner__breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.redesign-cost-banner__breakdown li {
+  display: flex;
+  gap: 0.3rem;
+  align-items: baseline;
+}
+
+.redesign-cost-banner__breakdown strong {
+  font-family: var(--font-mono);
+  color: var(--color-text);
+}
+
+.redesign-cost-banner__hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--color-text-dim);
+  line-height: 1.4;
+}
+
+.redesign-hint--cost {
+  color: var(--color-amber);
+}
+
+.redesign-hint--cost strong {
+  color: var(--color-text);
+}
+
 .redesign-haul__map {
   position: relative;
   width: 100%;
@@ -1454,6 +1534,13 @@
   color: var(--color-text-muted);
   line-height: 1.45;
   flex: 1;
+}
+
+.redesign-tech-card__cost {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-amber);
 }
 
 .redesign-tech-card__status {

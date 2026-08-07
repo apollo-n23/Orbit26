@@ -1,7 +1,7 @@
 # CLAUDE.md — Orb-it Process Excellence Simulator
 
 ## Project Goal
-Build a web-based interactive learning tool that teaches Lean Six Sigma concepts through short gameplay loops. The **primary learning measure is lead time** — end-to-end time from starting a unit through launch — and how process design changes improve it across rounds. **Road cost** (Round 2 redesign) is a secondary scored metric on the Data board.
+Build a web-based interactive learning tool that teaches Lean Six Sigma concepts through short gameplay loops. The **primary learning measure is lead time** — end-to-end time from starting a unit through launch — and how process design changes improve it across rounds. **Total cost of improvement** (Round 2 redesign, broken down by source) is a secondary scored metric on the Data board.
 
 Setting: Orb-it, a fictional satellite constellation company. Learners act as process engineers improving the satellite integration and launch preparation value stream.
 
@@ -21,7 +21,7 @@ Each round is a self-contained session: process config, lead-time board, chrome,
 
 ### Goal per round
 - Launch **3 rockets** (`ROCKETS_PER_ROUND` / `MAX_RUNS_PER_SESSION` = 3).
-- Each full cycle → one **Data** entry (`LeadTimeEntry`: run number, lead time ms, optional `roadCost`, completedAt).
+- Each full cycle → one **Data** entry (`LeadTimeEntry`: run number, lead time ms, optional `costBreakdown`, completedAt).
 - After the third launch → **orbit complete** scene (Earth + three satellites). No further Run Process.
 
 ### Round 1 — As-is
@@ -41,19 +41,19 @@ Each round is a self-contained session: process config, lead-time board, chrome,
 ### Round 2 redesign workshop (`RedesignWorkshop.tsx`)
 Tabs (all available before lock-in):
 
-| Tab | Learner actions | Persisted on `ProcessVersion` (and often mirrored on the step) |
-|-----|-----------------|----------------------------------------------------------------|
-| **1 · Manufacture** | Drag stations for **line order**; **parkOffset** sliders; **auto-transfer** upgrade (open panel on hover/click — **panel stays open** so the enable button is clickable) | `linePosition`, `parkOffset` on machines; `autoMoveBooster` |
-| **2 · Haul road** | Paint/erase tiles only (**no** Straight/Reset shortcuts). Endpoints fixed & free. | `haulPath` / `haulPathOverride`; **`roadCost`** = billable tiles × **10** |
-| **3 · Launch prep tech** | Invest in **one** of three techs (toggle off by re-selecting) | `launchPrepTech` |
-| **4 · Launch sequence** | **Realign** each GO; **info** criticality; Range Safety may be **deleted** from sequence | `launchSeqRealignIds`, `launchSeqRemovedIds` |
+| Tab | Learner actions | Persisted on `ProcessVersion` (and often mirrored on the step) | Cost |
+|-----|-----------------|----------------------------------------------------------------|------|
+| **1 · Manufacture** | Drag stations for **line order**; **parkOffset** sliders; **auto-transfer** upgrade (open panel on hover/click — **panel stays open** so the enable button is clickable) | `linePosition`, `parkOffset` on machines; `autoMoveBooster` | **15 pts** per machine ever moved from its factory slot · **40 pts** one-time for auto-transfer |
+| **2 · Haul road** | Paint/erase tiles only (**no** Straight/Reset shortcuts). Endpoints & tree-cluster tiles fixed and free. | `haulPath` / `haulPathOverride` | **10 pts** per billable tile — the **only** cost that can go back down (erase a tile to refund it) |
+| **3 · Launch prep tech** | Invest in **one** of three techs (toggle off by re-selecting) | `launchPrepTech` | **20/25/50 pts** (faster-pumps / auto-power / payload-drone) — switching techs does not refund a previously-tried one |
+| **4 · Launch sequence** | **Realign** each GO; **info** criticality; Range Safety may be **deleted** from sequence | `launchSeqRealignIds`, `launchSeqRemovedIds` | **10 pts** per GO ever realigned · **35 pts** for removing Range Safety |
 
 **Lock-in UX (settled):**
 - Warning banner: finish all tabs before locking; layout is fixed for all three launches.
 - **Confirm layout & start launches** opens **Are you sure?** (No = keep editing / Yes = lock in).
-- Confirm stamps road path + cost, re-stamps launch-prep tech and launch-seq redesign so fields survive `applyHaulPath`.
+- Confirm stamps road path + `costBreakdown`, re-stamps launch-prep tech and launch-seq redesign so fields survive `applyHaulPath`.
 
-**Road cost:** shown live in redesign header; stored on process; copied to each `LeadTimeEntry.roadCost` when a launch is logged; Data board shows a Road cost column / summary.
+**Total cost of improvement (`lib/redesignCost.ts`):** a prominent banner in the redesign header (visible on every tab, not just Haul road) shows the live running total + a per-category breakdown, and warns that only road tiles are reducible. Starts at **0**. Every category except road tiles is a **one-way ratchet within the redesign session** — tracked via `ever*` state in `RedesignWorkshop.tsx` (`everMovedMachineIds`, `everAutoTransferOn`, `everSelectedTechIds`, `everRealignedGoIds`, `everRangeRemoved`) that only grows, even if the learner later toggles an investment off — so switching techs or moving a machine back doesn't refund it. Road cost alone is derived live from current tiles and can rise or fall. Fixed as `ProcessVersion.costBreakdown` at Confirm; copied to each `LeadTimeEntry.costBreakdown` when a launch is logged. Data board shows a Redesign cost column plus a full breakdown panel (Manufacture / Haul road / Launch prep / Launch sequence) alongside both rounds' lead times. Re-entering the workshop via the stage nav starts a fresh cost session from the carried-over draft (matches the existing reset-on-redesign-reentry behaviour), not a running total across every visit.
 
 ### Launch-prep tech → play behaviour (`launchPrepTech`)
 | Value | Play effect in `LaunchPrepScene` |
@@ -81,6 +81,7 @@ Resolve via `resolveLaunchPrepTech(process)`. Scene must re-read tech when the l
 | `StageNav.tsx` | Persistent top nav: Round 1 · Redesign · Round 2 |
 | `RedesignWorkshop.tsx` | Round 2 pre-play redesign |
 | `processEdit.ts`, `roadGrid.ts` | Apply/resolve redesign fields |
+| `lib/redesignCost.ts` | Point costs + `RedesignCostBreakdown` builder for the total cost of improvement |
 | `OrbitCompleteScene.tsx` | End-of-round cutaway |
 | `SiteBrand.tsx` | Top banner brand lockup |
 | `lib/roundMetrics.ts` | Round 1 avg + per-launch times save/load; averages |

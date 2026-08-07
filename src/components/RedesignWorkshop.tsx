@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ProcessMachine, ProcessVersion } from '../types/process'
 import {
   applyAutoMoveBooster,
@@ -18,6 +18,15 @@ import {
   resolveLaunchSeqRealignIds,
   resolveLaunchSeqRemovedIds,
 } from '../lib/processEdit'
+import {
+  AUTO_TRANSFER_COST,
+  buildCostBreakdown,
+  GO_REALIGN_COST,
+  LAUNCH_PREP_TECH_COST,
+  MACHINE_MOVE_COST,
+  movedMachineIds,
+  RANGE_REMOVAL_COST,
+} from '../lib/redesignCost'
 import { Booster } from './Booster'
 import type { LaunchPrepTech } from '../types/process'
 import {
@@ -82,6 +91,91 @@ export function RedesignWorkshop({
   const endpoints = requiredEndpointCells()
   const roadCost = useMemo(() => roadCostFromTiles(roadTiles), [roadTiles])
   const treeCells = useMemo(() => new Set<CellKey>(TREE_CLUSTER_CELLS), [])
+
+  // Cost of improvement (settled): everything except road tiles is a
+  // one-way ratchet — once ever selected, it stays counted this session
+  // even if later toggled off. Only removing road tiles reduces the total.
+  const [everMovedMachineIds, setEverMovedMachineIds] = useState<Set<string>>(
+    () => new Set(),
+  )
+  useEffect(() => {
+    const movedNow = movedMachineIds(machinesSorted)
+    if (movedNow.length === 0) return
+    setEverMovedMachineIds((prev) => {
+      const next = new Set(prev)
+      let changed = false
+      for (const id of movedNow) {
+        if (!next.has(id)) {
+          next.add(id)
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [machinesSorted])
+
+  const [everAutoTransferOn, setEverAutoTransferOn] = useState(false)
+  useEffect(() => {
+    if (autoMoveBooster) setEverAutoTransferOn(true)
+  }, [autoMoveBooster])
+
+  const [everSelectedTechIds, setEverSelectedTechIds] = useState<
+    Set<LaunchPrepTech>
+  >(() => new Set())
+  useEffect(() => {
+    if (!launchPrepTech) return
+    setEverSelectedTechIds((prev) =>
+      prev.has(launchPrepTech) ? prev : new Set(prev).add(launchPrepTech),
+    )
+  }, [launchPrepTech])
+
+  const [everRealignedGoIds, setEverRealignedGoIds] = useState<Set<string>>(
+    () => new Set(),
+  )
+  useEffect(() => {
+    if (launchSeqRealignIds.length === 0) return
+    setEverRealignedGoIds((prev) => {
+      const next = new Set(prev)
+      let changed = false
+      for (const id of launchSeqRealignIds) {
+        if (!next.has(id)) {
+          next.add(id)
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+    // launchSeqRealignIds is a fresh array each render — only its content matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [launchSeqRealignIds.join(',')])
+
+  const [everRangeRemoved, setEverRangeRemoved] = useState(false)
+  useEffect(() => {
+    if (rangeRemoved) setEverRangeRemoved(true)
+  }, [rangeRemoved])
+
+  const costBreakdown = useMemo(
+    () =>
+      buildCostBreakdown({
+        machineMoveCost: everMovedMachineIds.size * MACHINE_MOVE_COST,
+        autoTransferCost: everAutoTransferOn ? AUTO_TRANSFER_COST : 0,
+        roadCost,
+        launchPrepTechCost: [...everSelectedTechIds].reduce(
+          (sum, id) => sum + LAUNCH_PREP_TECH_COST[id],
+          0,
+        ),
+        goRealignCost: everRealignedGoIds.size * GO_REALIGN_COST,
+        rangeRemovalCost: everRangeRemoved ? RANGE_REMOVAL_COST : 0,
+      }),
+    [
+      everMovedMachineIds,
+      everAutoTransferOn,
+      roadCost,
+      everSelectedTechIds,
+      everRealignedGoIds,
+      everRangeRemoved,
+    ],
+  )
 
   function handleDropOnSlot(targetSlotIndex: number, machineId: string) {
     if (!machineId) return
@@ -159,9 +253,8 @@ export function RedesignWorkshop({
     const selectedTech = resolveLaunchPrepTech(draft)
     const realignIds = resolveLaunchSeqRealignIds(draft)
     const removedIds = resolveLaunchSeqRemovedIds(draft)
-    // Always start from a fresh clone of the manufacture draft, then stamp the road + cost.
-    const cost = roadCostFromTiles(roadTiles)
-    let withRoad = applyHaulPath(structuredClone(draft), path, cost)
+    // Always start from a fresh clone of the manufacture draft, then stamp the road.
+    let withRoad = applyHaulPath(structuredClone(draft), path)
     // Re-stamp launch-prep tech after haul apply (defensive: same field on version + step).
     withRoad = applyLaunchPrepTech(withRoad, selectedTech)
     // Re-stamp launch-sequence redesign (realign + optional Range removal).
@@ -175,6 +268,8 @@ export function RedesignWorkshop({
       setTab('haul')
       return
     }
+    // Fix the total cost of improvement for this round at the moment of confirm.
+    withRoad = { ...withRoad, costBreakdown }
     setShowConfirmDialog(false)
     onConfirm(withRoad)
   }
@@ -192,14 +287,6 @@ export function RedesignWorkshop({
             {roundLabel} — improve the layout before the three launches. Changes
             are saved for this round only.
           </p>
-          <p className="redesign-road-cost" aria-live="polite">
-            Road cost:{' '}
-            <strong className="redesign-road-cost__value">{roadCost}</strong>
-            <span className="redesign-road-cost__unit">
-              {' '}
-              pts ({ROAD_COST_PER_TILE} per tile; endpoints free)
-            </span>
-          </p>
         </div>
         <div className="sim-header__controls">
           <button
@@ -213,6 +300,43 @@ export function RedesignWorkshop({
       </header>
 
       <div className="view-panel__body redesign-body">
+        <div className="redesign-cost-banner" aria-live="polite">
+          <div className="redesign-cost-banner__total">
+            <span className="redesign-cost-banner__label">
+              Total cost of improvement
+            </span>
+            <span className="redesign-cost-banner__value">
+              {costBreakdown.total}
+              <span className="redesign-cost-banner__unit"> pts</span>
+            </span>
+          </div>
+          <ul className="redesign-cost-banner__breakdown">
+            <li>
+              Manufacture{' '}
+              <strong>
+                {costBreakdown.machineMoveCost + costBreakdown.autoTransferCost}
+              </strong>
+            </li>
+            <li>
+              Haul road <strong>{costBreakdown.roadCost}</strong>
+            </li>
+            <li>
+              Launch prep <strong>{costBreakdown.launchPrepTechCost}</strong>
+            </li>
+            <li>
+              Launch sequence{' '}
+              <strong>
+                {costBreakdown.goRealignCost + costBreakdown.rangeRemovalCost}
+              </strong>
+            </li>
+          </ul>
+          <p className="redesign-cost-banner__hint">
+            Starts at zero and builds as you invest in upgrades. Only removing
+            road tiles on the Haul road tab brings the total back down —
+            every other investment is permanent for this round once selected.
+          </p>
+        </div>
+
         <div className="redesign-warning" role="status">
           <strong>Before you lock in:</strong> work through every redesign tab
           (manufacture line, haul road, launch prep tech, launch sequence) and
@@ -276,6 +400,13 @@ export function RedesignWorkshop({
               auto-transfer upgrade (panel stays open so you can click the
               button). Operate sequence numbers stay on each machine.
             </p>
+            <p className="redesign-hint redesign-hint--cost">
+              Moving a machine from its factory slot costs{' '}
+              <strong>{MACHINE_MOVE_COST} pts</strong> each (
+              {everMovedMachineIds.size} moved so far). The auto-transfer
+              upgrade below is a bigger one-time investment at{' '}
+              <strong>{AUTO_TRANSFER_COST} pts</strong>.
+            </p>
             <div className="redesign-mfg__line" aria-label="Production line slots">
               <div className="redesign-mfg__belt" aria-hidden="true" />
               <div
@@ -333,8 +464,8 @@ export function RedesignWorkshop({
                     </p>
                     <p className="redesign-booster-upgrade__copy">
                       {autoMoveBooster
-                        ? 'After each machine finishes, the booster moves to the next station automatically during launches.'
-                        : 'Upgrade the booster so it auto-moves to the next station when a machine completes its task.'}
+                        ? `After each machine finishes, the booster moves to the next station automatically during launches. (${AUTO_TRANSFER_COST} pts, already invested.)`
+                        : `Upgrade the booster so it auto-moves to the next station when a machine completes its task. Costs ${AUTO_TRANSFER_COST} pts, one time.`}
                     </p>
                     <div className="redesign-booster-upgrade__actions">
                       <button
@@ -371,11 +502,14 @@ export function RedesignWorkshop({
           <div className="redesign-prep">
             <p className="redesign-hint">
               Invest in <strong>one</strong> pad technology for this round. Your
-              choice applies to all three launches. Select again to clear.
+              choice applies to all three launches. Select again to clear —
+              note that switching investments does not refund the cost of one
+              you tried earlier this session.
             </p>
             <div className="redesign-tech-grid" role="listbox" aria-label="Launch prep technologies">
               {LAUNCH_PREP_TECH_OPTIONS.map((opt) => {
                 const selected = launchPrepTech === opt.id
+                const everTried = everSelectedTechIds.has(opt.id)
                 return (
                   <button
                     key={opt.id}
@@ -392,6 +526,10 @@ export function RedesignWorkshop({
                   >
                     <span className="redesign-tech-card__name">{opt.name}</span>
                     <span className="redesign-tech-card__summary">{opt.summary}</span>
+                    <span className="redesign-tech-card__cost">
+                      {LAUNCH_PREP_TECH_COST[opt.id]} pts
+                      {everTried && !selected ? ' · already spent' : ''}
+                    </span>
                     <span className="redesign-tech-card__status">
                       {selected ? 'Selected' : 'Select investment'}
                     </span>
@@ -418,8 +556,9 @@ export function RedesignWorkshop({
             <p className="redesign-hint">
               Mission-control GO stations for the launch poll. Use{' '}
               <strong>Realign</strong> to cut as-is misalignment friction on a
-              station. Open the info panel for operational criticality. Range
-              Safety can be removed from the sequence entirely.
+              station (<strong>{GO_REALIGN_COST} pts</strong> each). Open the
+              info panel for operational criticality. Range Safety can be
+              removed from the sequence entirely ({RANGE_REMOVAL_COST} pts).
             </p>
             <ul className="redesign-seq__list" aria-label="GO stations">
               {LAUNCH_SEQ_GO_STATIONS.map((station) => {
@@ -473,7 +612,9 @@ export function RedesignWorkshop({
                             }
                             aria-pressed={realigned}
                           >
-                            {realigned ? 'Undo realign' : 'Realign'}
+                            {realigned
+                              ? 'Undo realign'
+                              : `Realign (${GO_REALIGN_COST} pts)`}
                           </button>
                         )}
                         {removed && isRange && (
@@ -524,7 +665,7 @@ export function RedesignWorkshop({
                               className="btn btn--ghost redesign-seq__delete"
                               onClick={handleDeleteRangeFromSequence}
                             >
-                              Delete from sequence
+                              Delete from sequence ({RANGE_REMOVAL_COST} pts)
                             </button>
                           </div>
                         )}
@@ -572,7 +713,9 @@ export function RedesignWorkshop({
             <p className="redesign-hint">
               Click tiles to paint or erase road. Assembly exit and Launch Pad
               tiles stay fixed and free. Each other road tile costs{' '}
-              {ROAD_COST_PER_TILE} pts. Path must connect both ends.
+              {ROAD_COST_PER_TILE} pts. Path must connect both ends. This is
+              the <strong>only</strong> cost you can bring back down —
+              erasing a tile refunds it immediately.
             </p>
             <p className="redesign-road-cost redesign-road-cost--haul" aria-live="polite">
               Road cost:{' '}

@@ -99,12 +99,11 @@ function updateManufactureMachines(
 
 /**
  * Persist a redesigned haul centerline on the process (step + version override).
- * Optional `roadCost` is the construction metric from painted billable tiles.
+ * Cost of improvement is tracked separately via `costBreakdown` — see redesignCost.ts.
  */
 export function applyHaulPath(
   process: ProcessVersion,
   haulPath: Point[],
-  roadCost?: number,
 ): ProcessVersion {
   const path = clonePath(haulPath)
   if (path.length < 2) return process
@@ -112,7 +111,6 @@ export function applyHaulPath(
   return {
     ...process,
     haulPathOverride: path,
-    ...(roadCost !== undefined ? { roadCost } : {}),
     steps: process.steps.map((s) =>
       s.kind === 'haul' ? { ...s, haulPath: clonePath(path) } : s,
     ),

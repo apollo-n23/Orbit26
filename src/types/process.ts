@@ -86,6 +86,30 @@ export type LaunchPrepTech =
   | 'auto-power'
   | 'payload-drone'
 
+/**
+ * Total cost of improvement for a Round 2 redesign, broken down by where it
+ * comes from. Every category except `roadCost` is a one-way ratchet within a
+ * redesign session — once an investment is ever selected it stays counted,
+ * even if later toggled off. Only removing painted road tiles reduces the
+ * total. Fixed on the process once the learner confirms the layout.
+ */
+export interface RedesignCostBreakdown {
+  /** Manufacture: cost of every machine ever moved from its factory slot. */
+  machineMoveCost: number
+  /** Manufacture: one-time cost of the booster auto-transfer upgrade. */
+  autoTransferCost: number
+  /** Haul road: billable tiles × per-tile cost. The only reducible category. */
+  roadCost: number
+  /** Launch prep: sum of every pad technology ever selected this session. */
+  launchPrepTechCost: number
+  /** Launch sequence: cost of every GO station ever realigned. */
+  goRealignCost: number
+  /** Launch sequence: cost of removing Range Safety from the poll. */
+  rangeRemovalCost: number
+  /** Sum of all categories above. */
+  total: number
+}
+
 export interface ProcessVersion {
   id: string
   name: string
@@ -98,10 +122,10 @@ export interface ProcessVersion {
    */
   haulPathOverride?: HaulPathPoint[]
   /**
-   * Road construction cost from Round 2 haul redesign (cost points).
-   * Formula: billable tiles × ROAD_COST_PER_TILE (endpoints free). Fixed for the round once confirmed.
+   * Total cost of improvement from Round 2 redesign choices, broken down by
+   * source. Fixed for the round once confirmed.
    */
-  roadCost?: number
+  costBreakdown?: RedesignCostBreakdown
   /**
    * Process-level copy of manufacture auto-move upgrade (mirrors step flag for easy resolve).
    */
@@ -146,10 +170,10 @@ export interface LeadTimeEntry {
   /** `Date.now()` when the unit completed (launch finished). */
   completedAt: number
   /**
-   * Road construction cost (points) for the process used on this run.
+   * Total cost of improvement breakdown for the process used on this run.
    * Same value for all launches in a redesign round when cost is fixed at confirm.
    */
-  roadCost?: number
+  costBreakdown?: RedesignCostBreakdown
 }
 
 /**
