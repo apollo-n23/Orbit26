@@ -5378,6 +5378,7 @@
 /* ── Customer Portal — fictional "Starfeed" platform mockup ──── */
 
 .customer-platform-header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -5385,6 +5386,40 @@
   border: 1px solid color-mix(in srgb, var(--color-customer-accent) 50%, var(--color-border));
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-customer-accent-dim) 70%, var(--color-surface-raised));
+  overflow: hidden;
+}
+
+/* Twinkling stars filling the empty space to the right of the title. */
+.customer-platform-header__stars {
+  position: relative;
+  flex: 1;
+  align-self: stretch;
+  min-width: 3rem;
+}
+
+.customer-platform-header__star {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 4px 1px rgba(255, 255, 255, 0.85),
+    0 0 9px 2px var(--color-customer-accent);
+  opacity: 0.15;
+  animation-name: customer-star-twinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes customer-star-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.4);
+  }
 }
 
 .customer-platform-header__mark {

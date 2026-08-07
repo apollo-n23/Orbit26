@@ -114,7 +114,13 @@ learning-loop group — a static, read-only "voice of customer" feed.
   haul road; several explicitly ask for **exactly 75km**, as fast as
   possible — deliberately in the customers' own words/units (km) even
   though the engineering height-achieved metric elsewhere in the app is in
-  miles (voice of customer vs. voice of process).
+  miles (voice of customer vs. voice of process). The empty purple space to
+  the right of the title/tagline (`.customer-platform-header__stars`) is
+  filled with a fixed `HEADER_STARS` array of small twinkling dots
+  (`@keyframes customer-star-twinkle` — opacity/scale pulse, staggered
+  `animationDelay`/`animationDuration` per star so they don't sync up) —
+  purely decorative, fixed positions rather than randomised so they don't
+  jump around on re-render.
 - **Left nav** (`.customer-nav`) is a non-functional X/Twitter-style mockup
   (Home/Explore/Notifications/etc. + a decorative "Post" button) establishing
   the platform's UI, purple-themed to match. Its account chip at the bottom

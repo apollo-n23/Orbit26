@@ -243,6 +243,29 @@ const NAV_ITEMS = [
   { icon: '⋯', label: 'More' },
 ]
 
+/** Fixed positions/timings for the twinkling stars filling the header's empty space. */
+const HEADER_STARS: {
+  top: string
+  left: string
+  size: number
+  delay: string
+  duration: string
+}[] = [
+  { top: '20%', left: '6%', size: 2, delay: '0s', duration: '2.6s' },
+  { top: '62%', left: '12%', size: 3, delay: '0.5s', duration: '3.1s' },
+  { top: '35%', left: '20%', size: 2, delay: '1.1s', duration: '2.2s' },
+  { top: '75%', left: '27%', size: 2, delay: '1.6s', duration: '2.9s' },
+  { top: '15%', left: '35%', size: 3, delay: '0.3s', duration: '3.4s' },
+  { top: '55%', left: '42%', size: 2, delay: '2.0s', duration: '2.5s' },
+  { top: '30%', left: '50%', size: 2, delay: '0.8s', duration: '3.0s' },
+  { top: '70%', left: '57%', size: 3, delay: '1.4s', duration: '2.3s' },
+  { top: '18%', left: '64%', size: 2, delay: '0.2s', duration: '2.8s' },
+  { top: '48%', left: '71%', size: 2, delay: '1.8s', duration: '3.3s' },
+  { top: '68%', left: '79%', size: 3, delay: '0.6s', duration: '2.4s' },
+  { top: '25%', left: '86%', size: 2, delay: '1.2s', duration: '2.7s' },
+  { top: '58%', left: '93%', size: 2, delay: '1.9s', duration: '3.2s' },
+]
+
 export function CustomerPortalView() {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
 
@@ -288,6 +311,22 @@ export function CustomerPortalView() {
                 <p className="customer-platform-header__tagline">
                   What the system is saying, unfiltered.
                 </p>
+              </div>
+              <div className="customer-platform-header__stars" aria-hidden="true">
+                {HEADER_STARS.map((star, i) => (
+                  <span
+                    key={i}
+                    className="customer-platform-header__star"
+                    style={{
+                      top: star.top,
+                      left: star.left,
+                      width: `${star.size}px`,
+                      height: `${star.size}px`,
+                      animationDelay: star.delay,
+                      animationDuration: star.duration,
+                    }}
+                  />
+                ))}
               </div>
             </div>
 
