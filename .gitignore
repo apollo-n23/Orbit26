@@ -54,5 +54,5 @@ coverage/
 Thumbs.db
 Desktop.ini
 
-# Optional local agent / session noise (keep project agents docs)
-.grok/
+# Optional local agent / session noise (keep project docs, e.g. CLAUDE.md)
+.claude/settings.local.json

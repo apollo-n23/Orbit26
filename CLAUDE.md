@@ -1,4 +1,4 @@
-# AGENTS.md — Orb-it Process Excellence Simulator
+# CLAUDE.md — Orb-it Process Excellence Simulator
 
 ## Project Goal
 Build a web-based interactive learning tool that teaches Lean Six Sigma concepts through short gameplay loops. The **primary learning measure is lead time** — end-to-end time from starting a unit through launch — and how process design changes improve it across rounds. **Road cost** (Round 2 redesign) is a secondary scored metric on the Data board.
