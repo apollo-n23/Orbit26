@@ -6,7 +6,9 @@ import {
   hashForStage,
   stageFromHash,
   type AppStage,
+  type RoundId,
 } from './types/round'
+import type { LeadTimeEntry } from './types/process'
 import './App.css'
 
 /**
@@ -21,6 +23,12 @@ import './App.css'
  */
 function App() {
   const [stage, setStage] = useState<AppStage>(() => stageFromHash())
+  // Live lead-time logs from each round's RoundSession, so the Data tab in
+  // either round can show both rounds' launches simultaneously — both stay
+  // mounted for the app's lifetime, so this is always in sync, not a
+  // localStorage snapshot.
+  const [round1Entries, setRound1Entries] = useState<LeadTimeEntry[]>([])
+  const [round2Entries, setRound2Entries] = useState<LeadTimeEntry[]>([])
 
   useEffect(() => {
     // Normalise empty hash to round 1 so the URL is shareable.
@@ -50,6 +58,17 @@ function App() {
     [],
   )
 
+  const handleLeadTimeLogChange = useCallback(
+    (roundId: RoundId, entries: LeadTimeEntry[]) => {
+      if (roundId === 1) {
+        setRound1Entries(entries)
+      } else {
+        setRound2Entries(entries)
+      }
+    },
+    [],
+  )
+
   const round1 = getRoundConfig(1)
   const round2 = getRoundConfig(2)
 
@@ -60,6 +79,12 @@ function App() {
         round={round1}
         hidden={stage !== 'round1'}
         onNavigateRound2={() => navigateToStage('redesign')}
+        onLeadTimeLogChange={handleLeadTimeLogChange}
+        otherRoundEntries={{
+          roundId: round2.id,
+          roundLabel: round2.label,
+          entries: round2Entries,
+        }}
       />
       <RoundSession
         round={round2}
@@ -68,6 +93,12 @@ function App() {
           stage === 'redesign' ? 'redesign' : stage === 'round2' ? 'play' : undefined
         }
         onPhaseChange={handleRound2PhaseChange}
+        onLeadTimeLogChange={handleLeadTimeLogChange}
+        otherRoundEntries={{
+          roundId: round1.id,
+          roundLabel: round1.label,
+          entries: round1Entries,
+        }}
       />
     </>
   )

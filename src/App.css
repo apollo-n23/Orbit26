@@ -503,6 +503,19 @@
   color: var(--color-text-muted);
 }
 
+.lead-board__round-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.lead-board__round-heading {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
 /* ── Round 1 vs Round 2 lead time compare visual ─────────── */
 
 .lt-compare {

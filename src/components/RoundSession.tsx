@@ -22,7 +22,7 @@ import {
 import type { AppView } from '../types/views'
 import type { LeadTimeEntry, ProcessVersion, RunState } from '../types/process'
 import { INITIAL_RUN_STATE } from '../types/process'
-import type { RoundConfig } from '../types/round'
+import type { RoundConfig, RoundId } from '../types/round'
 import { ROCKETS_PER_ROUND, hashForRound } from '../types/round'
 import {
   loadRound1AverageLeadTimeMs,
@@ -45,6 +45,14 @@ interface RoundSessionProps {
   requestedPhase?: RoundPhase
   /** Reports internal phase changes so the stage nav can stay in sync. */
   onPhaseChange?: (phase: RoundPhase) => void
+  /** Reports this round's live lead-time log so the other round's Data tab can show it too. */
+  onLeadTimeLogChange?: (roundId: RoundId, entries: LeadTimeEntry[]) => void
+  /** The OTHER round's live lead-time log, for this round's Data tab. */
+  otherRoundEntries?: {
+    roundId: RoundId
+    roundLabel: string
+    entries: LeadTimeEntry[]
+  }
 }
 
 export function RoundSession({
@@ -53,6 +61,8 @@ export function RoundSession({
   hidden = false,
   requestedPhase,
   onPhaseChange,
+  onLeadTimeLogChange,
+  otherRoundEntries,
 }: RoundSessionProps) {
   const [activeView, setActiveView] = useState<AppView>('simulation')
   const [sessionActive, setSessionActive] = useState(false)
@@ -128,6 +138,12 @@ export function RoundSession({
     lastReportedPhaseRef.current = phase
     onPhaseChange?.(phase)
   }, [phase, onPhaseChange])
+
+  // Report this round's live lead-time log upward so App can hand it to the
+  // OTHER round's Data tab (both rounds stay mounted, so this stays live).
+  useEffect(() => {
+    onLeadTimeLogChange?.(round.id, leadTimeLog)
+  }, [leadTimeLog, round.id, onLeadTimeLogChange])
 
   useEffect(() => {
     if (!isRunTimerActive(run)) return
@@ -296,12 +312,26 @@ export function RoundSession({
         )}
         {activeView === 'data' && (
           <DataView
-            entries={leadTimeLog}
+            rounds={
+              round.id === 1
+                ? [
+                    { roundId: 1, roundLabel: round.label, entries: leadTimeLog },
+                    otherRoundEntries ?? {
+                      roundId: 2,
+                      roundLabel: 'Round 2',
+                      entries: [],
+                    },
+                  ]
+                : [
+                    otherRoundEntries ?? {
+                      roundId: 1,
+                      roundLabel: 'Round 1',
+                      entries: [],
+                    },
+                    { roundId: 2, roundLabel: round.label, entries: leadTimeLog },
+                  ]
+            }
             rocketsGoal={ROCKETS_PER_ROUND}
-            roundLabel={round.label}
-            roundId={round.id}
-            round1AverageMs={round.id === 2 ? round1AverageMs : null}
-            round1LaunchesMs={round.id === 2 ? round1LaunchesMs : null}
           />
         )}
       </main>
