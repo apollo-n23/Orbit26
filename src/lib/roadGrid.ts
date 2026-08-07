@@ -174,23 +174,35 @@ export function straightRoadTiles(): Set<CellKey> {
 }
 
 /**
- * Cost points charged per painted road tile (excluding fixed endpoints).
- * Formula: roadCost = billableRoadTileCount(tiles) × ROAD_COST_PER_TILE
- * Assembly exit + Launch Pad tiles are free (not removable).
+ * Cost points charged per road tile, relative to the round's starting
+ * (baseline) road — fixed endpoints excluded either way. The existing road
+ * is already built, so it's free and does not count toward the starting
+ * cost: painting a tile beyond baseline costs points, and selling (erasing)
+ * a baseline tile credits points back. Erasing a tile you added yourself
+ * just cancels its own charge — no separate credit.
+ * Formula: (tiles added beyond baseline − baseline tiles sold) × ROAD_COST_PER_TILE
  */
 export const ROAD_COST_PER_TILE = 10
 
-/** Count road tiles that cost points (all painted tiles except the two endpoints). */
-export function billableRoadTileCount(tiles: Set<CellKey>): number {
+/**
+ * Net road cost of `tiles` relative to `baselineTiles` (the road as it
+ * stood when the redesign session started). Can go negative if more
+ * baseline road is sold than new road is added.
+ */
+export function roadCostFromTiles(
+  tiles: Set<CellKey>,
+  baselineTiles: Set<CellKey>,
+): number {
   const { start, end } = requiredEndpointCells()
-  let n = 0
+  let addedCount = 0
+  let soldCount = 0
   for (const k of tiles) {
-    if (k !== start && k !== end) n += 1
+    if (k === start || k === end) continue
+    if (!baselineTiles.has(k)) addedCount += 1
   }
-  return n
-}
-
-/** Total road construction cost for the painted tile set. */
-export function roadCostFromTiles(tiles: Set<CellKey>): number {
-  return billableRoadTileCount(tiles) * ROAD_COST_PER_TILE
+  for (const k of baselineTiles) {
+    if (k === start || k === end) continue
+    if (!tiles.has(k)) soldCount += 1
+  }
+  return (addedCount - soldCount) * ROAD_COST_PER_TILE
 }

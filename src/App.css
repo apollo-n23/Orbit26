@@ -1427,6 +1427,12 @@
   box-shadow: inset 0 0 0 1px rgba(255, 220, 90, 0.2);
 }
 
+/* New road tile beyond the free existing road — costs points, so flag it. */
+.redesign-haul__cell--road-new {
+  background: color-mix(in srgb, var(--color-amber) 30%, #3d4249);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-amber) 55%, transparent);
+}
+
 .redesign-haul__cell--start {
   background: color-mix(in srgb, var(--color-orbital) 55%, #3d4249);
   cursor: default;

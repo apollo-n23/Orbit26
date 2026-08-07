@@ -76,6 +76,11 @@ export function RedesignWorkshop({
   const [roadTiles, setRoadTiles] = useState<Set<CellKey>>(() =>
     rasterizePath(haulDefaultPath),
   )
+  // The road as it stood when this redesign session started — already
+  // built, so it's free. Frozen at mount; never mutated afterward.
+  const [baselineRoadTiles] = useState<Set<CellKey>>(() =>
+    rasterizePath(haulDefaultPath),
+  )
 
   const machinesSorted = useMemo(() => {
     const mfg = getManufactureStep(draft)
@@ -89,7 +94,10 @@ export function RedesignWorkshop({
   const launchSeqRemovedIds = resolveLaunchSeqRemovedIds(draft)
   const rangeRemoved = launchSeqRemovedIds.includes(LAUNCH_SEQ_RANGE_STATION_ID)
   const endpoints = requiredEndpointCells()
-  const roadCost = useMemo(() => roadCostFromTiles(roadTiles), [roadTiles])
+  const roadCost = useMemo(
+    () => roadCostFromTiles(roadTiles, baselineRoadTiles),
+    [roadTiles, baselineRoadTiles],
+  )
   const treeCells = useMemo(() => new Set<CellKey>(TREE_CLUSTER_CELLS), [])
 
   // Cost of improvement (settled): everything except road tiles is a
@@ -331,9 +339,11 @@ export function RedesignWorkshop({
             </li>
           </ul>
           <p className="redesign-cost-banner__hint">
-            Starts at zero and builds as you invest in upgrades. Only removing
-            road tiles on the Haul road tab brings the total back down —
-            every other investment is permanent for this round once selected.
+            Starts at zero — the existing road is already built and free.
+            Only the Haul road tab can bring the total back down: selling
+            existing road credits points back, and erasing a tile you added
+            just cancels its own cost. Every other investment is permanent
+            for this round once selected.
           </p>
         </div>
 
@@ -712,10 +722,12 @@ export function RedesignWorkshop({
           <div className="redesign-haul">
             <p className="redesign-hint">
               Click tiles to paint or erase road. Assembly exit and Launch Pad
-              tiles stay fixed and free. Each other road tile costs{' '}
-              {ROAD_COST_PER_TILE} pts. Path must connect both ends. This is
-              the <strong>only</strong> cost you can bring back down —
-              erasing a tile refunds it immediately.
+              tiles stay fixed and free. The existing road is already built —
+              it's free and doesn't count toward your starting cost. Painting
+              a <strong>new</strong> tile beyond it costs{' '}
+              {ROAD_COST_PER_TILE} pts; selling an existing tile credits{' '}
+              {ROAD_COST_PER_TILE} pts back. This is the <strong>only</strong>{' '}
+              cost you can bring back down. Path must connect both ends.
             </p>
             <p className="redesign-road-cost redesign-road-cost--haul" aria-live="polite">
               Road cost:{' '}
@@ -745,6 +757,7 @@ export function RedesignWorkshop({
                     const on = !isTree && roadTiles.has(key)
                     const isStart = key === endpoints.start
                     const isEnd = key === endpoints.end
+                    const isBaseline = !isStart && !isEnd && baselineRoadTiles.has(key)
                     return (
                       <button
                         key={key}
@@ -752,6 +765,7 @@ export function RedesignWorkshop({
                         className={[
                           'redesign-haul__cell',
                           on ? 'redesign-haul__cell--road' : '',
+                          on && !isBaseline ? 'redesign-haul__cell--road-new' : '',
                           isStart ? 'redesign-haul__cell--start' : '',
                           isEnd ? 'redesign-haul__cell--end' : '',
                           isTree ? 'redesign-haul__cell--tree' : '',
@@ -767,8 +781,12 @@ export function RedesignWorkshop({
                               : isTree
                                 ? 'Tree cluster (fixed) — road cannot be built here'
                                 : on
-                                  ? `Road tile ${col},${row} — click to remove`
-                                  : `Grass tile ${col},${row} — click to add road`
+                                  ? isBaseline
+                                    ? `Existing road tile ${col},${row} — click to sell (+${ROAD_COST_PER_TILE} pts credit)`
+                                    : `New road tile ${col},${row} — click to remove (−${ROAD_COST_PER_TILE} pts)`
+                                  : isBaseline
+                                    ? `Sold road tile ${col},${row} — click to rebuild (free, restores existing road)`
+                                    : `Grass tile ${col},${row} — click to add road (+${ROAD_COST_PER_TILE} pts)`
                         }
                         disabled={isStart || isEnd || isTree}
                       />
