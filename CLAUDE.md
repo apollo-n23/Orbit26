@@ -57,6 +57,37 @@ Tabs (all available before lock-in):
 
 **Budget cap (`REDESIGN_BUDGET` = 250 pts, `lib/redesignCost.ts`):** once the running total would exceed the budget, that specific cost-increasing action is blocked — the control (drag-drop, tech card, Realign, Delete from sequence, an unpainted grass tile) is disabled and/or the click is a no-op with a `budgetError` message surfaced in the cost banner. Gating always compares the marginal cost of *that* action against `REDESIGN_BUDGET − costBreakdown.total`, so already-sunk choices (an `ever*`-tracked tech/realign/move) stay freely reversible even at zero budget. Selling road tiles is never blocked — it only frees up room. The cost banner shows a live "Budget remaining" figure and flips to a red exhausted state at 0.
 
+### Gemba walk (`views/GembaWalkthrough.tsx`)
+
+A 4th stage-nav tab, positioned **before** Round 1 — "go to the Gemba" (Lean:
+observe the real process directly). Lets a tutor/learner open **any** of
+Round 1's as-is process steps directly, in any order, to inspect/demo it —
+not a linear Run Process → Proceed playthrough.
+
+- **Route:** `#/gemba`. `AppStage` includes `'gemba'`; `StageNav` lists it first.
+- **Fully isolated:** reads `getRoundConfig(1).process` **read-only** (never
+  calls an `apply*` mutator — there is no redesign here) and owns its own
+  local `run: RunState`, seeded fresh per step via `freshStepRun(index)`
+  (`lib/simulation.ts`'s `INITIAL_RUN_STATE` + `currentStepIndex`). It does
+  **not** render inside a `RoundSession`, does **not** call
+  `onLeadTimeLogChange`/`saveRound1LeadTimeResults`, and is mounted only
+  while `stage === 'gemba'` (no state to preserve across hops) — so it can
+  never affect Round 1, the redesign workshop, Round 2, or the Data tab.
+- **Step nav:** one tab per `process.steps` entry (reuses `.redesign-tabs`
+  styling). Selecting a step — including re-selecting the current one —
+  bumps a `visitNonce` used in each scene's React `key`, forcing a full
+  remount so there's never stale seated/positioned state from a prior visit.
+- **Reuses the real scene components** (`ManufactureScene`,
+  `IntegratePayloadScene`, `LaunchPrepScene`, `LaunchSequenceScene`) and the
+  real per-step transition functions (`startMachineWork`,
+  `finishMachineWork`, `markOnPad`, `finishLaunchPrepAction`,
+  `finishLaunchSequenceAction`) so interaction feels identical to real play.
+  Two deliberate differences from `SimulationView`: no Proceed button is
+  ever rendered (step nav replaces it), and haul's Mount-to-launch-pad
+  handler is a no-op rather than `completeHaulStep` — that function
+  auto-advances `currentStepIndex` into the next step, which would fight
+  the step nav. The scene's own "seated" visual already shows arrival.
+
 ### Launch-prep tech → play behaviour (`launchPrepTech`)
 | Value | Play effect in `LaunchPrepScene` |
 |--------|----------------------------------|
@@ -77,10 +108,11 @@ Resolve via `resolveLaunchPrepTech(process)`. Scene must re-read tech when the l
 ### Round architecture
 | Piece | Role |
 |--------|------|
-| `App.tsx` | Hash router; owns `AppStage`; mounts **both** rounds' `RoundSession` permanently (visibility-toggled, never unmounted) so stage hops keep state |
+| `App.tsx` | Hash router; owns `AppStage`; mounts **both** rounds' `RoundSession` permanently (visibility-toggled, never unmounted) so stage hops keep state; mounts/unmounts `GembaWalkthrough` on demand (no cross-stage state to keep) |
 | `types/round.ts`, `data/rounds.ts` | Round configs; `AppStage` + `hashForStage` / `stageFromHash` |
 | `RoundSession.tsx` | redesign / play / orbit-complete for one round; accepts `hidden`, `requestedPhase`, `onPhaseChange` |
-| `StageNav.tsx` | Persistent top nav: Round 1 · Redesign · Round 2 |
+| `views/GembaWalkthrough.tsx` | Gemba walk — see below |
+| `StageNav.tsx` | Persistent top nav: Gemba · Round 1 · Redesign · Round 2 |
 | `RedesignWorkshop.tsx` | Round 2 pre-play redesign |
 | `processEdit.ts`, `roadGrid.ts` | Apply/resolve redesign fields |
 | `lib/redesignCost.ts` | Point costs + `RedesignCostBreakdown` builder for the total cost of improvement |

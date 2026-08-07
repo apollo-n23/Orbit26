@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { RoundSession } from './components/RoundSession'
 import { StageNav } from './components/StageNav'
+import { GembaWalkthrough } from './views/GembaWalkthrough'
 import { getRoundConfig } from './data/rounds'
 import {
   hashForStage,
@@ -88,6 +89,7 @@ function App() {
   return (
     <>
       <StageNav activeStage={stage} onNavigate={navigateToStage} />
+      {stage === 'gemba' && <GembaWalkthrough />}
       <RoundSession
         round={round1}
         hidden={stage !== 'round1'}
@@ -103,7 +105,7 @@ function App() {
       />
       <RoundSession
         round={round2}
-        hidden={stage === 'round1'}
+        hidden={stage !== 'redesign' && stage !== 'round2'}
         requestedPhase={
           stage === 'redesign' ? 'redesign' : stage === 'round2' ? 'play' : undefined
         }

@@ -32,11 +32,13 @@ export function hashForRound(id: RoundId): string {
 
 /**
  * Top-level nav stages a learner/tutor can jump between directly:
- * Round 1 (as-is), the Round 2 redesign workshop, and Round 2 (play).
+ * a Gemba walkthrough of Round 1 as-is, Round 1 itself, the Round 2
+ * redesign workshop, and Round 2 (play).
  */
-export type AppStage = 'round1' | 'redesign' | 'round2'
+export type AppStage = 'gemba' | 'round1' | 'redesign' | 'round2'
 
 export function hashForStage(stage: AppStage): string {
+  if (stage === 'gemba') return '#/gemba'
   if (stage === 'redesign') return '#/redesign'
   if (stage === 'round2') return hashForRound(2)
   return hashForRound(1)
@@ -45,6 +47,7 @@ export function hashForStage(stage: AppStage): string {
 /** Parse location hash into a top-level stage. Default: round1. */
 export function stageFromHash(hash: string = window.location.hash): AppStage {
   const path = hash.replace(/^#/, '').replace(/^\//, '')
+  if (path === 'gemba') return 'gemba'
   if (path === 'redesign') return 'redesign'
   if (path === 'round/2' || path === 'round2') return 'round2'
   return 'round1'

@@ -6,6 +6,7 @@ interface StageNavProps {
 }
 
 const STAGES: { id: AppStage; label: string }[] = [
+  { id: 'gemba', label: 'Gemba' },
   { id: 'round1', label: 'Round 1' },
   { id: 'redesign', label: 'Redesign' },
   { id: 'round2', label: 'Round 2' },
@@ -13,8 +14,9 @@ const STAGES: { id: AppStage; label: string }[] = [
 
 /**
  * Persistent top-level nav so a tutor/learner can hop directly between
- * Round 1, the Round 2 redesign workshop, and Round 2 play — independent
- * of the linear as-is → redesign → launches flow.
+ * a Gemba walkthrough of Round 1 as-is, Round 1, the Round 2 redesign
+ * workshop, and Round 2 play — independent of the linear
+ * as-is → redesign → launches flow.
  */
 export function StageNav({ activeStage, onNavigate }: StageNavProps) {
   return (
