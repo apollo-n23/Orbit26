@@ -3,6 +3,7 @@ import { formatLeadTime } from '../lib/simulation'
 import { averageLeadTimeMs, launchDurationsMs } from '../lib/roundMetrics'
 import { REDESIGN_BUDGET } from '../lib/redesignCost'
 import { formatHeightMiles } from '../lib/flightMetrics'
+import { buildDataCsv, downloadCsv } from '../lib/csvExport'
 import { RoundLeadTimeCompare } from '../components/RoundLeadTimeCompare'
 
 /** One round's live lead-time log, labeled for display on the Data tab. */
@@ -234,15 +235,36 @@ export function DataView({
     round1AvgMs != null &&
     round2AvgMs != null
 
+  const hasAnyEntries = rounds.some((r) => r.entries.length > 0)
+
+  function handleDownloadCsv() {
+    const csv = buildDataCsv(
+      rounds.map((r) => ({ roundLabel: r.roundLabel, entries: r.entries })),
+    )
+    downloadCsv('orbit26-lead-time-data.csv', csv)
+  }
+
   return (
     <section className="view-panel" aria-labelledby="data-heading">
-      <header className="view-panel__header">
-        <h2 id="data-heading">Data</h2>
-        <p className="view-panel__lede">
-          Lead time board for both rounds. Goal: log {rocketsGoal} full launch
-          cycles (assembly through liftoff) per round. Newest runs at the
-          top of each round's table.
-        </p>
+      <header className="view-panel__header data-header">
+        <div>
+          <h2 id="data-heading">Data</h2>
+          <p className="view-panel__lede">
+            Lead time board for both rounds. Goal: log {rocketsGoal} full
+            launch cycles (assembly through liftoff) per round. Newest runs
+            at the top of each round's table.
+          </p>
+        </div>
+        <div className="data-header__controls">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleDownloadCsv}
+            disabled={!hasAnyEntries}
+          >
+            Download CSV
+          </button>
+        </div>
       </header>
 
       <div className="view-panel__body data-body">

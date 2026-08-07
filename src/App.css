@@ -1984,6 +1984,21 @@
   white-space: nowrap;
 }
 
+.data-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.data-header__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
 .sim-body {
   display: flex;
   flex-direction: column;

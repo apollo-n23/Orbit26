@@ -285,6 +285,7 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 ### 4. Launch sequence (`LaunchSequenceScene.tsx`)
 - GO poll (possibly shortened/realigned from redesign) → hold key → liftoff (~3.2s).
 - Liftoff → `completeUnitRun` → Data entry: lead time, redesign cost (if set), a **randomised height achieved** (`lib/flightMetrics.ts`'s `randomHeightAchievedMiles()`, 60–90 **miles** — this app uses miles throughout, never km/kilometers), and this launch's **defect count** (haul-road explosions since the last Run Process). Data board shows both as their own columns per launch, plus a **Total defects** summary stat per round (sum across that round's logged launches).
+- **Download CSV** (`DataView.tsx` header, `lib/csvExport.ts`): one row per logged launch across both rounds (round label, rocket #, lead time as m:ss and ms, height achieved, redesign cost total + per-category breakdown, defects, ISO logged-at timestamp). Disabled until at least one launch is logged in either round. Plain browser Blob + temporary `<a download>` — no extra dependency.
 
 ---
 
