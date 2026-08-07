@@ -240,10 +240,19 @@ export function LaunchSequenceScene({
                     .join(' ')}
                   style={{ ['--mc-liftoff-ms' as string]: `${LIFTOFF_MS}ms` }}
                 >
+                  <div className="mc-pad-view__header" aria-hidden="true">
+                    <div className="mc-pad-view__live-feed">
+                      <span className="mc-pad-view__live-feed-dot" />
+                      LIVE FEED
+                    </div>
+                  </div>
                   <div className="mc-pad-view__brand" aria-hidden="true">
                     <img src={ORBIT_LOGO_SRC} alt="" />
                   </div>
                   <div className="mc-pad-view__sky" aria-hidden="true">
+                    <span className="mc-pad-view__cloud mc-pad-view__cloud--a" />
+                    <span className="mc-pad-view__cloud mc-pad-view__cloud--b" />
+                    <span className="mc-pad-view__cloud mc-pad-view__cloud--c" />
                     <span className="mc-pad-view__star mc-pad-view__star--a" />
                     <span className="mc-pad-view__star mc-pad-view__star--b" />
                     <span className="mc-pad-view__star mc-pad-view__star--c" />
@@ -251,10 +260,15 @@ export function LaunchSequenceScene({
                   <div className="mc-pad-view__ground" aria-hidden="true" />
                   <div className="mc-pad-view__pad" aria-hidden="true" />
                   <div className="mc-pad-view__tower" aria-hidden="true">
+                    <span className="mc-pad-view__tower-rod" />
+                    <span className="mc-pad-view__tower-beacon" />
                     <span className="mc-pad-view__tower-mast" />
                     <span className="mc-pad-view__tower-arm mc-pad-view__tower-arm--1" />
                     <span className="mc-pad-view__tower-arm mc-pad-view__tower-arm--2" />
                     <span className="mc-pad-view__tower-arm mc-pad-view__tower-arm--3" />
+                    <span className="mc-pad-view__tower-pipe" />
+                    <span className="mc-pad-view__tower-tank mc-pad-view__tower-tank--a" />
+                    <span className="mc-pad-view__tower-tank mc-pad-view__tower-tank--b" />
                     <span className="mc-pad-view__tower-base" />
                   </div>
                   <div

@@ -4122,7 +4122,7 @@
   grid-template-columns: minmax(0, 1.15fr) minmax(16rem, 0.95fr);
   gap: var(--space-3);
   flex: 1;
-  min-height: 18rem;
+  min-height: 20rem;
 }
 
 .mc-room__back {
@@ -4220,21 +4220,58 @@
   --mc-liftoff-ms: 3200ms;
   position: relative;
   flex: 1;
-  min-height: 8rem;
+  min-height: 10rem;
   overflow: hidden;
   background: #0b1016;
   transform-origin: 50% 70%;
 }
 
-/* Orb-it mark, upper-left of the window where the rocket launches. */
+/* Translucent header bar across the top of the window, behind the brand mark. */
+.mc-pad-view__header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  height: 1.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 4.6rem 0 0.5rem;
+  background: linear-gradient(180deg, rgba(6, 10, 15, 0.72), rgba(6, 10, 15, 0.08));
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+.mc-pad-view__live-feed {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #e8edf4;
+}
+
+.mc-pad-view__live-feed-dot {
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 50%;
+  background: #ff6b5e;
+  box-shadow: 0 0 5px rgba(255, 107, 94, 0.85);
+  animation: mc-live-pulse 0.9s ease-in-out infinite;
+}
+
+/* Orb-it mark, top-right of the window, floating in front of the header banner. */
 .mc-pad-view__brand {
   position: absolute;
-  top: 0.3rem;
-  left: 0.3rem;
-  z-index: 5;
+  top: 0.15rem;
+  right: 0.15rem;
+  z-index: 6;
   width: 5.5rem;
   height: 5.5rem;
-  opacity: 0.85;
+  opacity: 0.9;
   pointer-events: none;
 }
 
@@ -4290,6 +4327,37 @@
     radial-gradient(ellipse 55% 45% at 68% 18%, rgba(0, 129, 201, 0.18), transparent 62%),
     radial-gradient(ellipse 30% 25% at 22% 35%, rgba(90, 120, 160, 0.08), transparent 70%),
     linear-gradient(180deg, #071018 0%, #0f1a28 48%, #1a2838 100%);
+}
+
+/* Night-sky clouds, softly lit from below by the pad glow. */
+.mc-pad-view__cloud {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(120, 140, 165, 0.28);
+  filter: blur(3px);
+}
+
+.mc-pad-view__cloud--a {
+  top: 8%;
+  left: 8%;
+  width: 3.2rem;
+  height: 0.7rem;
+}
+
+.mc-pad-view__cloud--b {
+  top: 16%;
+  left: 42%;
+  width: 2.4rem;
+  height: 0.55rem;
+  opacity: 0.7;
+}
+
+.mc-pad-view__cloud--c {
+  top: 5%;
+  left: 62%;
+  width: 2rem;
+  height: 0.5rem;
+  opacity: 0.55;
 }
 
 .mc-pad-view__star {
@@ -4361,17 +4429,53 @@
   position: absolute;
   right: 27%;
   bottom: 28%;
-  width: 1.35rem;
-  height: 58%;
+  width: 2.3rem;
+  height: 29%;
   z-index: 2;
   pointer-events: none;
+}
+
+/* Lightning rod, top of the mast — thin spike with a red-tipped ball. */
+.mc-pad-view__tower-rod {
+  position: absolute;
+  right: 0.42rem;
+  top: -0.6rem;
+  width: 0.05rem;
+  height: 0.6rem;
+  background: linear-gradient(180deg, var(--color-brand-grey-light), var(--color-brand-grey));
+}
+
+.mc-pad-view__tower-rod::after {
+  content: '';
+  position: absolute;
+  top: -0.09rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0.14rem;
+  height: 0.14rem;
+  border-radius: 50%;
+  background: #ff6b5e;
+  box-shadow: 0 0 4px rgba(255, 107, 94, 0.8);
+}
+
+/* Aviation obstruction beacon — a red detail that blinks on and off. */
+.mc-pad-view__tower-beacon {
+  position: absolute;
+  right: 0.28rem;
+  top: 20%;
+  width: 0.17rem;
+  height: 0.17rem;
+  border-radius: 50%;
+  background: #ff6b5e;
+  box-shadow: 0 0 6px rgba(255, 107, 94, 0.85);
+  animation: mc-live-pulse 1.3s ease-in-out infinite;
 }
 
 .mc-pad-view__tower-mast {
   position: absolute;
   right: 0.15rem;
   bottom: 0;
-  width: 0.48rem;
+  width: 0.58rem;
   height: 100%;
   background: linear-gradient(90deg, #2e3642, var(--color-brand-grey) 40%, #3a4554 75%, #2a323d);
   box-shadow: 2px 0 0 rgba(0, 0, 0, 0.35);
@@ -4415,14 +4519,93 @@
   width: 0.75rem;
 }
 
+/* Cable tray / conduit running up the tower, beside the mast. */
+.mc-pad-view__tower-pipe {
+  position: absolute;
+  left: 0.12rem;
+  bottom: 0;
+  width: 0.16rem;
+  height: 88%;
+  background: linear-gradient(180deg, #3a4350, var(--color-brand-grey) 60%, #2a3038);
+  box-shadow: 1px 0 0 rgba(0, 0, 0, 0.3);
+}
+
+.mc-pad-view__tower-pipe::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 0.4rem,
+    rgba(0, 0, 0, 0.3) 0.4rem,
+    rgba(0, 0, 0, 0.3) 0.46rem
+  );
+}
+
+/* Fitting clamp on the conduit — a red detail from time to time. */
+.mc-pad-view__tower-pipe::after {
+  content: '';
+  position: absolute;
+  left: -0.05rem;
+  top: 45%;
+  width: 0.26rem;
+  height: 0.09rem;
+  background: #ff6b5e;
+  opacity: 0.85;
+}
+
+/* Ground support equipment — small fuel/LOX tanks beside the tower base. */
+.mc-pad-view__tower-tank {
+  position: absolute;
+  bottom: 0;
+  width: 0.44rem;
+  height: 0.85rem;
+  border-radius: 0.12rem 0.12rem 0.04rem 0.04rem;
+  background: linear-gradient(180deg, #4a5564, #2a323d);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.mc-pad-view__tower-tank--a {
+  left: -0.75rem;
+}
+
+.mc-pad-view__tower-tank--b {
+  left: -1.35rem;
+  height: 0.65rem;
+}
+
+.mc-pad-view__tower-tank--b::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0.18rem;
+  height: 0.08rem;
+  background: #ff6b5e;
+  opacity: 0.8;
+}
+
 .mc-pad-view__tower-base {
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 0.85rem;
+  width: 1.4rem;
   height: 0.35rem;
   background: linear-gradient(180deg, #4a5564, #2a323d);
   border-radius: 1px 1px 0 0;
+}
+
+/* Hazard stripe on the base — a red detail from time to time. */
+.mc-pad-view__tower-base::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 0.07rem;
+  background: #ff6b5e;
+  opacity: 0.75;
 }
 
 .mc-pad-view__rocket {
@@ -4430,7 +4613,7 @@
   left: 40%;
   bottom: 30.5%;
   width: 1.3rem;
-  height: 5.9rem;
+  height: 11.8rem;
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
@@ -4447,11 +4630,11 @@
 .mc-pad-view__rocket--away {
   animation: none;
   bottom: 125%;
-  opacity: 0.12;
-  transform: translateY(0) scale(0.45);
+  opacity: 0;
+  transform: translateY(0) scale(0.3);
 }
 
-/* Hold → slow breakaway → accelerate clear of tower */
+/* Hold → slow breakaway → accelerate clear of tower, soaring high before fading out. */
 @keyframes mc-liftoff {
   0% {
     transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
@@ -4461,27 +4644,27 @@
     transform: translate3d(0, 0.06rem, 0) scale(1) rotate(0deg);
   }
   14% {
-    transform: translate3d(0.02rem, -0.2rem, 0) scale(1) rotate(-0.4deg);
+    transform: translate3d(0.02rem, -0.25rem, 0) scale(1) rotate(-0.4deg);
   }
   28% {
-    transform: translate3d(-0.04rem, -1.1rem, 0) scale(0.98) rotate(0.35deg);
+    transform: translate3d(-0.05rem, -1.6rem, 0) scale(0.97) rotate(0.35deg);
   }
   48% {
-    transform: translate3d(0.06rem, -3.4rem, 0) scale(0.9) rotate(-0.5deg);
+    transform: translate3d(0.08rem, -5rem, 0) scale(0.85) rotate(-0.5deg);
   }
   72% {
-    transform: translate3d(-0.08rem, -7.2rem, 0) scale(0.72) rotate(0.25deg);
+    transform: translate3d(-0.1rem, -10.6rem, 0) scale(0.62) rotate(0.25deg);
   }
   100% {
-    transform: translate3d(0.05rem, -13.5rem, 0) scale(0.48) rotate(-0.2deg);
-    opacity: 0.12;
+    transform: translate3d(0.06rem, -20rem, 0) scale(0.32) rotate(-0.2deg);
+    opacity: 0;
   }
 }
 
 .mc-rocket__body {
   position: relative;
   width: 1.05rem;
-  height: 3.45rem;
+  height: 6.9rem;
   background: linear-gradient(90deg, #9aa4b0 0%, #eef2f6 42%, var(--color-brand-grey-light) 68%, #7a8490 100%);
   border-radius: 2px 2px 1px 1px;
   box-shadow:
@@ -4499,14 +4682,14 @@
   opacity: 0.85;
 }
 
-/* Small Orb-it decal on the booster hull, above the stripe. */
+/* Orb-it decal on the booster hull, above the stripe — enlarged for visibility. */
 .mc-rocket__logo {
   position: absolute;
   top: 12%;
   left: 50%;
   transform: translateX(-50%);
-  width: 0.62rem;
-  height: 0.62rem;
+  width: 0.95rem;
+  height: 0.95rem;
   object-fit: contain;
   opacity: 0.95;
   pointer-events: none;
@@ -4515,8 +4698,8 @@
 .mc-rocket__fin {
   position: absolute;
   bottom: 0;
-  width: 0.43rem;
-  height: 0.95rem;
+  width: 0.5rem;
+  height: 1.9rem;
   background: linear-gradient(180deg, #8a94a0, var(--color-brand-grey));
   z-index: -1;
 }
@@ -4533,7 +4716,7 @@
 
 .mc-rocket__nose {
   width: 1.05rem;
-  height: 1.2rem;
+  height: 2.4rem;
   background: linear-gradient(180deg, var(--color-brand-grey) 0%, var(--color-brand-grey-light) 70%, #e8ecf0 100%);
   clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.15);
@@ -4541,7 +4724,7 @@
 
 .mc-rocket__exhaust {
   position: relative;
-  width: 1.5rem;
+  width: 1.7rem;
   height: 0;
   display: flex;
   justify-content: center;
@@ -4553,28 +4736,28 @@
 
 .mc-pad-view__rocket--liftoff .mc-rocket__exhaust,
 .launch-seq-scene--launching .mc-rocket__exhaust {
-  height: 2.5rem;
+  height: 3.6rem;
   opacity: 1;
   animation: mc-exhaust-grow var(--mc-liftoff-ms) ease-out forwards;
 }
 
 @keyframes mc-exhaust-grow {
   0% {
-    height: 0.2rem;
+    height: 0.3rem;
     opacity: 0.4;
   }
   8% {
-    height: 1.1rem;
+    height: 1.6rem;
     opacity: 1;
   }
   22% {
-    height: 1.7rem;
+    height: 2.4rem;
   }
   55% {
-    height: 2rem;
+    height: 2.9rem;
   }
   100% {
-    height: 1.5rem;
+    height: 2.2rem;
     opacity: 0.85;
   }
 }
@@ -4900,19 +5083,19 @@
     bottom: 30%;
   }
   12% {
-    height: 1.2rem;
+    height: 1.6rem;
     opacity: 0.7;
     bottom: 32%;
   }
   45% {
-    height: 4.5rem;
-    opacity: 0.55;
-    bottom: 48%;
+    height: 6rem;
+    opacity: 0.5;
+    bottom: 50%;
   }
   100% {
-    height: 9rem;
-    opacity: 0.08;
-    bottom: 70%;
+    height: 13rem;
+    opacity: 0;
+    bottom: 74%;
   }
 }
 
