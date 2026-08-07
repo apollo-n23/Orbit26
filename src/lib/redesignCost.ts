@@ -25,6 +25,27 @@ export const LAUNCH_PREP_TECH_COST: Record<LaunchPrepTech, number> = {
   'payload-drone': 50,
 }
 
+/**
+ * Total redesign budget for a Round 2 session (points). Once the running
+ * total of improvement reaches this, no further cost-increasing choice can
+ * be made — only selling road tiles (which reduces the total) frees up
+ * room again.
+ */
+export const REDESIGN_BUDGET = 250
+
+/** Budget left before hitting REDESIGN_BUDGET, given the current breakdown. */
+export function remainingBudget(breakdown: RedesignCostBreakdown): number {
+  return REDESIGN_BUDGET - breakdown.total
+}
+
+/** Whether an additional charge of `cost` points still fits the budget. */
+export function canAffordCost(
+  breakdown: RedesignCostBreakdown,
+  cost: number,
+): boolean {
+  return cost <= remainingBudget(breakdown)
+}
+
 /** Baseline (factory-default) line position for each manufacture machine id. */
 const BASELINE_MACHINE_POSITIONS: Record<string, number> = (() => {
   const machines = getManufactureStep(BASELINE_PROCESS)?.machines ?? []

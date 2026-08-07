@@ -1325,7 +1325,13 @@
   background: color-mix(in srgb, var(--color-amber-dim) 65%, var(--color-surface-raised));
 }
 
-.redesign-cost-banner__total {
+.redesign-cost-banner--exhausted {
+  border-color: color-mix(in srgb, #c45c5c 55%, var(--color-border));
+  background: color-mix(in srgb, rgba(196, 92, 92, 0.16) 70%, var(--color-surface-raised));
+}
+
+.redesign-cost-banner__total,
+.redesign-cost-banner__remaining {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
@@ -1352,6 +1358,28 @@
   font-weight: 600;
   color: var(--color-text-dim);
   margin-left: 0.15rem;
+}
+
+.redesign-cost-banner__value--remaining {
+  font-size: 1.35rem;
+  color: var(--color-text);
+}
+
+.redesign-cost-banner--exhausted .redesign-cost-banner__value,
+.redesign-cost-banner--exhausted .redesign-cost-banner__value--remaining {
+  color: #e88a8a;
+}
+
+.redesign-cost-banner__exhausted-note {
+  flex-basis: 100%;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid #c45c5c;
+  background: rgba(196, 92, 92, 0.12);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e88a8a;
 }
 
 .redesign-cost-banner__breakdown {
@@ -1431,6 +1459,17 @@
 .redesign-haul__cell--road-new {
   background: color-mix(in srgb, var(--color-amber) 30%, #3d4249);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-amber) 55%, transparent);
+}
+
+/* Grass tile that would cost more than the remaining budget. */
+.redesign-haul__cell--over-budget {
+  cursor: not-allowed;
+  background: rgba(196, 92, 92, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(196, 92, 92, 0.35);
+}
+
+.redesign-haul__cell--over-budget:hover {
+  background: rgba(196, 92, 92, 0.14);
 }
 
 .redesign-haul__cell--start {
@@ -1527,6 +1566,16 @@
   border-color: var(--color-orbital-strong);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital) 50%, transparent);
   background: color-mix(in srgb, var(--color-orbital-dim) 55%, var(--color-surface-raised));
+}
+
+.redesign-tech-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.redesign-tech-card:disabled:hover {
+  border-color: var(--color-border);
+  background: var(--color-surface-raised);
 }
 
 .redesign-tech-card__name {

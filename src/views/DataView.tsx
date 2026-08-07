@@ -1,6 +1,7 @@
 import type { LeadTimeEntry, RedesignCostBreakdown } from '../types/process'
 import { formatLeadTime } from '../lib/simulation'
 import { averageLeadTimeMs, launchDurationsMs } from '../lib/roundMetrics'
+import { REDESIGN_BUDGET } from '../lib/redesignCost'
 import { RoundLeadTimeCompare } from '../components/RoundLeadTimeCompare'
 
 /** One round's live lead-time log, labeled for display on the Data tab. */
@@ -46,15 +47,16 @@ function RedesignCostSummary({ cost }: { cost: RedesignCostBreakdown }) {
         Total cost of improvement — Round 2
       </h3>
       <p className="view-panel__lede">
-        Builds as you invest in redesign upgrades. Only removing road tiles
-        brings it back down — every other investment is permanent for the
-        round once selected.
+        Round 2 has a {REDESIGN_BUDGET} pt improvement budget. Builds as you
+        invest in redesign upgrades. Only removing road tiles brings it back
+        down — every other investment is permanent for the round once
+        selected.
       </p>
       <div className="lead-board__summary">
         <div className="lead-board__stat lead-board__stat--best">
           <span className="lead-board__stat-label">Total cost</span>
           <span className="lead-board__stat-value">
-            {formatCost(cost.total)}
+            {formatCost(cost.total)} / {REDESIGN_BUDGET} pts
           </span>
         </div>
         {accrued.length === 0 ? (

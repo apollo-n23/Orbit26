@@ -26,6 +26,7 @@ import {
   MACHINE_MOVE_COST,
   movedMachineIds,
   RANGE_REMOVAL_COST,
+  REDESIGN_BUDGET,
 } from '../lib/redesignCost'
 import { Booster } from './Booster'
 import type { LaunchPrepTech } from '../types/process'
@@ -65,6 +66,8 @@ export function RedesignWorkshop({
   )
   const [tab, setTab] = useState<RedesignTab>('manufacture')
   const [roadError, setRoadError] = useState<string | null>(null)
+  /** Shown when an action is blocked because it would exceed the budget. */
+  const [budgetError, setBudgetError] = useState<string | null>(null)
   /** Booster upgrade panel: open once on hover/focus, then stays until dismissed. */
   const [upgradePanelOpen, setUpgradePanelOpen] = useState(false)
   /** Confirm lock-in dialog before starting launches. */
@@ -185,6 +188,22 @@ export function RedesignWorkshop({
     ],
   )
 
+  /** Budget left before hitting REDESIGN_BUDGET — only new charges are gated. */
+  const remainingBudget = REDESIGN_BUDGET - costBreakdown.total
+  const budgetExhausted = remainingBudget <= 0
+
+  function blockOverBudget(cost: number, description: string): boolean {
+    if (cost > remainingBudget) {
+      setBudgetError(
+        `Not enough budget to ${description} — needs ${cost} pts, ` +
+          `${Math.max(remainingBudget, 0)} pts left of ${REDESIGN_BUDGET}.`,
+      )
+      return true
+    }
+    setBudgetError(null)
+    return false
+  }
+
   function handleDropOnSlot(targetSlotIndex: number, machineId: string) {
     if (!machineId) return
     const ordered = machinesSorted.map((m) => m.id)
@@ -193,7 +212,14 @@ export function RedesignWorkshop({
     const next = ordered.filter((id) => id !== machineId)
     const insertAt = Math.max(0, Math.min(targetSlotIndex, next.length))
     next.splice(insertAt, 0, machineId)
-    setDraft((p) => applyMachineLineOrder(p, next))
+    const candidate = applyMachineLineOrder(draft, next)
+    const candidateMachines = getManufactureStep(candidate)?.machines ?? []
+    const newlyMoved = movedMachineIds(candidateMachines).filter(
+      (id) => !everMovedMachineIds.has(id),
+    )
+    const cost = newlyMoved.length * MACHINE_MOVE_COST
+    if (blockOverBudget(cost, 'move this machine')) return
+    setDraft(candidate)
   }
 
   function handleParkChange(machineId: string, value: number) {
@@ -201,25 +227,43 @@ export function RedesignWorkshop({
   }
 
   function handleToggleAutoMove() {
-    setDraft((p) => applyAutoMoveBooster(p, !resolveAutoMoveBooster(p)))
+    const enabling = !resolveAutoMoveBooster(draft)
+    if (enabling && !everAutoTransferOn) {
+      if (blockOverBudget(AUTO_TRANSFER_COST, 'enable auto-transfer')) return
+    } else {
+      setBudgetError(null)
+    }
+    setDraft((p) => applyAutoMoveBooster(p, enabling))
   }
 
   function handleSelectLaunchPrepTech(tech: LaunchPrepTech) {
-    setDraft((p) => {
-      const current = resolveLaunchPrepTech(p)
-      // Toggle off if re-selecting the same investment.
-      return applyLaunchPrepTech(p, current === tech ? null : tech)
-    })
+    const current = resolveLaunchPrepTech(draft)
+    const turningOff = current === tech
+    if (!turningOff && !everSelectedTechIds.has(tech)) {
+      const name = LAUNCH_PREP_TECH_OPTIONS.find((o) => o.id === tech)?.name ?? tech
+      if (blockOverBudget(LAUNCH_PREP_TECH_COST[tech], `invest in ${name}`)) return
+    } else {
+      setBudgetError(null)
+    }
+    setDraft((p) => applyLaunchPrepTech(p, turningOff ? null : tech))
   }
 
   function handleToggleLaunchSeqRealign(stationId: string) {
-    setDraft((p) => {
-      const realigned = resolveLaunchSeqRealignIds(p).includes(stationId)
-      return applyLaunchSeqRealign(p, stationId, !realigned)
-    })
+    const realigned = resolveLaunchSeqRealignIds(draft).includes(stationId)
+    if (!realigned && !everRealignedGoIds.has(stationId)) {
+      if (blockOverBudget(GO_REALIGN_COST, 'realign this station')) return
+    } else {
+      setBudgetError(null)
+    }
+    setDraft((p) => applyLaunchSeqRealign(p, stationId, !realigned))
   }
 
   function handleDeleteRangeFromSequence() {
+    if (!everRangeRemoved) {
+      if (blockOverBudget(RANGE_REMOVAL_COST, 'remove Range Safety')) return
+    } else {
+      setBudgetError(null)
+    }
     setDraft((p) => applyLaunchSeqRemove(p, LAUNCH_SEQ_RANGE_STATION_ID, true))
     setLaunchSeqInfoId(null)
   }
@@ -238,6 +282,14 @@ export function RedesignWorkshop({
     if (key === endpoints.start || key === endpoints.end) return
     // Tree cluster is a fixed decorative obstacle — never paintable as road.
     if (treeCells.has(key)) return
+    // Painting a brand-new (non-baseline) tile costs points — gate on budget.
+    // Removing/selling a tile only ever helps the budget, so it's never blocked.
+    const addingNewTile = !roadTiles.has(key) && !baselineRoadTiles.has(key)
+    if (addingNewTile) {
+      if (blockOverBudget(ROAD_COST_PER_TILE, 'add this road tile')) return
+    } else {
+      setBudgetError(null)
+    }
     setRoadTiles((prev) => {
       const next = new Set(prev)
       if (next.has(key)) next.delete(key)
@@ -308,13 +360,33 @@ export function RedesignWorkshop({
       </header>
 
       <div className="view-panel__body redesign-body">
-        <div className="redesign-cost-banner" aria-live="polite">
+        <div
+          className={[
+            'redesign-cost-banner',
+            budgetExhausted ? 'redesign-cost-banner--exhausted' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          aria-live="polite"
+        >
           <div className="redesign-cost-banner__total">
             <span className="redesign-cost-banner__label">
               Total cost of improvement
             </span>
             <span className="redesign-cost-banner__value">
               {costBreakdown.total}
+              <span className="redesign-cost-banner__unit">
+                {' '}
+                / {REDESIGN_BUDGET} pts
+              </span>
+            </span>
+          </div>
+          <div className="redesign-cost-banner__remaining">
+            <span className="redesign-cost-banner__label">
+              Budget remaining
+            </span>
+            <span className="redesign-cost-banner__value redesign-cost-banner__value--remaining">
+              {Math.max(remainingBudget, 0)}
               <span className="redesign-cost-banner__unit"> pts</span>
             </span>
           </div>
@@ -338,6 +410,18 @@ export function RedesignWorkshop({
               </strong>
             </li>
           </ul>
+          {budgetExhausted && (
+            <p className="redesign-cost-banner__exhausted-note" role="alert">
+              Budget exhausted — no further cost-increasing improvements can
+              be selected. Sell road tiles on the Haul road tab to free up
+              room.
+            </p>
+          )}
+          {budgetError && (
+            <p className="redesign-cost-banner__exhausted-note" role="alert">
+              {budgetError}
+            </p>
+          )}
           <p className="redesign-cost-banner__hint">
             Starts at zero — the existing road is already built and free.
             Only the Haul road tab can bring the total back down: selling
@@ -486,10 +570,20 @@ export function RedesignWorkshop({
                             : 'btn btn--primary'
                         }
                         onClick={handleToggleAutoMove}
+                        disabled={
+                          !autoMoveBooster &&
+                          !everAutoTransferOn &&
+                          AUTO_TRANSFER_COST > remainingBudget
+                        }
                       >
                         {autoMoveBooster
                           ? 'Disable auto-transfer'
-                          : 'Enable auto-transfer'}
+                          : `Enable auto-transfer${
+                              !everAutoTransferOn &&
+                              AUTO_TRANSFER_COST > remainingBudget
+                                ? ' (over budget)'
+                                : ''
+                            }`}
                       </button>
                       {upgradePanelOpen && !autoMoveBooster && (
                         <button
@@ -520,6 +614,10 @@ export function RedesignWorkshop({
               {LAUNCH_PREP_TECH_OPTIONS.map((opt) => {
                 const selected = launchPrepTech === opt.id
                 const everTried = everSelectedTechIds.has(opt.id)
+                const overBudget =
+                  !selected &&
+                  !everTried &&
+                  LAUNCH_PREP_TECH_COST[opt.id] > remainingBudget
                 return (
                   <button
                     key={opt.id}
@@ -533,12 +631,14 @@ export function RedesignWorkshop({
                       .filter(Boolean)
                       .join(' ')}
                     onClick={() => handleSelectLaunchPrepTech(opt.id)}
+                    disabled={overBudget}
                   >
                     <span className="redesign-tech-card__name">{opt.name}</span>
                     <span className="redesign-tech-card__summary">{opt.summary}</span>
                     <span className="redesign-tech-card__cost">
                       {LAUNCH_PREP_TECH_COST[opt.id]} pts
                       {everTried && !selected ? ' · already spent' : ''}
+                      {overBudget ? ' · over budget' : ''}
                     </span>
                     <span className="redesign-tech-card__status">
                       {selected ? 'Selected' : 'Select investment'}
@@ -621,10 +721,18 @@ export function RedesignWorkshop({
                               handleToggleLaunchSeqRealign(station.id)
                             }
                             aria-pressed={realigned}
+                            disabled={
+                              !realigned &&
+                              !everRealignedGoIds.has(station.id) &&
+                              GO_REALIGN_COST > remainingBudget
+                            }
                           >
                             {realigned
                               ? 'Undo realign'
-                              : `Realign (${GO_REALIGN_COST} pts)`}
+                              : !everRealignedGoIds.has(station.id) &&
+                                  GO_REALIGN_COST > remainingBudget
+                                ? 'Realign (over budget)'
+                                : `Realign (${GO_REALIGN_COST} pts)`}
                           </button>
                         )}
                         {removed && isRange && (
@@ -674,8 +782,15 @@ export function RedesignWorkshop({
                               type="button"
                               className="btn btn--ghost redesign-seq__delete"
                               onClick={handleDeleteRangeFromSequence}
+                              disabled={
+                                !everRangeRemoved &&
+                                RANGE_REMOVAL_COST > remainingBudget
+                              }
                             >
-                              Delete from sequence ({RANGE_REMOVAL_COST} pts)
+                              {!everRangeRemoved &&
+                              RANGE_REMOVAL_COST > remainingBudget
+                                ? 'Delete from sequence (over budget)'
+                                : `Delete from sequence (${RANGE_REMOVAL_COST} pts)`}
                             </button>
                           </div>
                         )}
@@ -758,6 +873,10 @@ export function RedesignWorkshop({
                     const isStart = key === endpoints.start
                     const isEnd = key === endpoints.end
                     const isBaseline = !isStart && !isEnd && baselineRoadTiles.has(key)
+                    const overBudget =
+                      !on &&
+                      !isBaseline &&
+                      ROAD_COST_PER_TILE > remainingBudget
                     return (
                       <button
                         key={key}
@@ -769,6 +888,7 @@ export function RedesignWorkshop({
                           isStart ? 'redesign-haul__cell--start' : '',
                           isEnd ? 'redesign-haul__cell--end' : '',
                           isTree ? 'redesign-haul__cell--tree' : '',
+                          overBudget ? 'redesign-haul__cell--over-budget' : '',
                         ]
                           .filter(Boolean)
                           .join(' ')}
@@ -786,9 +906,11 @@ export function RedesignWorkshop({
                                     : `New road tile ${col},${row} — click to remove (−${ROAD_COST_PER_TILE} pts)`
                                   : isBaseline
                                     ? `Sold road tile ${col},${row} — click to rebuild (free, restores existing road)`
-                                    : `Grass tile ${col},${row} — click to add road (+${ROAD_COST_PER_TILE} pts)`
+                                    : overBudget
+                                      ? `Grass tile ${col},${row} — over budget, cannot add road`
+                                      : `Grass tile ${col},${row} — click to add road (+${ROAD_COST_PER_TILE} pts)`
                         }
-                        disabled={isStart || isEnd || isTree}
+                        disabled={isStart || isEnd || isTree || overBudget}
                       />
                     )
                   }),
