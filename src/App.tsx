@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { RoundSession } from './components/RoundSession'
-import { StageNav } from './components/StageNav'
 import { GembaWalkthrough } from './views/GembaWalkthrough'
 import { CustomerPortalView } from './views/CustomerPortalView'
 import { getRoundConfig } from './data/rounds'
@@ -89,11 +88,22 @@ function App() {
 
   return (
     <>
-      <StageNav activeStage={stage} onNavigate={navigateToStage} />
-      {stage === 'gemba' && <GembaWalkthrough />}
-      {stage === 'customers' && <CustomerPortalView />}
+      {stage === 'gemba' && (
+        <GembaWalkthrough
+          activeStage={stage}
+          onNavigateStage={navigateToStage}
+        />
+      )}
+      {stage === 'customers' && (
+        <CustomerPortalView
+          activeStage={stage}
+          onNavigateStage={navigateToStage}
+        />
+      )}
       <RoundSession
         round={round1}
+        activeStage={stage}
+        onNavigateStage={navigateToStage}
         hidden={stage !== 'round1'}
         onNavigateRound2={() => navigateToStage('redesign')}
         onLeadTimeLogChange={handleLeadTimeLogChange}
@@ -107,6 +117,8 @@ function App() {
       />
       <RoundSession
         round={round2}
+        activeStage={stage}
+        onNavigateStage={navigateToStage}
         hidden={stage !== 'redesign' && stage !== 'round2'}
         requestedPhase={
           stage === 'redesign' ? 'redesign' : stage === 'round2' ? 'play' : undefined

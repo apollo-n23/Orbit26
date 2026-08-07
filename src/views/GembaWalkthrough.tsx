@@ -4,7 +4,9 @@ import { IntegratePayloadScene } from '../components/IntegratePayloadScene'
 import { LaunchPrepScene } from '../components/LaunchPrepScene'
 import { LaunchSequenceScene } from '../components/LaunchSequenceScene'
 import { SiteBrand } from '../components/SiteBrand'
+import { StageNav } from '../components/StageNav'
 import { getRoundConfig } from '../data/rounds'
+import type { AppStage } from '../types/round'
 import type { RunState } from '../types/process'
 import { INITIAL_RUN_STATE, MACHINE_CYCLE_MS } from '../types/process'
 import {
@@ -46,7 +48,15 @@ function freshStepRun(stepIndex: number): RunState {
  * Redesign, or Round 2 — this view owns its own local, throwaway state and
  * never touches theirs.
  */
-export function GembaWalkthrough() {
+interface GembaWalkthroughProps {
+  activeStage: AppStage
+  onNavigateStage: (stage: AppStage) => void
+}
+
+export function GembaWalkthrough({
+  activeStage,
+  onNavigateStage,
+}: GembaWalkthroughProps) {
   const process = GEMBA_PROCESS
   const [stepIndex, setStepIndex] = useState(0)
   const [run, setRun] = useState<RunState>(() => freshStepRun(0))
@@ -165,6 +175,7 @@ export function GembaWalkthrough() {
       <header className="top-bar top-bar--round-done">
         <SiteBrand subtitle="Gemba walk · Round 1 as-is" />
       </header>
+      <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
       <main className="app-main">
         <section className="view-panel" aria-labelledby="gemba-heading">
           <header className="view-panel__header sim-header">

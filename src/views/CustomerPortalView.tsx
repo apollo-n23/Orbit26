@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { SiteBrand } from '../components/SiteBrand'
+import { StageNav } from '../components/StageNav'
+import type { AppStage } from '../types/round'
 
 const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
 
@@ -316,7 +318,15 @@ const HEADER_STARS: {
   { top: '58%', left: '93%', size: 2, delay: '1.9s', duration: '3.2s' },
 ]
 
-export function CustomerPortalView() {
+interface CustomerPortalViewProps {
+  activeStage: AppStage
+  onNavigateStage: (stage: AppStage) => void
+}
+
+export function CustomerPortalView({
+  activeStage,
+  onNavigateStage,
+}: CustomerPortalViewProps) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
 
   function toggleExpanded(handle: string) {
@@ -333,6 +343,7 @@ export function CustomerPortalView() {
       <header className="top-bar top-bar--round-done">
         <SiteBrand subtitle="Customer Portal · Voice of Customer" />
       </header>
+      <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
       <main className="app-main">
         <section className="view-panel" aria-labelledby="customer-portal-heading">
           <header className="view-panel__header sim-header">

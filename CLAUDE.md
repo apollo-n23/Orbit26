@@ -188,11 +188,11 @@ Resolve via `resolveLaunchPrepTechs(process)` (returns `LaunchPrepTech[]`). Scen
 ### Round architecture
 | Piece | Role |
 |--------|------|
-| `App.tsx` | Hash router; owns `AppStage`; mounts **both** rounds' `RoundSession` permanently (visibility-toggled, never unmounted) so stage hops keep state; mounts/unmounts `GembaWalkthrough` on demand (no cross-stage state to keep) |
+| `App.tsx` | Hash router; owns `AppStage`; mounts **both** rounds' `RoundSession` permanently (visibility-toggled, never unmounted) so stage hops keep state; mounts/unmounts `GembaWalkthrough`/`CustomerPortalView` on demand (no cross-stage state to keep); passes `activeStage`/`onNavigateStage` down to each page rather than rendering `StageNav` itself |
 | `types/round.ts`, `data/rounds.ts` | Round configs; `AppStage` + `hashForStage` / `stageFromHash` |
-| `RoundSession.tsx` | redesign / play / orbit-complete for one round; accepts `hidden`, `requestedPhase`, `onPhaseChange` |
+| `RoundSession.tsx` | redesign / play / orbit-complete for one round; accepts `hidden`, `requestedPhase`, `onPhaseChange`, `activeStage`, `onNavigateStage`; renders its own `StageNav` beneath its own banner in all three phase branches |
 | `views/GembaWalkthrough.tsx` | Gemba walk — see below |
-| `StageNav.tsx` | Persistent top nav: Gemba · Round 1 · Redesign · Round 2, plus a separately-styled Customer Portal button off to the side |
+| `StageNav.tsx` | Stage nav: Gemba · Round 1 · Redesign · Round 2, plus a separately-styled Customer Portal button off to the side. Rendered by each page beneath its own PMI banner, not once at the `App.tsx` level — see "Stage nav (settled)" below |
 | `views/CustomerPortalView.tsx` | Customer Portal — see below |
 | `RedesignWorkshop.tsx` | Round 2 pre-play redesign |
 | `processEdit.ts`, `roadGrid.ts` | Apply/resolve redesign fields |
@@ -205,8 +205,9 @@ Resolve via `resolveLaunchPrepTechs(process)` (returns `LaunchPrepTech[]`). Scen
 
 ### Stage nav (settled)
 
-Persistent top-level nav (`StageNav.tsx`, rendered once in `App.tsx` above whichever round is showing) lets a tutor/learner hop directly between **Round 1**, **Redesign**, and **Round 2** — independent of the as-is → redesign → launches linear flow.
+Persistent stage nav (`StageNav.tsx`) lets a tutor/learner hop directly between **Round 1**, **Redesign**, and **Round 2** — independent of the as-is → redesign → launches linear flow.
 
+- **Position: beneath the PMI brand banner, on every page.** `StageNav` is **not** rendered once at the `App.tsx` level — `App.tsx` only owns the `stage` state and passes `activeStage`/`onNavigateStage` down as props. Each page renders its own `<StageNav>` immediately after its own PMI banner header: `RoundSession` renders it in all three of its phase branches (orbit-complete, redesign, and play — right after `TopBar` in the play branch), and `GembaWalkthrough` / `CustomerPortalView` each render it right after their own `<SiteBrand>` header. This keeps the nav directly under the "PMI · Orb-it" banner everywhere, rather than above it.
 - **Routes:** `#/round/1` · `#/redesign` · `#/round/2` (`AppStage` in `types/round.ts`).
 - **Both rounds stay mounted for the app's lifetime** (`App.tsx` renders both `RoundSession`s, hidden via inline `display: none` rather than unmounted) — hopping never loses in-progress state (process edits, run in flight, lead-time log).
 - **Round 2 phase is nav-controlled** via `requestedPhase`/`onPhaseChange` props on `RoundSession`:

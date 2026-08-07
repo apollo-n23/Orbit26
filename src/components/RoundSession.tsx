@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TopBar } from './TopBar'
 import { SiteBrand } from './SiteBrand'
+import { StageNav } from './StageNav'
 import { ViewNav } from './ViewNav'
 import { RedesignWorkshop } from './RedesignWorkshop'
 import { SimulationView } from '../views/SimulationView'
@@ -28,7 +29,7 @@ import type {
 } from '../types/process'
 import { INITIAL_RUN_STATE } from '../types/process'
 import { randomHeightAchievedMiles } from '../lib/flightMetrics'
-import type { RoundConfig, RoundId } from '../types/round'
+import type { AppStage, RoundConfig, RoundId } from '../types/round'
 import { ROCKETS_PER_ROUND, hashForRound } from '../types/round'
 import {
   loadRound1AverageLeadTimeMs,
@@ -40,6 +41,9 @@ type RoundPhase = 'redesign' | 'play' | 'orbit-complete'
 
 interface RoundSessionProps {
   round: RoundConfig
+  /** Persistent stage nav, rendered beneath this round's PMI brand banner. */
+  activeStage: AppStage
+  onNavigateStage: (stage: AppStage) => void
   onNavigateRound2?: () => void
   /** Hide without unmounting, so stage-nav hops don't lose session state. */
   hidden?: boolean
@@ -70,6 +74,8 @@ interface RoundSessionProps {
 
 export function RoundSession({
   round,
+  activeStage,
+  onNavigateStage,
   onNavigateRound2,
   hidden = false,
   requestedPhase,
@@ -281,6 +287,7 @@ export function RoundSession({
         <header className="top-bar top-bar--round-done">
           <SiteBrand subtitle={round.label} />
         </header>
+        <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
         <main className="app-main app-main--orbit">
           <OrbitCompleteScene
             round={round}
@@ -301,6 +308,7 @@ export function RoundSession({
         <header className="top-bar top-bar--round-done">
           <SiteBrand subtitle={`${round.label} · Redesign`} />
         </header>
+        <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
         <main className="app-main">
           <RedesignWorkshop
             initialProcess={process}
@@ -322,6 +330,7 @@ export function RoundSession({
         rocketsLaunched={rocketsLaunched}
         rocketsGoal={ROCKETS_PER_ROUND}
       />
+      <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
       <ViewNav activeView={activeView} onChangeView={setActiveView} />
       <main className="app-main">
         {activeView === 'simulation' && (
