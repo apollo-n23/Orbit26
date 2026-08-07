@@ -26,13 +26,26 @@ export interface RoundConfig {
   allowsRedesign?: boolean
 }
 
-/** Parse location hash into a round. Default: round 1. */
-export function roundIdFromHash(hash: string = window.location.hash): RoundId {
-  const path = hash.replace(/^#/, '').replace(/^\//, '')
-  if (path === 'round/2' || path === 'round2') return 2
-  return 1
-}
-
 export function hashForRound(id: RoundId): string {
   return `#/round/${id}`
+}
+
+/**
+ * Top-level nav stages a learner/tutor can jump between directly:
+ * Round 1 (as-is), the Round 2 redesign workshop, and Round 2 (play).
+ */
+export type AppStage = 'round1' | 'redesign' | 'round2'
+
+export function hashForStage(stage: AppStage): string {
+  if (stage === 'redesign') return '#/redesign'
+  if (stage === 'round2') return hashForRound(2)
+  return hashForRound(1)
+}
+
+/** Parse location hash into a top-level stage. Default: round1. */
+export function stageFromHash(hash: string = window.location.hash): AppStage {
+  const path = hash.replace(/^#/, '').replace(/^\//, '')
+  if (path === 'redesign') return 'redesign'
+  if (path === 'round/2' || path === 'round2') return 'round2'
+  return 'round1'
 }

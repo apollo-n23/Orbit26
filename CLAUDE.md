@@ -75,9 +75,10 @@ Resolve via `resolveLaunchPrepTech(process)`. Scene must re-read tech when the l
 ### Round architecture
 | Piece | Role |
 |--------|------|
-| `App.tsx` | Hash router only |
-| `types/round.ts`, `data/rounds.ts` | Round configs |
-| `RoundSession.tsx` | redesign / play / orbit-complete for one round |
+| `App.tsx` | Hash router; owns `AppStage`; mounts **both** rounds' `RoundSession` permanently (visibility-toggled, never unmounted) so stage hops keep state |
+| `types/round.ts`, `data/rounds.ts` | Round configs; `AppStage` + `hashForStage` / `stageFromHash` |
+| `RoundSession.tsx` | redesign / play / orbit-complete for one round; accepts `hidden`, `requestedPhase`, `onPhaseChange` |
+| `StageNav.tsx` | Persistent top nav: Round 1 · Redesign · Round 2 |
 | `RedesignWorkshop.tsx` | Round 2 pre-play redesign |
 | `processEdit.ts`, `roadGrid.ts` | Apply/resolve redesign fields |
 | `OrbitCompleteScene.tsx` | End-of-round cutaway |
@@ -85,6 +86,19 @@ Resolve via `resolveLaunchPrepTech(process)`. Scene must re-read tech when the l
 | `lib/roundMetrics.ts` | Round 1 avg + per-launch times save/load; averages |
 | `RoundLeadTimeCompare.tsx` | Visual R1 vs R2 averages + three-launch bar compare (Data + orbit complete) |
 | Views | **Simulation** · **Data** only (**Comparison tab removed**) |
+
+### Stage nav (settled)
+
+Persistent top-level nav (`StageNav.tsx`, rendered once in `App.tsx` above whichever round is showing) lets a tutor/learner hop directly between **Round 1**, **Redesign**, and **Round 2** — independent of the as-is → redesign → launches linear flow.
+
+- **Routes:** `#/round/1` · `#/redesign` · `#/round/2` (`AppStage` in `types/round.ts`).
+- **Both rounds stay mounted for the app's lifetime** (`App.tsx` renders both `RoundSession`s, hidden via inline `display: none` rather than unmounted) — hopping never loses in-progress state (process edits, run in flight, lead-time log).
+- **Round 2 phase is nav-controlled** via `requestedPhase`/`onPhaseChange` props on `RoundSession`:
+  - Clicking **Redesign** always jumps into the workshop (even mid-round or post-completion) — and **resets that round's play state** (session, run, lead-time log) so it plays out fresh under whatever design is confirmed next.
+  - Clicking **Round 2** only *advances* redesign → play; it never regresses an in-progress or completed round back to the workshop.
+  - A **fresh deep link** (e.g. tutor share URL landing straight on `#/round/2`) is unaffected — the forcing only reacts to a `requestedPhase` *change after mount*, so first load still lands on the round's natural starting phase (redesign, since Round 2 `allowsRedesign`).
+  - Internal auto-advances (Confirm redesign → play) report back via `onPhaseChange` so the nav's active tab stays correct even without a nav click.
+- **Round 1 → Round 2 CTA** (`onNavigateRound2` on Round 1's `RoundSession`, used by the orbit-complete "Continue to Round 2" button) navigates to the **Redesign** stage, not Round 2 play — preserves the original "share link lands on the workshop" flow.
 
 ---
 

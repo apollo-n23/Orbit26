@@ -194,6 +194,41 @@
   animation: machine-pulse 1.4s ease-in-out infinite;
 }
 
+/* ── Stage navigation (Round 1 / Redesign / Round 2) ────────── */
+
+.stage-nav {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 var(--space-5);
+  border-bottom: 1px solid var(--color-border-strong);
+  background: var(--color-bg);
+}
+
+.stage-nav__item {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.stage-nav__item:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.stage-nav__item--active {
+  color: var(--color-orbital-strong);
+  border-color: color-mix(in srgb, var(--color-orbital) 45%, transparent);
+  background: var(--color-orbital-dim);
+}
+
 /* ── View navigation ─────────────────────────────────────── */
 
 .view-nav {

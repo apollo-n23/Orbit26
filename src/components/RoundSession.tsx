@@ -35,9 +35,25 @@ type RoundPhase = 'redesign' | 'play' | 'orbit-complete'
 interface RoundSessionProps {
   round: RoundConfig
   onNavigateRound2?: () => void
+  /** Hide without unmounting, so stage-nav hops don't lose session state. */
+  hidden?: boolean
+  /**
+   * External nav request for this round's phase (redesign vs play).
+   * Only acted on when it changes after mount — a fresh deep link still
+   * lands on the round's natural starting phase.
+   */
+  requestedPhase?: RoundPhase
+  /** Reports internal phase changes so the stage nav can stay in sync. */
+  onPhaseChange?: (phase: RoundPhase) => void
 }
 
-export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
+export function RoundSession({
+  round,
+  onNavigateRound2,
+  hidden = false,
+  requestedPhase,
+  onPhaseChange,
+}: RoundSessionProps) {
   const [activeView, setActiveView] = useState<AppView>('simulation')
   const [sessionActive, setSessionActive] = useState(false)
   const [phase, setPhase] = useState<RoundPhase>(() =>
@@ -79,6 +95,39 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
     // round fields read intentionally only when round.id changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round.id])
+
+  // Stage-nav can request a phase jump (redesign <-> play) for this round.
+  // Ignore the value on first mount — a fresh deep link should still land
+  // on the round's natural starting phase, not be force-jumped.
+  const requestedPhaseAppliedRef = useRef(requestedPhase)
+  useEffect(() => {
+    if (requestedPhase === requestedPhaseAppliedRef.current) return
+    requestedPhaseAppliedRef.current = requestedPhase
+    if (!requestedPhase) return
+    if (requestedPhase === 'redesign') {
+      setPhase((prev) => {
+        if (prev === 'redesign') return prev
+        // Revisiting the workshop mid-round or after completion restarts
+        // this round's launches under whatever design is confirmed next.
+        setSessionActive(false)
+        setRun(INITIAL_RUN_STATE)
+        setLeadTimeLog([])
+        lastLoggedRunRef.current = 0
+        return 'redesign'
+      })
+    } else if (requestedPhase === 'play') {
+      setPhase((prev) => (prev === 'redesign' ? 'play' : prev))
+    }
+  }, [requestedPhase])
+
+  // Report phase changes upward so the stage nav stays in sync when this
+  // round auto-advances (e.g. Confirm redesign -> play) without a nav click.
+  const lastReportedPhaseRef = useRef(phase)
+  useEffect(() => {
+    if (phase === lastReportedPhaseRef.current) return
+    lastReportedPhaseRef.current = phase
+    onPhaseChange?.(phase)
+  }, [phase, onPhaseChange])
 
   useEffect(() => {
     if (!isRunTimerActive(run)) return
@@ -181,7 +230,7 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
 
   if (phase === 'orbit-complete') {
     return (
-      <div className="app-shell">
+      <div className="app-shell" style={hidden ? { display: 'none' } : undefined}>
         <header className="top-bar top-bar--round-done">
           <SiteBrand subtitle={round.label} />
         </header>
@@ -201,7 +250,7 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
 
   if (phase === 'redesign') {
     return (
-      <div className="app-shell">
+      <div className="app-shell" style={hidden ? { display: 'none' } : undefined}>
         <header className="top-bar top-bar--round-done">
           <SiteBrand subtitle={`${round.label} · Redesign`} />
         </header>
@@ -217,7 +266,7 @@ export function RoundSession({ round, onNavigateRound2 }: RoundSessionProps) {
   }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" style={hidden ? { display: 'none' } : undefined}>
       <TopBar
         metrics={metrics}
         onStartSession={handleStartSession}
