@@ -1675,7 +1675,8 @@
   gap: var(--space-3);
 }
 
-.redesign-seq-preview {
+.redesign-seq-preview,
+.redesign-haul-preview {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

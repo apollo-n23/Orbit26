@@ -672,6 +672,14 @@ export function IntegratePayloadScene({
               stroke={locked || seated ? '#5ba3e0' : '#8a929c'}
               strokeWidth="2"
             />
+            <image
+              href={`${import.meta.env.BASE_URL}OrbitLogo.png`}
+              x={PAD_SEATED.x - 30}
+              y={PAD_SEATED.y - 30}
+              width="60"
+              height="60"
+              opacity="0.9"
+            />
             <circle
               cx={PAD_SEATED.x}
               cy={PAD_SEATED.y}

@@ -32,6 +32,7 @@ import {
   REDESIGN_BUDGET,
 } from '../lib/redesignCost'
 import { Booster } from './Booster'
+import { IntegratePayloadScene } from './IntegratePayloadScene'
 import { LaunchSequenceScene } from './LaunchSequenceScene'
 import type { LaunchPrepTech, RunState } from '../types/process'
 import {
@@ -39,7 +40,7 @@ import {
   LAUNCH_SEQ_GO_STATIONS,
   LAUNCH_SEQ_RANGE_STATION_ID,
 } from '../types/process'
-import { finishLaunchSequenceAction } from '../lib/simulation'
+import { finishLaunchSequenceAction, markOnPad } from '../lib/simulation'
 import {
   ROAD_COLS,
   ROAD_ROWS,
@@ -140,6 +141,46 @@ export function RedesignWorkshop({
   function handlePreviewActionComplete() {
     setPreviewRun((prev) => finishLaunchSequenceAction(draft, prev))
   }
+
+  // Haul tab: live preview of the pad-approach scene for the currently
+  // painted road — same self-contained, throwaway-run pattern as above.
+  const haulStepIndex = useMemo(
+    () => draft.steps.findIndex((s) => s.kind === 'haul'),
+    [draft],
+  )
+  const haulPreviewPath = useMemo(() => {
+    const path = pathFromRoadTiles(roadTiles)
+    return path && path.length >= 2 ? path : HAUL_PATH
+  }, [roadTiles])
+  const haulPreviewPathKey = useMemo(
+    () => haulPreviewPath.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join('|'),
+    [haulPreviewPath],
+  )
+  const [haulPreviewRun, setHaulPreviewRun] = useState<RunState>(() => ({
+    ...INITIAL_RUN_STATE,
+    status: 'running',
+    currentStepIndex: haulStepIndex,
+  }))
+
+  // Restart the preview booster whenever the painted road's shape actually
+  // changes, so it never sits mid-transit on a path that no longer exists.
+  useEffect(() => {
+    setHaulPreviewRun({
+      ...INITIAL_RUN_STATE,
+      status: 'running',
+      currentStepIndex: haulStepIndex,
+    })
+    // Only the path's shape matters, not array identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [haulPreviewPathKey, haulStepIndex])
+
+  function handleHaulPreviewReachedPad() {
+    setHaulPreviewRun((prev) => markOnPad(prev))
+  }
+  // No-op, same reasoning as Gemba: completeHaulStep would advance to the
+  // next process step, which this preview doesn't render. The scene's own
+  // "seated" visual already shows the booster arriving on the pad.
+  function handleHaulPreviewMountToPad() {}
 
   // Cost of improvement (settled): everything except road tiles is a
   // one-way ratchet — once ever selected, it stays counted this session
@@ -1034,6 +1075,21 @@ export function RedesignWorkshop({
               <span className="redesign-haul__label redesign-haul__label--pad">
                 Launch Pad
               </span>
+            </div>
+
+            <div className="redesign-haul-preview">
+              <p className="redesign-hint">
+                <strong>Preview:</strong> this is the pad-approach view your
+                painted road produces. Try it — nothing here is scored or
+                saved.
+              </p>
+              <IntegratePayloadScene
+                key={`redesign-haul-preview-${haulPreviewPathKey}`}
+                run={haulPreviewRun}
+                haulPath={haulPreviewPath}
+                onReachedPad={handleHaulPreviewReachedPad}
+                onMountToPad={handleHaulPreviewMountToPad}
+              />
             </div>
           </div>
         )}
