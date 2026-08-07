@@ -59,8 +59,8 @@ export function HomeView({ activeStage, onNavigateStage }: HomeViewProps) {
               src={ORBIT_LOGO_SRC}
               alt=""
               className="home-header__logo"
-              width={80}
-              height={80}
+              width={120}
+              height={120}
               decoding="async"
             />
             <div>
@@ -69,6 +69,35 @@ export function HomeView({ activeStage, onNavigateStage }: HomeViewProps) {
                 Orb-it's internal hub for training, company reporting, and
                 billing. Pick a destination below.
               </p>
+            </div>
+            <div className="home-header__schematic" aria-hidden="true">
+              <svg
+                className="home-schematic"
+                viewBox="0 0 240 110"
+                preserveAspectRatio="xMidYMid meet"
+              >
+                <g transform="translate(120,55)">
+                  <g className="home-schematic__ring home-schematic__ring--a">
+                    <ellipse rx="95" ry="30" />
+                    <circle className="home-schematic__sat" cx="95" cy="0" r="3.2" />
+                  </g>
+                  <g className="home-schematic__ring home-schematic__ring--b">
+                    <ellipse rx="58" ry="40" />
+                    <circle
+                      className="home-schematic__sat home-schematic__sat--b"
+                      cx="-58"
+                      cy="0"
+                      r="2.6"
+                    />
+                  </g>
+                </g>
+                <line className="home-schematic__link" x1="20" y1="15" x2="70" y2="40" />
+                <line className="home-schematic__link" x1="215" y1="95" x2="165" y2="60" />
+                <line className="home-schematic__link" x1="205" y1="20" x2="165" y2="45" />
+                <circle className="home-schematic__node" cx="20" cy="15" r="2.6" />
+                <circle className="home-schematic__node" cx="215" cy="95" r="2.6" />
+                <circle className="home-schematic__node" cx="205" cy="20" r="2.2" />
+              </svg>
             </div>
           </header>
 
@@ -84,9 +113,11 @@ export function HomeView({ activeStage, onNavigateStage }: HomeViewProps) {
                   <span className="intranet-tile__icon" aria-hidden="true">
                     {tile.icon}
                   </span>
-                  <span className="intranet-tile__title">{tile.title}</span>
-                  <span className="intranet-tile__description">
-                    {tile.description}
+                  <span className="intranet-tile__text">
+                    <span className="intranet-tile__title">{tile.title}</span>
+                    <span className="intranet-tile__description">
+                      {tile.description}
+                    </span>
                   </span>
                 </button>
               ))}

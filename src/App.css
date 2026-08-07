@@ -6085,6 +6085,107 @@
   font-size: 2rem;
 }
 
+/* Animated glowing orbit schematic filling the empty space right of the text. */
+.home-header__schematic {
+  flex: 1;
+  min-width: 6rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.home-schematic {
+  width: 100%;
+  max-width: 15rem;
+  height: 6rem;
+  opacity: 0.85;
+}
+
+.home-schematic__ring ellipse {
+  fill: none;
+  stroke: var(--color-orbital-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+  opacity: 0.55;
+}
+
+.home-schematic__ring--a {
+  animation: home-schematic-spin 18s linear infinite;
+}
+
+.home-schematic__ring--b {
+  animation: home-schematic-spin-reverse 13s linear infinite;
+}
+
+@keyframes home-schematic-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes home-schematic-spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.home-schematic__sat {
+  fill: var(--color-brand-cyan);
+  filter: drop-shadow(0 0 3px var(--color-brand-cyan));
+  transform-origin: center;
+  animation: home-schematic-glow 2.2s ease-in-out infinite;
+}
+
+.home-schematic__sat--b {
+  fill: var(--color-orbital-strong);
+  filter: drop-shadow(0 0 3px var(--color-orbital-strong));
+  animation-delay: 0.6s;
+}
+
+@keyframes home-schematic-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.home-schematic__link {
+  stroke: var(--color-orbital);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: 0.45;
+  animation: home-schematic-flow 3s linear infinite;
+}
+
+@keyframes home-schematic-flow {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+
+.home-schematic__node {
+  fill: var(--color-orbital-strong);
+  opacity: 0.7;
+}
+
+@media (max-width: 720px) {
+  .home-header__schematic {
+    display: none;
+  }
+}
+
 .intranet-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
@@ -6093,10 +6194,10 @@
 
 .intranet-tile {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-5);
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-raised);
@@ -6114,18 +6215,26 @@
 }
 
 .intranet-tile__icon {
-  font-size: 1.75rem;
+  flex-shrink: 0;
+  font-size: 1.5rem;
   line-height: 1;
 }
 
+.intranet-tile__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
 .intranet-tile__title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--color-text);
 }
 
 .intranet-tile__description {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--color-text-muted);
 }
 
@@ -6141,7 +6250,7 @@
 .home-marketing__image {
   display: block;
   width: 100%;
-  max-height: 26rem;
+  max-height: 34rem;
   object-fit: cover;
 }
 
