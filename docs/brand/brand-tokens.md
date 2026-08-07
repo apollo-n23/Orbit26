@@ -74,9 +74,19 @@ these (across `App.css` and the scene components) was migrated onto the
 matching `--color-brand-*` token (or, in `.tsx` SVG attributes — which don't
 use `var()` anywhere else in this codebase — the literal brand hex value).
 
-`--color-customer-accent` (purple) is **not** part of this reconciliation —
-it's intentionally scoped to the Customer Portal page only, per existing
-project convention, and isn't close to any brand colour.
+`--color-customer-accent` was originally a standalone purple (`#b073f0`),
+intentionally scoped to the Customer Portal page only and unrelated to the
+brand palette. It has since been re-themed around `--color-brand-magenta`
+(Pantone 227, `#B00060`) instead of purple:
+
+| Token | Value | Use |
+|---|---|---|
+| `--color-customer-accent-strong` | `var(--color-brand-magenta)` — true Pantone 227 | Solid-fill / high-emphasis use, e.g. the active state of the Customer Portal's nav button |
+| `--color-customer-accent` | `color-mix(in srgb, var(--color-brand-magenta) 55%, white)` | Lightened tint, used for most text/icon/border colour so it stays legible on the dark chrome (Pantone 227 itself is too dark for that) |
+| `--color-customer-accent-dim` | `color-mix(in srgb, var(--color-customer-accent) 16%, transparent)` | Translucent background wash, same role as before |
+
+It's still scoped to the Customer Portal page only, distinct from the
+shared brand-aligned accents above.
 
 The near-black dark-chrome UI tokens (`--color-bg`, `--color-surface`,
 `--color-border`, `--color-border-strong`, `--color-surface-raised`) were

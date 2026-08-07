@@ -100,9 +100,10 @@ A separate stage, deliberately **outside** the Gemba/Round1/Redesign/Round2
 learning-loop group — a static, read-only "voice of customer" feed.
 
 - **Route:** `#/customers`. `StageNav` renders it as its own
-  `stage-nav__customer-btn` (violet `--color-customer-accent`, distinct from
-  the orange stage-group accent), positioned to the side: `.stage-nav__group`
-  takes `flex: 1` and centers the 4 main stage buttons, leaving the customer
+  `stage-nav__customer-btn` (magenta `--color-customer-accent`, built around
+  brand-magenta/Pantone 227 — see below — and distinct from the orange
+  stage-group accent), positioned to the side: `.stage-nav__group` takes
+  `flex: 1` and centers the 4 main stage buttons, leaving the customer
   button pinned at the far end of the bar rather than in that group.
 - **Fictional platform:** "Starfeed" (own name/wordmark/ring-and-dot logo
   mark, `.customer-platform-header` — deliberately distinct from the real
@@ -225,7 +226,7 @@ Persistent top-level nav (`StageNav.tsx`, rendered once in `App.tsx` above which
 - The haul/pad scene (`IntegratePayloadScene.tsx`) didn't render inside the redesign workshop at all until it needed to for this same reason — its Haul road tab now also has a **live preview** (`.redesign-haul-preview`, right after the tile grid) of that scene, driven by a local `haulPreviewRun` against whatever path `pathFromRoadTiles(roadTiles)` currently resolves to (falling back to baseline `HAUL_PATH` if the painted tiles don't yet form a valid connected path). Keyed by the path's own coordinates so repainting the road forces a clean remount instead of leaving the preview booster stranded on a path that no longer exists. Same self-contained, nothing-logged pattern as the launch-sequence preview and `GembaWalkthrough` — `onMountToPad` is a no-op for the same reason `GembaWalkthrough`'s is (the real `completeHaulStep` auto-advances to the next process step, which isn't rendered here).
 - Play top bar metrics: **Lead Time** + **Launches x/3** only (no Yield / Flow Efficiency).
 - Static site assets belong in **`public/`** (not `src/` unless import-bundled).
-- **Brand colour palette:** official PMI Pantone palette lives as `--color-brand-*` CSS custom properties in `src/index.css` (see `docs/brand/brand-tokens.md`). The existing named accent tokens (`--color-orbital`/`--color-orbital-strong`, `--color-amber`, `--color-nav-accent`, `--color-text-dim`) now alias these brand tokens rather than carrying their own hex. `--color-customer-accent` (purple) is deliberately exempt — stays scoped to the Customer Portal only. The near-black dark-chrome tokens (`--color-bg`/`--color-surface`/`--color-border*`) and hand-tuned illustrative shading in scene art are intentionally **not** forced onto the brand palette — they're UI neutrals/light-shadow tints, not brand-identity colours. New UI colour choices should use a `--color-brand-*` token (or an existing aliased accent token) rather than a fresh hardcoded hex.
+- **Brand colour palette:** official PMI Pantone palette lives as `--color-brand-*` CSS custom properties in `src/index.css` (see `docs/brand/brand-tokens.md`). The existing named accent tokens (`--color-orbital`/`--color-orbital-strong`, `--color-amber`, `--color-nav-accent`, `--color-text-dim`) now alias these brand tokens rather than carrying their own hex. `--color-customer-accent`/`--color-customer-accent-strong` are built around `--color-brand-magenta` (Pantone 227, `#B00060`) rather than purple — `-strong` is the true Pantone 227 (solid-fill/high-emphasis use, e.g. the active nav button), the base token is a lightened tint of it for legible text/icon use on the dark chrome. Stays scoped to the Customer Portal only, distinct from the shared accent set. The near-black dark-chrome tokens (`--color-bg`/`--color-surface`/`--color-border*`) and hand-tuned illustrative shading in scene art are intentionally **not** forced onto the brand palette — they're UI neutrals/light-shadow tints, not brand-identity colours. New UI colour choices should use a `--color-brand-*` token (or an existing aliased accent token) rather than a fresh hardcoded hex.
 
 ---
 

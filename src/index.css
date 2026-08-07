@@ -20,8 +20,10 @@
   --color-nav-accent: var(--color-brand-orange); /* was #ff7a33 — aligned to brand palette */
   --color-nav-accent-dim: rgba(255, 131, 0, 0.16); /* brand-orange @ 16% */
 
-  --color-customer-accent: #b073f0;
-  --color-customer-accent-dim: rgba(176, 115, 240, 0.16);
+  /* Built around brand-magenta (Pantone 227, #B00060) rather than purple. */
+  --color-customer-accent: color-mix(in srgb, var(--color-brand-magenta) 55%, white); /* lightened for text/icon legibility on dark chrome */
+  --color-customer-accent-strong: var(--color-brand-magenta); /* true Pantone 227 — solid-fill / high-emphasis use (e.g. the active nav button) */
+  --color-customer-accent-dim: color-mix(in srgb, var(--color-customer-accent) 16%, transparent);
 
   /* PMI brand palette (official) — hex is authoritative; Pantone/CMYK/RGB are print-only reference. */
   --color-brand-navy: #00538a; /* Pantone 7452 */
