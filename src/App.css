@@ -5320,42 +5320,158 @@
   }
 }
 
-/* ── Customer Portal — voice-of-customer feed ────────────────── */
+/* ── Customer Portal — fictional "Starfeed" platform mockup ──── */
 
-.customer-ask {
+.customer-platform-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   padding: var(--space-4);
   border: 1px solid color-mix(in srgb, var(--color-customer-accent) 50%, var(--color-border));
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-customer-accent-dim) 70%, var(--color-surface-raised));
 }
 
-.customer-ask__kicker {
-  margin: 0 0 var(--space-2);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.customer-platform-header__mark {
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--color-customer-accent);
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.customer-platform-header__name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
   color: var(--color-customer-accent);
 }
 
-.customer-ask__copy {
+.customer-platform-header__tagline {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.customer-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+/* ── Left nav — X/Twitter-style mockup, not functional ───────── */
+
+.customer-nav {
+  flex-shrink: 0;
+  width: 12.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  position: sticky;
+  top: var(--space-4);
+}
+
+.customer-nav__mark svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-customer-accent);
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.customer-nav__list {
+  list-style: none;
   margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.55;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.customer-nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.customer-nav__item--active {
+  color: var(--color-customer-accent);
+  background: var(--color-customer-accent-dim);
+}
+
+.customer-nav__post-btn {
+  padding: 0.6rem;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1c1030;
+  background: var(--color-customer-accent);
+}
+
+.customer-nav__account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.customer-nav__account-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-surface-raised);
+}
+
+.customer-nav__account-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.customer-nav__account-name {
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--color-text);
 }
 
-.customer-ask__copy strong {
-  color: var(--color-customer-accent);
+.customer-nav__account-handle {
+  font-size: 0.72rem;
+  color: var(--color-text-dim);
 }
 
+.customer-nav__account-more {
+  color: var(--color-text-dim);
+}
+
+/* ── Feed ─────────────────────────────────────────────────────── */
+
 .customer-feed {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  min-width: 0;
   max-width: 42rem;
-  width: 100%;
-  margin: var(--space-4) auto 0;
 }
 
 .customer-post {
@@ -5365,6 +5481,14 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-raised);
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.customer-post:hover,
+.customer-post:focus-visible {
+  border-color: color-mix(in srgb, var(--color-customer-accent) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-customer-accent-dim) 35%, var(--color-surface-raised));
 }
 
 .customer-post__avatar {
@@ -5419,9 +5543,105 @@
 
 .customer-post__stats {
   display: flex;
+  align-items: center;
   gap: var(--space-4);
   font-size: 0.8rem;
   color: var(--color-text-muted);
+}
+
+.customer-post__reply-toggle {
+  font-weight: 600;
+  color: var(--color-customer-accent);
+}
+
+/* ── Replies (revealed on click) ──────────────────────────────── */
+
+.customer-replies {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.customer-reply {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.customer-reply__avatar {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-customer-accent) 30%, var(--color-surface));
+  color: var(--color-customer-accent);
+  font-weight: 700;
+  font-size: 0.68rem;
+}
+
+.customer-reply__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.customer-reply__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.customer-reply__text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.customer-reply--company {
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--color-customer-accent-dim);
+}
+
+.customer-reply--company .customer-post__name,
+.customer-reply--company .customer-post__handle {
+  color: var(--color-customer-accent);
+}
+
+.customer-reply--company .customer-reply__text {
+  color: var(--color-text);
+}
+
+@media (max-width: 860px) {
+  .customer-layout {
+    flex-direction: column;
+  }
+
+  .customer-nav {
+    width: 100%;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .customer-nav__list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .customer-nav__item span:last-child {
+    display: none;
+  }
+
+  .customer-nav__account {
+    margin-left: auto;
+  }
 }
 
 /* Narrow layouts: stack brand / metrics / actions */

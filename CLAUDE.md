@@ -98,17 +98,33 @@ learning-loop group — a static, read-only "voice of customer" feed.
   the orange stage-group accent), positioned to the side: `.stage-nav__group`
   takes `flex: 1` and centers the 4 main stage buttons, leaving the customer
   button pinned at the far end of the bar rather than in that group.
-- **Content is static flavor text** (`POSTS` array of fictional social posts)
-  — not wired to any real app data (lead times, height, defects). Posts
-  complain about launch cadence/delays, altitude inconsistency, slow
-  end-to-end process, and boosters exploding on the haul road, and a pinned
-  `.customer-ask` banner spells out the ask plainly: launch to **exactly
-  75km**, as fast as possible. Deliberately in the customers' own words/units
-  (km) even though the engineering height-achieved metric elsewhere in the
-  app is in miles — that unit mismatch is the point (voice of customer vs.
-  voice of process).
+- **Fictional platform:** "Starfeed" (own name/wordmark/ring-and-dot logo
+  mark, `.customer-platform-header` — deliberately distinct from the real
+  Orb-it brand, since this page represents a third-party social platform
+  Orb-it's customers happen to use). Content is static flavor text
+  (`POSTS` array) — not wired to any real app data (lead times, height,
+  defects). Posts complain about launch cadence/delays, altitude
+  inconsistency, slow end-to-end process, and boosters exploding on the
+  haul road; several explicitly ask for **exactly 75km**, as fast as
+  possible — deliberately in the customers' own words/units (km) even
+  though the engineering height-achieved metric elsewhere in the app is in
+  miles (voice of customer vs. voice of process).
+- **Left nav** (`.customer-nav`) is a non-functional X/Twitter-style mockup
+  (Home/Explore/Notifications/etc. + a decorative "Post" button) establishing
+  the platform's UI, purple-themed to match. Its account chip at the bottom
+  shows **Orb-it logged in** (`OrbitLogo.png` avatar, `@OrbitOfficial`) — the
+  in-fiction premise is that Orb-it is watching this feed as its own account.
+- **Replies are interactive** (the one non-static piece): clicking anywhere
+  on a post (`role="button"`, keyboard-accessible) toggles `expanded` state
+  and reveals that post's `replies` — a few other fictional customers
+  agreeing/adding their own take, and, on several key threads, an official
+  **Orb-it reply** (`reply.isCompany`, styled with the Orb-it logo as avatar
+  via `.customer-reply--company`) apologising and committing to a named
+  improvement project (cadence, haul-road safety, altitude consistency,
+  process cycle time) — a deliberate nod to the app's own Lean/VOC theme.
 - Mounted only while `stage === 'customers'`, like `GembaWalkthrough` — no
-  state to preserve across hops.
+  state to preserve across hops (the expanded-replies state resets each
+  time you leave and come back).
 
 ### Launch-prep tech → play behaviour (`launchPrepTech`)
 | Value | Play effect in `LaunchPrepScene` |
