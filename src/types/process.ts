@@ -174,6 +174,13 @@ export interface LeadTimeEntry {
    * Same value for all launches in a redesign round when cost is fixed at confirm.
    */
   costBreakdown?: RedesignCostBreakdown
+  /** Orbital insertion height achieved on this launch, in miles (randomised per launch). */
+  heightAchievedMiles?: number
+  /**
+   * Number of times the booster exploded off the haul road (process step 2)
+   * during this launch, before it reached the pad.
+   */
+  defectCount?: number
 }
 
 /**

@@ -21,7 +21,7 @@ Each round is a self-contained session: process config, lead-time board, chrome,
 
 ### Goal per round
 - Launch **3 rockets** (`ROCKETS_PER_ROUND` / `MAX_RUNS_PER_SESSION` = 3).
-- Each full cycle → one **Data** entry (`LeadTimeEntry`: run number, lead time ms, optional `costBreakdown`, completedAt).
+- Each full cycle → one **Data** entry (`LeadTimeEntry`: run number, lead time ms, optional `costBreakdown`, `heightAchievedMiles`, `defectCount`, completedAt).
 - After the third launch → **orbit complete** scene (Earth + three satellites). No further Run Process.
 
 ### Round 1 — As-is
@@ -187,6 +187,7 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 ### 2. Haul (`IntegratePayloadScene.tsx`, `pathGeometry.ts`)
 - Path from `resolveHaulPath(process)` (`haulPathOverride` / step `haulPath` / default winding `HAUL_PATH`). Remount scene when path changes.
 - Arrow keys primary; safe zones: road+margin, assembly, pad; pure grass → explode → reset.
+- **Each explosion is a logged defect.** `onExplode` fires once the reset animation finishes (renamed from the never-wired `onPathReset`) → threaded through `SimulationView`'s `onHaulExplode` → `RoundSession`'s `defectCountRef`, which accumulates for the current launch attempt and resets to 0 in `handleRunProcess` (new Run Process) and every other run/log reset point. Same `RoundSession` component plays both rounds, so this works identically on Round 1 and Round 2 with no extra wiring. The Gemba walkthrough never passes `onExplode`, so exploding there is purely visual and logs nothing.
 - Mount to pad → auto-advance to launch-prep.
 
 ### 3. Launch prep (`LaunchPrepScene.tsx`)
@@ -195,7 +196,7 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 
 ### 4. Launch sequence (`LaunchSequenceScene.tsx`)
 - GO poll (possibly shortened/realigned from redesign) → hold key → liftoff (~3.2s).
-- Liftoff → `completeUnitRun` → Data entry (lead time + road cost if set).
+- Liftoff → `completeUnitRun` → Data entry: lead time, redesign cost (if set), a **randomised height achieved** (`lib/flightMetrics.ts`'s `randomHeightAchievedMiles()`, 60–90 **miles** — this app uses miles throughout, never km/kilometers), and this launch's **defect count** (haul-road explosions since the last Run Process). Data board shows both as their own columns per launch, plus a **Total defects** summary stat per round (sum across that round's logged launches).
 
 ---
 

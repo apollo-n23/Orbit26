@@ -27,6 +27,7 @@ import type {
   RunState,
 } from '../types/process'
 import { INITIAL_RUN_STATE } from '../types/process'
+import { randomHeightAchievedMiles } from '../lib/flightMetrics'
 import type { RoundConfig, RoundId } from '../types/round'
 import { ROCKETS_PER_ROUND, hashForRound } from '../types/round'
 import {
@@ -90,6 +91,8 @@ export function RoundSession({
   const [leadTimeLog, setLeadTimeLog] = useState<LeadTimeEntry[]>([])
   const [now, setNow] = useState(() => Date.now())
   const lastLoggedRunRef = useRef(0)
+  /** Explosions on the haul road (step 2) so far this launch attempt. */
+  const defectCountRef = useRef(0)
   /** Round 1 average (ms) for Round 2 Data comparison — from localStorage. */
   const [round1AverageMs, setRound1AverageMs] = useState<number | null>(() =>
     round.id === 2 ? loadRound1AverageLeadTimeMs() : null,
@@ -110,6 +113,7 @@ export function RoundSession({
     setRun(INITIAL_RUN_STATE)
     setLeadTimeLog([])
     lastLoggedRunRef.current = 0
+    defectCountRef.current = 0
     setRound1AverageMs(
       round.id === 2 ? loadRound1AverageLeadTimeMs() : null,
     )
@@ -137,6 +141,7 @@ export function RoundSession({
         setRun(INITIAL_RUN_STATE)
         setLeadTimeLog([])
         lastLoggedRunRef.current = 0
+        defectCountRef.current = 0
         return 'redesign'
       })
     } else if (requestedPhase === 'play') {
@@ -174,6 +179,8 @@ export function RoundSession({
     if (run.status !== 'complete') return
     const entry = leadTimeEntryFromRun(run, {
       costBreakdown: process.costBreakdown,
+      heightAchievedMiles: randomHeightAchievedMiles(),
+      defectCount: defectCountRef.current,
     })
     if (!entry) return
     if (entry.runNumber <= lastLoggedRunRef.current) return
@@ -229,6 +236,7 @@ export function RoundSession({
     if (run.status !== 'idle' && run.status !== 'complete') return
     if (run.completedRuns >= ROCKETS_PER_ROUND) return
     setNow(Date.now())
+    defectCountRef.current = 0
     setRun((prev) => beginRun(prev))
   }
 
@@ -254,6 +262,10 @@ export function RoundSession({
   const handleHaulMountToPad = useCallback(() => {
     setRun((prev) => completeHaulStep(process, prev))
   }, [process])
+
+  const handleHaulExplode = useCallback(() => {
+    defectCountRef.current += 1
+  }, [])
 
   const handleLaunchPrepActionComplete = useCallback(() => {
     setRun((prev) => finishLaunchPrepAction(process, prev))
@@ -325,6 +337,7 @@ export function RoundSession({
             onProceedToNextStep={handleProceedToNextStep}
             onReachedPad={handleReachedPad}
             onHaulMountToPad={handleHaulMountToPad}
+            onHaulExplode={handleHaulExplode}
             onLaunchPrepActionComplete={handleLaunchPrepActionComplete}
             onLaunchSequenceActionComplete={handleLaunchSequenceActionComplete}
           />

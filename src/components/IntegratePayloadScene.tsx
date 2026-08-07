@@ -25,7 +25,8 @@ interface IntegratePayloadSceneProps {
   onReachedPad: () => void
   /** Mount booster to the launch pad (seats pose + completes haul / auto-advances). */
   onMountToPad: () => void
-  onPathReset?: () => void
+  /** Booster left the safe road and exploded — fires once the reset animation finishes. */
+  onExplode?: () => void
 }
 
 interface HaulPose {
@@ -67,7 +68,7 @@ export function IntegratePayloadScene({
   haulPath,
   onReachedPad,
   onMountToPad,
-  onPathReset,
+  onExplode,
 }: IntegratePayloadSceneProps) {
   const sceneRef = useRef<HTMLDivElement>(null)
   const [pose, setPose] = useState<HaulPose>(startPose)
@@ -159,10 +160,10 @@ export function IntegratePayloadScene({
       applyPose(startPose())
       explodingRef.current = false
       setExploding(false)
-      onPathReset?.()
+      onExplode?.()
       sceneRef.current?.focus({ preventScroll: true })
     }, EXPLODE_MS)
-  }, [clearExplodeTimer, onPathReset, applyPose])
+  }, [clearExplodeTimer, onExplode, applyPose])
 
   const tryMoveTo = useCallback(
     (next: HaulPose): boolean => {

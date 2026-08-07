@@ -455,6 +455,18 @@
   color: var(--color-text);
 }
 
+.lead-board__height {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-orbital-strong);
+}
+
+.lead-board__defects {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
 .lead-board__when {
   color: var(--color-text-dim);
   font-size: 0.8rem;

@@ -34,6 +34,8 @@ interface SimulationViewProps {
   onProceedToNextStep: () => void
   onReachedPad: () => void
   onHaulMountToPad: () => void
+  /** Booster exploded off the haul road (process step 2) — a logged defect. */
+  onHaulExplode?: () => void
   onLaunchPrepActionComplete: () => void
   onLaunchSequenceActionComplete: () => void
 }
@@ -50,6 +52,7 @@ export function SimulationView({
   onProceedToNextStep,
   onReachedPad,
   onHaulMountToPad,
+  onHaulExplode,
   onLaunchPrepActionComplete,
   onLaunchSequenceActionComplete,
 }: SimulationViewProps) {
@@ -287,6 +290,7 @@ export function SimulationView({
                 haulPath={haulPath}
                 onReachedPad={onReachedPad}
                 onMountToPad={onHaulMountToPad}
+                onExplode={onHaulExplode}
               />
             )}
 

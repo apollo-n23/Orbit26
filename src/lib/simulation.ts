@@ -1,4 +1,5 @@
 import type {
+  LeadTimeEntry,
   ProcessMachine,
   ProcessStep,
   ProcessVersion,
@@ -373,18 +374,17 @@ export const formatCycleTime = formatLeadTime
 export interface LeadTimeEntryExtras {
   /** Redesign cost breakdown (same for all launches if fixed at confirm). */
   costBreakdown?: RedesignCostBreakdown
+  /** Orbital insertion height achieved on this launch, in miles. */
+  heightAchievedMiles?: number
+  /** Times the booster exploded on the haul road during this launch. */
+  defectCount?: number
 }
 
 /** Build a Data-tab board entry from a just-completed unit run. */
 export function leadTimeEntryFromRun(
   run: RunState,
   extras?: LeadTimeEntryExtras,
-): {
-  runNumber: number
-  durationMs: number
-  completedAt: number
-  costBreakdown?: RedesignCostBreakdown
-} | null {
+): LeadTimeEntry | null {
   if (
     run.status !== 'complete' ||
     run.runStartedAt == null ||
@@ -399,6 +399,12 @@ export function leadTimeEntryFromRun(
     completedAt: run.runEndedAt,
     ...(extras?.costBreakdown !== undefined
       ? { costBreakdown: extras.costBreakdown }
+      : {}),
+    ...(extras?.heightAchievedMiles !== undefined
+      ? { heightAchievedMiles: extras.heightAchievedMiles }
+      : {}),
+    ...(extras?.defectCount !== undefined
+      ? { defectCount: extras.defectCount }
       : {}),
   }
 }

@@ -2,6 +2,7 @@ import type { LeadTimeEntry, RedesignCostBreakdown } from '../types/process'
 import { formatLeadTime } from '../lib/simulation'
 import { averageLeadTimeMs, launchDurationsMs } from '../lib/roundMetrics'
 import { REDESIGN_BUDGET } from '../lib/redesignCost'
+import { formatHeightMiles } from '../lib/flightMetrics'
 import { RoundLeadTimeCompare } from '../components/RoundLeadTimeCompare'
 
 /** One round's live lead-time log, labeled for display on the Data tab. */
@@ -94,6 +95,7 @@ function RoundLeadBoard({
   const roundComplete = entries.length >= rocketsGoal
   const hasAnyCost = entries.some((e) => e.costBreakdown != null)
   const costSample = entries.find((e) => e.costBreakdown != null)?.costBreakdown
+  const totalDefects = entries.reduce((sum, e) => sum + (e.defectCount ?? 0), 0)
 
   return (
     <div className="lead-board__round-section">
@@ -132,6 +134,16 @@ function RoundLeadBoard({
                 </span>
               </div>
             )}
+            <div
+              className={
+                totalDefects > 0
+                  ? 'lead-board__stat lead-board__stat--worse'
+                  : 'lead-board__stat'
+              }
+            >
+              <span className="lead-board__stat-label">Total defects</span>
+              <span className="lead-board__stat-value">{totalDefects}</span>
+            </div>
           </div>
 
           <table className="lead-board__table">
@@ -139,7 +151,9 @@ function RoundLeadBoard({
               <tr>
                 <th scope="col">Rocket</th>
                 <th scope="col">Lead time</th>
+                <th scope="col">Height achieved</th>
                 <th scope="col">Redesign cost</th>
+                <th scope="col">Defects</th>
                 <th scope="col">Delta vs best</th>
                 <th scope="col">Logged</th>
               </tr>
@@ -173,8 +187,14 @@ function RoundLeadBoard({
                     <td className="lead-board__time">
                       {formatLeadTime(entry.durationMs / 1000)}
                     </td>
+                    <td className="lead-board__height">
+                      {formatHeightMiles(entry.heightAchievedMiles)}
+                    </td>
                     <td className="lead-board__road-cost">
                       {formatCost(entry.costBreakdown?.total)}
+                    </td>
+                    <td className="lead-board__defects">
+                      {entry.defectCount ?? 0}
                     </td>
                     <td className="lead-board__delta">
                       {isBest ? '—' : `+${formatLeadTime(deltaMs / 1000)}`}
