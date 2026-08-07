@@ -6075,9 +6075,20 @@
   gap: var(--space-3);
 }
 
-.home-header__logo {
+/* White circular badge behind the logo, slightly larger than the logo itself. */
+.home-header__logo-badge {
   flex-shrink: 0;
-  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 8.5rem;
+  height: 8.5rem;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.home-header__logo {
+  display: block;
 }
 
 /* Logo doubled in size (40px → 80px) — heading scaled up to match. */

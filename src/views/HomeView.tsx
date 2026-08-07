@@ -55,14 +55,16 @@ export function HomeView({ activeStage, onNavigateStage }: HomeViewProps) {
       <main className="app-main">
         <section className="view-panel" aria-labelledby="home-heading">
           <header className="view-panel__header home-header">
-            <img
-              src={ORBIT_LOGO_SRC}
-              alt=""
-              className="home-header__logo"
-              width={120}
-              height={120}
-              decoding="async"
-            />
+            <span className="home-header__logo-badge">
+              <img
+                src={ORBIT_LOGO_SRC}
+                alt=""
+                className="home-header__logo"
+                width={120}
+                height={120}
+                decoding="async"
+              />
+            </span>
             <div>
               <h2 id="home-heading">Welcome back</h2>
               <p className="view-panel__lede">
