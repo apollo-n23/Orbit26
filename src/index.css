@@ -17,6 +17,9 @@
   --color-amber: #d4a017;
   --color-amber-dim: rgba(212, 160, 23, 0.15);
 
+  --color-nav-accent: #ff7a33;
+  --color-nav-accent-dim: rgba(255, 122, 51, 0.16);
+
   --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace;
 
