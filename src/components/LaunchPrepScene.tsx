@@ -4,18 +4,18 @@ import type { LaunchPrepTech, ProcessVersion, RunState } from '../types/process'
 import { LAUNCH_PREP_ACTIONS } from '../types/process'
 import {
   isLaunchPrepTech,
-  resolveLaunchPrepTech,
+  resolveLaunchPrepTechs,
 } from '../lib/processEdit'
 
 interface LaunchPrepSceneProps {
   run: RunState
   onActionComplete: () => void
   /**
-   * Round 2 technology investment (at most one).
-   * Prefer `process` when available so tech is re-resolved on each run start.
+   * Round 2 technology investments (any number — not mutually exclusive).
+   * Prefer `process` when available so techs are re-resolved on each run start.
    */
-  tech?: LaunchPrepTech | null
-  /** Full process version — used to re-read launchPrepTech when the step starts. */
+  techs?: LaunchPrepTech[] | null
+  /** Full process version — used to re-read launchPrepTechs when the step starts. */
   process?: ProcessVersion | null
 }
 
@@ -40,13 +40,13 @@ const FILL_RATE_PER_MS = 0.045 // % per ms while holding (~2.2s to fill)
 /** Faster fuel pumps upgrade — near-instant fill while holding. */
 const FAST_FILL_RATE_PER_MS = 1.8
 
-function resolveSceneTech(
+function resolveSceneTechs(
   process: ProcessVersion | null | undefined,
-  techProp: LaunchPrepTech | null | undefined,
-): LaunchPrepTech | null {
-  // When process is provided, trust it alone (includes explicit clear → null).
-  if (process) return resolveLaunchPrepTech(process)
-  return isLaunchPrepTech(techProp) ? techProp : null
+  techsProp: LaunchPrepTech[] | null | undefined,
+): LaunchPrepTech[] {
+  // When process is provided, trust it alone (includes explicit clear → []).
+  if (process) return resolveLaunchPrepTechs(process)
+  return Array.isArray(techsProp) ? techsProp.filter(isLaunchPrepTech) : []
 }
 
 /**
@@ -57,16 +57,19 @@ function resolveSceneTech(
 export function LaunchPrepScene({
   run,
   onActionComplete,
-  tech: techProp = null,
+  techs: techsProp = null,
   process = null,
 }: LaunchPrepSceneProps) {
-  // Snapshot tech when launch-prep (re)starts so a mid-step parent re-render cannot drop it.
-  const [tech, setTech] = useState<LaunchPrepTech | null>(() =>
-    resolveSceneTech(process, techProp),
+  // Snapshot techs when launch-prep (re)starts so a mid-step parent re-render cannot drop them.
+  const [techs, setTechs] = useState<LaunchPrepTech[]>(() =>
+    resolveSceneTechs(process, techsProp),
   )
-  const fastPumps = tech === 'faster-pumps'
-  const autoPower = tech === 'auto-power'
-  const payloadDrone = tech === 'payload-drone'
+  const fastPumps = techs.includes('faster-pumps')
+  const autoPower = techs.includes('auto-power')
+  const payloadDrone = techs.includes('payload-drone')
+  const strongbackRedesign = techs.includes('strongback-redesign')
+  /** Strongback redesign: mate slider only needs to travel half as far. */
+  const mateTarget = strongbackRedesign ? 50 : 100
   const fillRate = fastPumps ? FAST_FILL_RATE_PER_MS : FILL_RATE_PER_MS
   const actionIndex = run.nextMachineIndex
   const locked = run.status === 'complete' || run.status === 'step_complete'
@@ -97,12 +100,14 @@ export function LaunchPrepScene({
   const [powerArmed, setPowerArmed] = useState<string[]>([])
   const [powerDone, setPowerDone] = useState(false)
 
-  // Re-read redesign tech whenever this step (re)starts for a unit.
+  // Re-read redesign techs whenever this step (re)starts for a unit.
   useEffect(() => {
     if (run.status === 'running' && run.currentStepIndex >= 0) {
-      setTech(resolveSceneTech(process, techProp))
+      setTechs(resolveSceneTechs(process, techsProp))
     }
-  }, [run.status, run.currentStepIndex, run.completedRuns, process, techProp])
+    // techsProp is a fresh array each render when provided — only its content matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run.status, run.currentStepIndex, run.completedRuns, process, techsProp?.join(',')])
 
   // Reset local interaction state when this step (re)starts (not mid-step tech re-read).
   useEffect(() => {
@@ -155,12 +160,12 @@ export function LaunchPrepScene({
     return true
   }, [canInteract, onActionComplete])
 
-  // —— Mate: drag slider to 100% ——
+  // —— Mate: drag slider to its target (halved by strongback redesign) ——
   function handleMateChange(value: number) {
     if (!canInteract || actionIndex !== 0 || mateDone) return
-    const v = Math.max(0, Math.min(100, value))
+    const v = Math.max(0, Math.min(mateTarget, value))
     setMateProgress(v)
-    if (v >= 100) {
+    if (v >= mateTarget) {
       setMateDone(true)
       completeCurrent()
     }
@@ -276,7 +281,7 @@ export function LaunchPrepScene({
   }
 
   const stepComplete = locked || powerDone
-  const mated = mateDone || mateProgress >= 100 || actionIndex > 0
+  const mated = mateDone || mateProgress >= mateTarget || actionIndex > 0
   const payloadStacked = craneDone || actionIndex > 1
   const fueled = fuelDone || actionIndex > 2
   const powered = powerDone || actionIndex > 3 || locked
@@ -306,7 +311,7 @@ export function LaunchPrepScene({
         'launch-prep-scene',
         stepComplete ? 'launch-prep-scene--ready' : '',
         payloadDrone ? 'launch-prep-scene--drone' : '',
-        tech ? `launch-prep-scene--tech-${tech}` : '',
+        ...techs.map((t) => `launch-prep-scene--tech-${t}`),
       ]
         .filter(Boolean)
         .join(' ')}
@@ -347,7 +352,7 @@ export function LaunchPrepScene({
             className="lp-tower__strongback"
             style={
               actionIndex === 0 && !mateDone
-                ? { ['--mate' as string]: `${mateProgress / 100}` }
+                ? { ['--mate' as string]: `${mateProgress / mateTarget}` }
                 : undefined
             }
           >
@@ -367,7 +372,7 @@ export function LaunchPrepScene({
           style={
             actionIndex === 0 && !mateDone
               ? {
-                  ['--mate' as string]: `${mateProgress / 100}`,
+                  ['--mate' as string]: `${mateProgress / mateTarget}`,
                 }
               : undefined
           }
@@ -483,21 +488,27 @@ export function LaunchPrepScene({
           <div className="lp-panel">
             <p className="lp-panel__title">1 · Mate booster to tower</p>
             <p className="lp-panel__hint">
-              Slide the strongback control to raise and mate the booster with the
-              launch tower.
+              {strongbackRedesign
+                ? 'Redesigned clamp geometry — the slide is half as long now. Slide the control to raise and mate the booster with the launch tower.'
+                : 'Slide the strongback control to raise and mate the booster with the launch tower.'}
             </p>
             <label className="lp-slider">
               <span className="lp-slider__label">Strongback mate</span>
               <input
                 type="range"
                 min={0}
-                max={100}
+                max={mateTarget}
                 step={1}
                 value={mateProgress}
                 onChange={(e) => handleMateChange(Number(e.target.value))}
-                aria-valuetext={`${mateProgress}% mated`}
+                aria-valuetext={`${Math.round((mateProgress / mateTarget) * 100)}% mated`}
+                className={
+                  strongbackRedesign ? 'lp-slider__input lp-slider__input--short' : 'lp-slider__input'
+                }
               />
-              <span className="lp-slider__value">{mateProgress}%</span>
+              <span className="lp-slider__value">
+                {Math.round((mateProgress / mateTarget) * 100)}%
+              </span>
             </label>
           </div>
         )}
@@ -641,7 +652,7 @@ export function LaunchPrepScene({
         )}
 
         {canInteract && actionIndex === POWER_ACTION_INDEX && (
-          <div className="lp-panel" data-lp-tech={tech ?? 'none'}>
+          <div className="lp-panel" data-lp-tech={autoPower ? 'auto-power' : 'none'}>
             <p className="lp-panel__title">
               {autoPower
                 ? '4 · Power up for launch (master ON)'

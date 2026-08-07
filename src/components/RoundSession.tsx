@@ -216,7 +216,7 @@ export function RoundSession({
 
   function handleConfirmRedesign(nextProcess: ProcessVersion) {
     // Deep-clone so later play/mutation cannot touch the workshop draft graph.
-    // launchPrepTech (and other redesign fields) must survive into play.
+    // launchPrepTechs (and other redesign fields) must survive into play.
     setProcess(structuredClone(nextProcess))
     setPhase('play')
     setSessionActive(false)

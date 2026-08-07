@@ -25,6 +25,7 @@ export const LAUNCH_PREP_TECH_COST: Record<LaunchPrepTech, number> = {
   'faster-pumps': 20,
   'auto-power': 25,
   'payload-drone': 50,
+  'strongback-redesign': 20,
 }
 
 /**

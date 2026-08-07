@@ -45,7 +45,7 @@ Tabs (all available before lock-in):
 |-----|-----------------|----------------------------------------------------------------|------|
 | **1 · Manufacture** | Drag stations for **line order**; **parkOffset** sliders; **auto-transfer** upgrade (open panel on hover/click — **panel stays open** so the enable button is clickable) | `linePosition`, `parkOffset` on machines; `autoMoveBooster` | **15 pts** per machine ever moved from its factory slot · **40 pts** one-time for auto-transfer |
 | **2 · Haul road** | Paint/erase tiles only (**no** Straight/Reset shortcuts). Endpoints & tree-cluster tiles fixed and free. | `haulPath` / `haulPathOverride` | The road as it stood when the session started is **free** (0 pts) — only tiles painted **beyond** it cost **10 pts** each; selling an existing tile credits **10 pts** back. The **only** category that can go back down. |
-| **3 · Launch prep tech** | Invest in **one** of three techs (toggle off by re-selecting) | `launchPrepTech` | **20/25/50 pts** (faster-pumps / auto-power / payload-drone) — switching techs does not refund a previously-tried one |
+| **3 · Launch prep tech** | Invest in **as many of the four** techs as the budget allows (not mutually exclusive; toggle each on/off independently) | `launchPrepTechs` | **20/25/50/20 pts** (faster-pumps / auto-power / payload-drone / strongback-redesign) — deselecting a tech does not refund a previously-tried one |
 | **4 · Launch sequence** | **Realign** each GO; **info** criticality; Range Safety may be **deleted** from sequence; **Key lubrication** toggle (near-instant key-arm hold instead of the long as-is hold) | `launchSeqRealignIds`, `launchSeqRemovedIds`, `keyLubrication` | **10 pts** per GO ever realigned · **35 pts** for removing Range Safety · **15 pts** one-time for key lubrication |
 
 **Lock-in UX (settled):**
@@ -156,15 +156,18 @@ learning-loop group — a static, read-only "voice of customer" feed.
   state to preserve across hops (the expanded-replies state resets each
   time you leave and come back).
 
-### Launch-prep tech → play behaviour (`launchPrepTech`)
+### Launch-prep tech → play behaviour (`launchPrepTechs`)
+Not mutually exclusive — any combination can be active simultaneously; the only limit is the redesign budget.
+
 | Value | Play effect in `LaunchPrepScene` |
 |--------|----------------------------------|
 | `faster-pumps` | Near-instant LOX/RP-1 fill while holding |
 | `auto-power` | Single master **ON** (not four sequential switches); one click completes power-up |
 | `payload-drone` | Crane UI → one-step **Deploy payload drone** + drone visual |
-| unset / null | Baseline multi-step crane, slow fill, four power switches |
+| `strongback-redesign` | Strongback-mate slider's target (and rendered width) halved — `mateTarget = 50` instead of `100` |
+| none selected | Baseline multi-step crane, slow fill, four power switches, full-length mate slider |
 
-Resolve via `resolveLaunchPrepTech(process)`. Scene must re-read tech when the launch-prep step starts (do not rely on a stale prop only).
+Resolve via `resolveLaunchPrepTechs(process)` (returns `LaunchPrepTech[]`). Scene must re-read techs when the launch-prep step starts (do not rely on a stale prop only).
 
 ### Launch-sequence redesign → play (`resolveLaunchSeqConfig`)
 - Filters out `launchSeqRemovedIds` (e.g. `go-range`).

@@ -3887,6 +3887,13 @@
   cursor: pointer;
 }
 
+/* Strongback redesign: the slider itself is half as wide — half the travel. */
+.lp-slider__input--short {
+  max-width: 50%;
+  justify-self: start;
+  accent-color: var(--color-amber);
+}
+
 .lp-slider__value {
   font-family: var(--font-mono);
   font-size: 0.85rem;

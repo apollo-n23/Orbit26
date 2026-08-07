@@ -17,7 +17,7 @@ import {
 import {
   resolveAutoMoveBooster,
   resolveHaulPath,
-  resolveLaunchPrepTech,
+  resolveLaunchPrepTechs,
   resolveLaunchSeqConfig,
 } from '../lib/processEdit'
 
@@ -75,8 +75,8 @@ export function SimulationView({
     () => resolveAutoMoveBooster(process),
     [process],
   )
-  const launchPrepTech = useMemo(
-    () => resolveLaunchPrepTech(process),
+  const launchPrepTechs = useMemo(
+    () => resolveLaunchPrepTechs(process),
     [process],
   )
   /** GO list / key / liftoff indices from redesign (or baseline). */
@@ -178,16 +178,16 @@ export function SimulationView({
         const action = LAUNCH_PREP_ACTIONS[run.nextMachineIndex]
         if (action) {
           let name = action.name
-          if (action.id === 'power-up' && launchPrepTech === 'auto-power') {
+          if (action.id === 'power-up' && launchPrepTechs.includes('auto-power')) {
             name = 'Power up for launch (master ON)'
           } else if (
             action.id === 'crane-payload' &&
-            launchPrepTech === 'payload-drone'
+            launchPrepTechs.includes('payload-drone')
           ) {
             name = 'Stack payload with drone'
           } else if (
             action.id === 'fuel-vehicle' &&
-            launchPrepTech === 'faster-pumps'
+            launchPrepTechs.includes('faster-pumps')
           ) {
             name = 'Fuel the vehicle (high-flow pumps)'
           }
@@ -296,10 +296,10 @@ export function SimulationView({
 
             {showLaunchPrep && (
               <LaunchPrepScene
-                key={`launch-prep-${process.id}-${launchPrepTech ?? 'none'}-${run.completedRuns}`}
+                key={`launch-prep-${process.id}-${launchPrepTechs.join(',') || 'none'}-${run.completedRuns}`}
                 run={run}
                 process={process}
-                tech={launchPrepTech}
+                techs={launchPrepTechs}
                 onActionComplete={onLaunchPrepActionComplete}
               />
             )}

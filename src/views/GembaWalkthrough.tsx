@@ -19,7 +19,7 @@ import {
 import {
   resolveAutoMoveBooster,
   resolveHaulPath,
-  resolveLaunchPrepTech,
+  resolveLaunchPrepTechs,
   resolveLaunchSeqConfig,
 } from '../lib/processEdit'
 
@@ -67,8 +67,8 @@ export function GembaWalkthrough() {
     () => resolveAutoMoveBooster(process),
     [process],
   )
-  const launchPrepTech = useMemo(
-    () => resolveLaunchPrepTech(process),
+  const launchPrepTechs = useMemo(
+    () => resolveLaunchPrepTechs(process),
     [process],
   )
   const launchSeqConfig = useMemo(
@@ -240,7 +240,7 @@ export function GembaWalkthrough() {
                 key={`gemba-launch-prep-${visitNonce}`}
                 run={run}
                 process={process}
-                tech={launchPrepTech}
+                techs={launchPrepTechs}
                 onActionComplete={handleLaunchPrepActionComplete}
               />
             )}

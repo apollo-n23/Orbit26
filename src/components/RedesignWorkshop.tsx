@@ -4,7 +4,7 @@ import {
   applyAutoMoveBooster,
   applyHaulPath,
   applyKeyLubrication,
-  applyLaunchPrepTech,
+  applyLaunchPrepTechs,
   applyLaunchSeqRealign,
   applyLaunchSeqRedesign,
   applyLaunchSeqRemove,
@@ -16,9 +16,10 @@ import {
   LAUNCH_SEQ_STATION_CRITICALITY,
   resolveAutoMoveBooster,
   resolveKeyLubrication,
-  resolveLaunchPrepTech,
+  resolveLaunchPrepTechs,
   resolveLaunchSeqRealignIds,
   resolveLaunchSeqRemovedIds,
+  toggleLaunchPrepTech,
 } from '../lib/processEdit'
 import {
   AUTO_TRANSFER_COST,
@@ -99,7 +100,7 @@ export function RedesignWorkshop({
   }, [draft])
 
   const autoMoveBooster = resolveAutoMoveBooster(draft)
-  const launchPrepTech = resolveLaunchPrepTech(draft)
+  const launchPrepTechs = resolveLaunchPrepTechs(draft)
   const launchSeqRealignIds = resolveLaunchSeqRealignIds(draft)
   const launchSeqRemovedIds = resolveLaunchSeqRemovedIds(draft)
   const rangeRemoved = launchSeqRemovedIds.includes(LAUNCH_SEQ_RANGE_STATION_ID)
@@ -213,11 +214,21 @@ export function RedesignWorkshop({
     Set<LaunchPrepTech>
   >(() => new Set())
   useEffect(() => {
-    if (!launchPrepTech) return
-    setEverSelectedTechIds((prev) =>
-      prev.has(launchPrepTech) ? prev : new Set(prev).add(launchPrepTech),
-    )
-  }, [launchPrepTech])
+    if (launchPrepTechs.length === 0) return
+    setEverSelectedTechIds((prev) => {
+      const next = new Set(prev)
+      let changed = false
+      for (const id of launchPrepTechs) {
+        if (!next.has(id)) {
+          next.add(id)
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+    // launchPrepTechs is a fresh array each render — only its content matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [launchPrepTechs.join(',')])
 
   const [everRealignedGoIds, setEverRealignedGoIds] = useState<Set<string>>(
     () => new Set(),
@@ -322,16 +333,15 @@ export function RedesignWorkshop({
     setDraft((p) => applyAutoMoveBooster(p, enabling))
   }
 
-  function handleSelectLaunchPrepTech(tech: LaunchPrepTech) {
-    const current = resolveLaunchPrepTech(draft)
-    const turningOff = current === tech
-    if (!turningOff && !everSelectedTechIds.has(tech)) {
+  function handleToggleLaunchPrepTech(tech: LaunchPrepTech) {
+    const enabling = !launchPrepTechs.includes(tech)
+    if (enabling && !everSelectedTechIds.has(tech)) {
       const name = LAUNCH_PREP_TECH_OPTIONS.find((o) => o.id === tech)?.name ?? tech
       if (blockOverBudget(LAUNCH_PREP_TECH_COST[tech], `invest in ${name}`)) return
     } else {
       setBudgetError(null)
     }
-    setDraft((p) => applyLaunchPrepTech(p, turningOff ? null : tech))
+    setDraft((p) => toggleLaunchPrepTech(p, tech, enabling))
   }
 
   function handleToggleLaunchSeqRealign(stationId: string) {
@@ -406,14 +416,14 @@ export function RedesignWorkshop({
       return
     }
     // Snapshot redesign choices before haul stamp so play cannot lose investments.
-    const selectedTech = resolveLaunchPrepTech(draft)
+    const selectedTechs = resolveLaunchPrepTechs(draft)
     const realignIds = resolveLaunchSeqRealignIds(draft)
     const removedIds = resolveLaunchSeqRemovedIds(draft)
     const keyLubricationSelected = resolveKeyLubrication(draft)
     // Always start from a fresh clone of the manufacture draft, then stamp the road.
     let withRoad = applyHaulPath(structuredClone(draft), path)
-    // Re-stamp launch-prep tech after haul apply (defensive: same field on version + step).
-    withRoad = applyLaunchPrepTech(withRoad, selectedTech)
+    // Re-stamp launch-prep techs after haul apply (defensive: same field on version + step).
+    withRoad = applyLaunchPrepTechs(withRoad, selectedTechs)
     // Re-stamp launch-sequence redesign (realign + optional Range removal).
     withRoad = applyLaunchSeqRedesign(withRoad, realignIds, removedIds)
     // Re-stamp key lubrication (defensive: same field on version + step).
@@ -706,14 +716,15 @@ export function RedesignWorkshop({
         {tab === 'launch-prep' && (
           <div className="redesign-prep">
             <p className="redesign-hint">
-              Invest in <strong>one</strong> pad technology for this round. Your
-              choice applies to all three launches. Select again to clear —
-              note that switching investments does not refund the cost of one
-              you tried earlier this session.
+              Invest in <strong>as many</strong> pad technologies as your
+              budget allows — they're not mutually exclusive. Your choices
+              apply to all three launches. Select again to turn one off —
+              note that doing so does not refund the cost of one you tried
+              earlier this session.
             </p>
-            <div className="redesign-tech-grid" role="listbox" aria-label="Launch prep technologies">
+            <div className="redesign-tech-grid" aria-label="Launch prep technologies">
               {LAUNCH_PREP_TECH_OPTIONS.map((opt) => {
-                const selected = launchPrepTech === opt.id
+                const selected = launchPrepTechs.includes(opt.id)
                 const everTried = everSelectedTechIds.has(opt.id)
                 const overBudget =
                   !selected &&
@@ -723,15 +734,14 @@ export function RedesignWorkshop({
                   <button
                     key={opt.id}
                     type="button"
-                    role="option"
-                    aria-selected={selected}
+                    aria-pressed={selected}
                     className={[
                       'redesign-tech-card',
                       selected ? 'redesign-tech-card--selected' : '',
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    onClick={() => handleSelectLaunchPrepTech(opt.id)}
+                    onClick={() => handleToggleLaunchPrepTech(opt.id)}
                     disabled={overBudget}
                   >
                     <span className="redesign-tech-card__name">{opt.name}</span>
@@ -748,14 +758,17 @@ export function RedesignWorkshop({
                 )
               })}
             </div>
-            {launchPrepTech && (
+            {launchPrepTechs.length > 0 && (
               <p className="redesign-hint redesign-hint--ok">
-                Active investment:{' '}
+                Active investments:{' '}
                 <strong>
-                  {
-                    LAUNCH_PREP_TECH_OPTIONS.find((o) => o.id === launchPrepTech)
-                      ?.name
-                  }
+                  {launchPrepTechs
+                    .map(
+                      (id) =>
+                        LAUNCH_PREP_TECH_OPTIONS.find((o) => o.id === id)?.name ??
+                        id,
+                    )
+                    .join(', ')}
                 </strong>
               </p>
             )}

@@ -59,10 +59,11 @@ export interface ProcessStep {
    */
   autoMoveBooster?: boolean
   /**
-   * Launch-prep redesign: single technology investment for this process version.
-   * Mirrors process.launchPrepTech when set on the launch-prep step.
+   * Launch-prep redesign: technology investments for this process version
+   * (as many as the budget allows — not mutually exclusive).
+   * Mirrors process.launchPrepTechs when set on the launch-prep step.
    */
-  launchPrepTech?: LaunchPrepTech
+  launchPrepTechs?: LaunchPrepTech[]
   /**
    * Launch-sequence redesign: GO station ids the learner realigned
    * (reduces as-is misalignment friction in play). Mirrors process.launchSeqRealignIds.
@@ -81,15 +82,18 @@ export interface ProcessStep {
 }
 
 /**
- * Round 2 launch-prep technology investments (mutually exclusive — pick one).
+ * Round 2 launch-prep technology investments. Not mutually exclusive — the
+ * learner can select as many as the redesign budget allows.
  * - faster-pumps: LOX/RP-1 fill almost instantly
  * - auto-power: single master ON instead of sequential switches
  * - payload-drone: one-step drone stack replaces multi-step crane
+ * - strongback-redesign: mate slider only needs to travel half as far
  */
 export type LaunchPrepTech =
   | 'faster-pumps'
   | 'auto-power'
   | 'payload-drone'
+  | 'strongback-redesign'
 
 /**
  * Total cost of improvement for a Round 2 redesign, broken down by where it
@@ -138,9 +142,10 @@ export interface ProcessVersion {
    */
   autoMoveBooster?: boolean
   /**
-   * Launch-prep technology investment chosen in Round 2 redesign (at most one).
+   * Launch-prep technology investments chosen in Round 2 redesign — as many
+   * as the redesign budget allows; not mutually exclusive.
    */
-  launchPrepTech?: LaunchPrepTech | null
+  launchPrepTechs?: LaunchPrepTech[]
   /**
    * Launch-sequence redesign (Round 2): GO station ids marked realigned.
    * Ids match LAUNCH_SEQ_GO_STATIONS[].id (e.g. 'go-guidance').

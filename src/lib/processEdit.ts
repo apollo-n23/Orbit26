@@ -160,6 +160,12 @@ export const LAUNCH_PREP_TECH_OPTIONS: {
     summary:
       'Replaces the multi-step pad crane with a drone that seats the payload on the stack in one action.',
   },
+  {
+    id: 'strongback-redesign',
+    name: 'Strongback redesign',
+    summary:
+      'Redesigned clamp geometry means the strongback mate slider only has to travel half as far to lock the booster to the tower.',
+  },
 ]
 
 const LAUNCH_PREP_TECH_IDS = new Set<string>(
@@ -171,37 +177,53 @@ export function isLaunchPrepTech(value: unknown): value is LaunchPrepTech {
   return typeof value === 'string' && LAUNCH_PREP_TECH_IDS.has(value)
 }
 
-/**
- * Resolve the launch-prep technology for play:
- * process.launchPrepTech → launch-prep step.launchPrepTech → null.
- * Invalid / cleared values do not fall through as a false positive.
- */
-export function resolveLaunchPrepTech(
-  process: ProcessVersion,
-): LaunchPrepTech | null {
-  if (isLaunchPrepTech(process.launchPrepTech)) return process.launchPrepTech
-  // Explicit null on the version means "cleared in redesign" — do not use step.
-  if (process.launchPrepTech === null) return null
-  const step = process.steps.find((s) => s.kind === 'launch-prep')
-  if (isLaunchPrepTech(step?.launchPrepTech)) return step.launchPrepTech
-  return null
+function dedupeLaunchPrepTechs(techs: unknown): LaunchPrepTech[] {
+  if (!Array.isArray(techs)) return []
+  const seen = new Set<LaunchPrepTech>()
+  for (const t of techs) {
+    if (isLaunchPrepTech(t)) seen.add(t)
+  }
+  return [...seen]
 }
 
-/** Set or clear the single launch-prep technology investment (Round 2 redesign). */
-export function applyLaunchPrepTech(
+/**
+ * Resolve the launch-prep technology investments for play:
+ * process.launchPrepTechs → launch-prep step.launchPrepTechs → none.
+ * Not mutually exclusive — any number may be active at once.
+ */
+export function resolveLaunchPrepTechs(process: ProcessVersion): LaunchPrepTech[] {
+  if (Array.isArray(process.launchPrepTechs)) {
+    return dedupeLaunchPrepTechs(process.launchPrepTechs)
+  }
+  const step = process.steps.find((s) => s.kind === 'launch-prep')
+  return dedupeLaunchPrepTechs(step?.launchPrepTechs)
+}
+
+/** Set the full list of active launch-prep technology investments (Round 2 redesign). */
+export function applyLaunchPrepTechs(
   process: ProcessVersion,
-  tech: LaunchPrepTech | null,
+  techs: LaunchPrepTech[],
 ): ProcessVersion {
-  const nextTech = tech != null && isLaunchPrepTech(tech) ? tech : null
+  const next = dedupeLaunchPrepTechs(techs)
   return {
     ...process,
-    launchPrepTech: nextTech,
-    steps: process.steps.map((s) => {
-      if (s.kind !== 'launch-prep') return s
-      const { launchPrepTech: _prev, ...rest } = s
-      return nextTech ? { ...rest, launchPrepTech: nextTech } : rest
-    }),
+    launchPrepTechs: next,
+    steps: process.steps.map((s) =>
+      s.kind === 'launch-prep' ? { ...s, launchPrepTechs: [...next] } : s,
+    ),
   }
+}
+
+/** Turn a single launch-prep technology investment on/off (Round 2 redesign). */
+export function toggleLaunchPrepTech(
+  process: ProcessVersion,
+  tech: LaunchPrepTech,
+  enabled: boolean,
+): ProcessVersion {
+  const current = new Set(resolveLaunchPrepTechs(process))
+  if (enabled) current.add(tech)
+  else current.delete(tech)
+  return applyLaunchPrepTechs(process, [...current])
 }
 
 // ---------------------------------------------------------------------------
