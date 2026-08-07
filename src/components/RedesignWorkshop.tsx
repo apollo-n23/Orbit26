@@ -28,6 +28,7 @@ import {
   ROAD_COLS,
   ROAD_ROWS,
   ROAD_COST_PER_TILE,
+  TREE_CLUSTER_CELLS,
   cellKey,
   pathFromRoadTiles,
   rasterizePath,
@@ -80,6 +81,7 @@ export function RedesignWorkshop({
   const rangeRemoved = launchSeqRemovedIds.includes(LAUNCH_SEQ_RANGE_STATION_ID)
   const endpoints = requiredEndpointCells()
   const roadCost = useMemo(() => roadCostFromTiles(roadTiles), [roadTiles])
+  const treeCells = useMemo(() => new Set<CellKey>(TREE_CLUSTER_CELLS), [])
 
   function handleDropOnSlot(targetSlotIndex: number, machineId: string) {
     if (!machineId) return
@@ -132,6 +134,8 @@ export function RedesignWorkshop({
     const key = cellKey(col, row)
     // Endpoints stay on (free baseline — not billable, not removable).
     if (key === endpoints.start || key === endpoints.end) return
+    // Tree cluster is a fixed decorative obstacle — never paintable as road.
+    if (treeCells.has(key)) return
     setRoadTiles((prev) => {
       const next = new Set(prev)
       if (next.has(key)) next.delete(key)
@@ -594,7 +598,8 @@ export function RedesignWorkshop({
                 {Array.from({ length: ROAD_ROWS }, (_, row) =>
                   Array.from({ length: ROAD_COLS }, (_, col) => {
                     const key = cellKey(col, row)
-                    const on = roadTiles.has(key)
+                    const isTree = treeCells.has(key)
+                    const on = !isTree && roadTiles.has(key)
                     const isStart = key === endpoints.start
                     const isEnd = key === endpoints.end
                     return (
@@ -606,6 +611,7 @@ export function RedesignWorkshop({
                           on ? 'redesign-haul__cell--road' : '',
                           isStart ? 'redesign-haul__cell--start' : '',
                           isEnd ? 'redesign-haul__cell--end' : '',
+                          isTree ? 'redesign-haul__cell--tree' : '',
                         ]
                           .filter(Boolean)
                           .join(' ')}
@@ -615,11 +621,13 @@ export function RedesignWorkshop({
                             ? 'Assembly (fixed)'
                             : isEnd
                               ? 'Launch pad (fixed)'
-                              : on
-                                ? `Road tile ${col},${row} — click to remove`
-                                : `Grass tile ${col},${row} — click to add road`
+                              : isTree
+                                ? 'Tree cluster (fixed) — road cannot be built here'
+                                : on
+                                  ? `Road tile ${col},${row} — click to remove`
+                                  : `Grass tile ${col},${row} — click to add road`
                         }
-                        disabled={isStart || isEnd}
+                        disabled={isStart || isEnd || isTree}
                       />
                     )
                   }),

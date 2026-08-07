@@ -1344,6 +1344,29 @@
   cursor: default;
 }
 
+.redesign-haul__cell--tree {
+  position: relative;
+  background: color-mix(in srgb, #2f6a2a 55%, #1f4a1c);
+  cursor: default;
+  box-shadow: none;
+}
+
+.redesign-haul__cell--tree::after {
+  content: '🌲';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.redesign-haul__cell--tree:hover:not(:disabled) {
+  background: color-mix(in srgb, #2f6a2a 55%, #1f4a1c);
+}
+
 .redesign-haul__label {
   position: absolute;
   z-index: 2;

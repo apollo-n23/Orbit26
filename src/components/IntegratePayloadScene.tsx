@@ -547,6 +547,56 @@ export function IntegratePayloadScene({
             strokeLinejoin="round"
           />
 
+          <g className="haul-trees" aria-hidden="true">
+            {/*
+              Fixed decorative obstacle in the open grass pocket between the
+              Assembly building and the road's loop around it (scene rect
+              x=280–360, y=280–360 — matches roadGrid.ts TREE_CLUSTER_CELLS,
+              cols 7–8 / rows 7–8). Purely visual: this pocket is already
+              outside the drivable safe corridor, and the matching grid
+              cells are locked from being painted as road in the Round 2
+              redesign workshop.
+            */}
+            {[
+              { cx: 300, cy: 306, r: 15 },
+              { cx: 337, cy: 297, r: 12 },
+              { cx: 315, cy: 337, r: 14 },
+              { cx: 347, cy: 331, r: 11 },
+            ].map((tree, i) => (
+              <g key={i} transform={`translate(${tree.cx}, ${tree.cy})`}>
+                <ellipse
+                  cx="0"
+                  cy={tree.r * 0.85}
+                  rx={tree.r * 0.9}
+                  ry={tree.r * 0.28}
+                  fill="rgba(8, 20, 6, 0.35)"
+                />
+                <rect
+                  x={-tree.r * 0.16}
+                  y={tree.r * 0.35}
+                  width={tree.r * 0.32}
+                  height={tree.r * 0.6}
+                  fill="#5b3a22"
+                  stroke="#3e2716"
+                  strokeWidth="1"
+                />
+                <circle
+                  r={tree.r}
+                  fill="#276029"
+                  stroke="#153d18"
+                  strokeWidth="1.5"
+                />
+                <circle
+                  cx={-tree.r * 0.28}
+                  cy={-tree.r * 0.28}
+                  r={tree.r * 0.45}
+                  fill="#3d8a3a"
+                  opacity="0.55"
+                />
+              </g>
+            ))}
+          </g>
+
           <g className="haul-building">
             <rect
               x="18"

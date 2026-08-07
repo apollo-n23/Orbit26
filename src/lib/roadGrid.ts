@@ -17,6 +17,20 @@ export function cellKey(col: number, row: number): CellKey {
   return `${col},${row}`
 }
 
+/**
+ * Fixed decorative tree cluster in the open grass pocket between the
+ * Assembly building and the road's loop around it (scene x=280–360,
+ * y=280–360 — well inside the pocket bounded by road cells at col 5,
+ * col 10, and row 9). Permanent obstacle: never toggleable as road in the
+ * redesign grid, and never part of the rasterized baseline path.
+ */
+export const TREE_CLUSTER_CELLS: CellKey[] = [
+  cellKey(7, 7),
+  cellKey(8, 7),
+  cellKey(7, 8),
+  cellKey(8, 8),
+]
+
 export function parseCellKey(key: string): { col: number; row: number } {
   const [c, r] = key.split(',').map(Number)
   return { col: c, row: r }
