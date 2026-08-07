@@ -34,7 +34,7 @@ export const LAUNCH_PREP_TECH_COST: Record<LaunchPrepTech, number> = {
  * be made — only selling road tiles (which reduces the total) frees up
  * room again.
  */
-export const REDESIGN_BUDGET = 180
+export const REDESIGN_BUDGET = 90
 
 /** Budget left before hitting REDESIGN_BUDGET, given the current breakdown. */
 export function remainingBudget(breakdown: RedesignCostBreakdown): number {
