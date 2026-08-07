@@ -17,6 +17,8 @@ interface LaunchSequenceSceneProps {
   onActionComplete: () => void
 }
 
+const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
+
 /** Hold duration to fully turn the launch key (ms). */
 const KEY_HOLD_MS = 1400
 
@@ -233,6 +235,9 @@ export function LaunchSequenceScene({
                     .join(' ')}
                   style={{ ['--mc-liftoff-ms' as string]: `${LIFTOFF_MS}ms` }}
                 >
+                  <div className="mc-pad-view__brand" aria-hidden="true">
+                    <img src={ORBIT_LOGO_SRC} alt="" />
+                  </div>
                   <div className="mc-pad-view__sky" aria-hidden="true">
                     <span className="mc-pad-view__star mc-pad-view__star--a" />
                     <span className="mc-pad-view__star mc-pad-view__star--b" />
@@ -266,6 +271,7 @@ export function LaunchSequenceScene({
                     </div>
                     <div className="mc-rocket__body">
                       <span className="mc-rocket__stripe" />
+                      <img src={ORBIT_LOGO_SRC} alt="" className="mc-rocket__logo" />
                       <span className="mc-rocket__fin mc-rocket__fin--l" />
                       <span className="mc-rocket__fin mc-rocket__fin--r" />
                     </div>

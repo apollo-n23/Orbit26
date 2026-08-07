@@ -29,11 +29,14 @@ import {
   REDESIGN_BUDGET,
 } from '../lib/redesignCost'
 import { Booster } from './Booster'
-import type { LaunchPrepTech } from '../types/process'
+import { LaunchSequenceScene } from './LaunchSequenceScene'
+import type { LaunchPrepTech, RunState } from '../types/process'
 import {
+  INITIAL_RUN_STATE,
   LAUNCH_SEQ_GO_STATIONS,
   LAUNCH_SEQ_RANGE_STATION_ID,
 } from '../types/process'
+import { finishLaunchSequenceAction } from '../lib/simulation'
 import {
   ROAD_COLS,
   ROAD_ROWS,
@@ -102,6 +105,37 @@ export function RedesignWorkshop({
     [roadTiles, baselineRoadTiles],
   )
   const treeCells = useMemo(() => new Set<CellKey>(TREE_CLUSTER_CELLS), [])
+
+  // Launch-sequence tab: live preview of the mission-control scene, driven
+  // by a local, throwaway run — never touches real round/session state.
+  const launchSeqStepIndex = useMemo(
+    () => draft.steps.findIndex((s) => s.kind === 'launch-sequence'),
+    [draft],
+  )
+  const [previewRun, setPreviewRun] = useState<RunState>(() => ({
+    ...INITIAL_RUN_STATE,
+    status: 'running',
+    currentStepIndex: launchSeqStepIndex,
+  }))
+  const [previewNonce, setPreviewNonce] = useState(0)
+
+  // Restart the preview whenever the redesign changes underneath it, so a
+  // mid-sequence realign/removal can never leave it pointing at a station
+  // that no longer exists at that index.
+  useEffect(() => {
+    setPreviewRun({
+      ...INITIAL_RUN_STATE,
+      status: 'running',
+      currentStepIndex: launchSeqStepIndex,
+    })
+    setPreviewNonce((n) => n + 1)
+    // Only the ids' content matters, not array identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [launchSeqRealignIds.join(','), launchSeqRemovedIds.join(','), launchSeqStepIndex])
+
+  function handlePreviewActionComplete() {
+    setPreviewRun((prev) => finishLaunchSequenceAction(draft, prev))
+  }
 
   // Cost of improvement (settled): everything except road tiles is a
   // one-way ratchet — once ever selected, it stays counted this session
@@ -830,6 +864,20 @@ export function RedesignWorkshop({
                 )}
               </p>
             )}
+
+            <div className="redesign-seq-preview">
+              <p className="redesign-hint">
+                <strong>Preview:</strong> this is how the launch sequence will
+                look in play, including your realigns and removals. Try it —
+                nothing here is scored or saved.
+              </p>
+              <LaunchSequenceScene
+                key={`redesign-seq-preview-${previewNonce}`}
+                run={previewRun}
+                process={draft}
+                onActionComplete={handlePreviewActionComplete}
+              />
+            </div>
           </div>
         )}
 

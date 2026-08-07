@@ -143,6 +143,12 @@ Resolve via `resolveLaunchPrepTech(process)`. Scene must re-read tech when the l
 - Non-realigned keep as-is wide gaps + misalignment.
 - Round 1: full six GOs, all misaligned.
 
+**Branding + rocket scale in this scene (`LaunchSequenceScene.tsx`, all four contexts it renders in — Round 1 play, Round 2 play, Gemba, and the redesign workshop's own preview below):**
+- `.mc-pad-view__brand` — Orb-it logo, upper-left corner of `.mc-pad-view` (the window showing the rocket on the pad / lifting off). Not in `.mc-screen__label` (the "PAD 1 · LIVE" bar above it) — specifically inside the viewport itself, per the brief.
+- `.mc-rocket__logo` — small Orb-it decal on the booster hull (`.mc-rocket__body`), above the stripe.
+- Rocket assembly (`.mc-pad-view__rocket`, `.mc-rocket__body/__nose/__fin/__exhaust`) sized up from the original baseline (~×1.35 on every dimension) — done via base width/height, not `transform: scale()`, because the liftoff `@keyframes mc-liftoff` sets its own `transform` per keyframe and would silently override (not compose with) a size-only transform once liftoff starts.
+- **Redesign workshop preview:** the launch-sequence tab (`RedesignWorkshop.tsx`) renders this same `LaunchSequenceScene` live, driven by a local `previewRun` (fresh `RunState` via `INITIAL_RUN_STATE` + the draft's actual launch-sequence step index) — same self-contained, nothing-logged pattern as `GembaWalkthrough`. `onActionComplete` calls `finishLaunchSequenceAction(draft, prev)` on that local state only. A `useEffect` keyed on `launchSeqRealignIds`/`launchSeqRemovedIds` resets and remounts it (`previewNonce` key) whenever the redesign changes underneath it, so it can never end up mid-sequence pointing at a GO station index that no longer exists after a realign/removal edit.
+
 ### Round architecture
 | Piece | Role |
 |--------|------|
