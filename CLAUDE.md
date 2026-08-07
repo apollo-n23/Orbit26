@@ -271,9 +271,12 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 - Arrow keys primary; safe zones: road+margin, assembly, pad; pure grass → explode → reset.
 - **Each explosion is a logged defect.** `onExplode` fires once the reset animation finishes (renamed from the never-wired `onPathReset`) → threaded through `SimulationView`'s `onHaulExplode` → `RoundSession`'s `defectCountRef`, which accumulates for the current launch attempt and resets to 0 in `handleRunProcess` (new Run Process) and every other run/log reset point. Same `RoundSession` component plays both rounds, so this works identically on Round 1 and Round 2 with no extra wiring. The Gemba walkthrough never passes `onExplode`, so exploding there is purely visual and logs nothing.
 - Mount to pad → auto-advance to launch-prep.
+- **Coastline (decorative, non-interactive):** the rightmost road-grid column (`roadGrid.ts` `ROAD_COLS=20`, col 19, scene x=760–800) is sea; a narrow sand band (x=746–760) sits between it and the grass, with a wavy coastline stroke at the sand/sea boundary. Drawn as a background layer *before* the `haul-field-vignette` overlay (so the vignette darkens it consistently with the rest of the map) and *before* the road/buildings/pad (which render on top, since the pad's right edge already sits close to this strip). Purely visual — does not extend `SCENE_WIDTH`/`ROAD_COLS` or otherwise touch gameplay geometry, so none of the safety-zone or road-tile logic changes.
+- **No-fly zone (decorative, non-interactive):** a dashed red placard rect + four small drone-prohibition markers drawn around `LAUNCH_PAD` (`NO_FLY_MARGIN` = 30, corner markers inset so they stay on-canvas) plus a "NO FLY ZONE" label below the pad. Rendered as its own `<g>` after the pad group so it sits on top; no handlers attached, so it is never interactive (same convention as the tree cluster / building groups).
+- **Offices annex:** a small labelled building to the left of Assembly (scene x=8–48), clear of the road (nearest segment runs x=95–220). Assembly's own rect kept its **right edge fixed at x=128** — the `HAUL_START` exit-apron alignment is unchanged — and only lost width off its left side to make room.
 
 ### 3. Launch prep (`LaunchPrepScene.tsx`)
-- Mate → payload stack → fuel → power (modified by `launchPrepTech` as above).
+- Mate → payload stack → fuel → power (modified by `launchPrepTechs` as above).
 - Crane/drone layout close to stack; umbilicals connect to vehicle ports.
 
 ### 4. Launch sequence (`LaunchSequenceScene.tsx`)

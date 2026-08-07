@@ -55,6 +55,40 @@ const ARROW_CODES = new Set([
   'ArrowRight',
 ])
 
+/** Coastline: the rightmost road-grid column (roadGrid.ts ROAD_COLS=20, col 19) is sea. */
+const SEA_X = 760
+/** Narrow sand band between the grass of the main map and the sea. */
+const SAND_WIDTH = 14
+const SAND_X = SEA_X - SAND_WIDTH
+
+/**
+ * Restricted-airspace placard drawn around the pad. Purely decorative — no
+ * handlers are attached to it, so it is never interactive.
+ */
+const NO_FLY_MARGIN = 30
+const NO_FLY_ZONE = {
+  x: LAUNCH_PAD.x - NO_FLY_MARGIN,
+  y: LAUNCH_PAD.y - NO_FLY_MARGIN,
+  width: LAUNCH_PAD.width + NO_FLY_MARGIN * 2,
+  height: LAUNCH_PAD.height + NO_FLY_MARGIN * 2,
+}
+const NO_FLY_MARKER_INSET = 20
+const NO_FLY_MARKERS: Point[] = [
+  { x: NO_FLY_ZONE.x + NO_FLY_MARKER_INSET, y: NO_FLY_ZONE.y + NO_FLY_MARKER_INSET },
+  {
+    x: NO_FLY_ZONE.x + NO_FLY_ZONE.width - NO_FLY_MARKER_INSET,
+    y: NO_FLY_ZONE.y + NO_FLY_MARKER_INSET,
+  },
+  {
+    x: NO_FLY_ZONE.x + NO_FLY_MARKER_INSET,
+    y: NO_FLY_ZONE.y + NO_FLY_ZONE.height - NO_FLY_MARKER_INSET,
+  },
+  {
+    x: NO_FLY_ZONE.x + NO_FLY_ZONE.width - NO_FLY_MARKER_INSET,
+    y: NO_FLY_ZONE.y + NO_FLY_ZONE.height - NO_FLY_MARKER_INSET,
+  },
+]
+
 function startPose(): HaulPose {
   return {
     x: HAUL_START.x,
@@ -516,6 +550,46 @@ export function IntegratePayloadScene({
               <stop offset="50%" stopColor="#3d4249" />
               <stop offset="100%" stopColor="#353a41" />
             </linearGradient>
+            <linearGradient id="haul-sand" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#c9a866" />
+              <stop offset="100%" stopColor="#ddc383" />
+            </linearGradient>
+            <pattern
+              id="haul-sand-texture"
+              width="10"
+              height="10"
+              patternUnits="userSpaceOnUse"
+            >
+              <rect width="10" height="10" fill="transparent" />
+              <circle cx="2" cy="3" r="0.6" fill="rgba(110, 82, 34, 0.35)" />
+              <circle cx="7" cy="7" r="0.5" fill="rgba(110, 82, 34, 0.3)" />
+              <circle cx="5" cy="2" r="0.4" fill="rgba(255, 255, 255, 0.18)" />
+            </pattern>
+            <linearGradient id="haul-sea" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#123f57" />
+              <stop offset="45%" stopColor="#155f86" />
+              <stop offset="100%" stopColor="#0d4a6b" />
+            </linearGradient>
+            <pattern
+              id="haul-sea-texture"
+              width="34"
+              height="24"
+              patternUnits="userSpaceOnUse"
+            >
+              <rect width="34" height="24" fill="transparent" />
+              <path
+                d="M0 14 Q8 8 16 14 T34 14"
+                stroke="rgba(255, 255, 255, 0.2)"
+                strokeWidth="1.4"
+                fill="none"
+              />
+              <path
+                d="M-4 20 Q6 15 16 20 T36 20"
+                stroke="rgba(255, 255, 255, 0.12)"
+                strokeWidth="1.2"
+                fill="none"
+              />
+            </pattern>
           </defs>
 
           <rect width={SCENE_WIDTH} height={SCENE_HEIGHT} fill="url(#haul-grass)" />
@@ -524,6 +598,44 @@ export function IntegratePayloadScene({
             height={SCENE_HEIGHT}
             fill="url(#haul-grass-texture)"
           />
+
+          <g className="haul-coast" aria-hidden="true">
+            <rect
+              x={SAND_X}
+              y="0"
+              width={SAND_WIDTH}
+              height={SCENE_HEIGHT}
+              fill="url(#haul-sand)"
+            />
+            <rect
+              x={SAND_X}
+              y="0"
+              width={SAND_WIDTH}
+              height={SCENE_HEIGHT}
+              fill="url(#haul-sand-texture)"
+            />
+            <rect
+              x={SEA_X}
+              y="0"
+              width={SCENE_WIDTH - SEA_X}
+              height={SCENE_HEIGHT}
+              fill="url(#haul-sea)"
+            />
+            <rect
+              x={SEA_X}
+              y="0"
+              width={SCENE_WIDTH - SEA_X}
+              height={SCENE_HEIGHT}
+              fill="url(#haul-sea-texture)"
+            />
+            <path
+              d="M 762 0 Q 750 40 762 80 Q 772 120 758 160 Q 748 200 764 240 Q 774 280 756 320 Q 748 360 766 400 Q 774 440 760 480"
+              stroke="rgba(255, 255, 255, 0.4)"
+              strokeWidth="2"
+              fill="none"
+            />
+          </g>
+
           <rect
             width={SCENE_WIDTH}
             height={SCENE_HEIGHT}
@@ -613,11 +725,54 @@ export function IntegratePayloadScene({
             ))}
           </g>
 
-          <g className="haul-building">
+          <g className="haul-building haul-building--offices" aria-hidden="true">
+            {/*
+              Offices annex, to the left of Assembly, clear of the road (the
+              nearest road segment runs x=95-220 at y=240 — this sits at
+              x=8-48). Assembly's own rect kept its right edge at x=128 (the
+              HAUL_START exit-apron alignment) and only lost width off its
+              left side to make room here.
+            */}
+            <rect
+              x="8"
+              y="175"
+              width="40"
+              height="130"
+              rx="4"
+              fill="#2a3038"
+              stroke="#5a6574"
+              strokeWidth="2"
+            />
+            <rect x="18" y="195" width="20" height="22" fill="#1a222c" />
+            <rect x="18" y="230" width="20" height="22" fill="#1a222c" />
             <rect
               x="18"
+              y="268"
+              width="20"
+              height="28"
+              fill="#151a21"
+              stroke="#5a6574"
+            />
+            <text
+              x="28"
+              y="240"
+              textAnchor="middle"
+              transform="rotate(-90 28 240)"
+              fill="#c7cdd3"
+              fontSize="11"
+              fontFamily="Segoe UI, system-ui, sans-serif"
+              fontWeight="600"
+              letterSpacing="1"
+            >
+              Offices
+            </text>
+          </g>
+
+          <g className="haul-building">
+            <rect
+              x="56"
               y="175"
-              width="110"
+              width="72"
               height="130"
               rx="4"
               fill="#2a3038"
@@ -626,26 +781,26 @@ export function IntegratePayloadScene({
             />
             <image
               href={`${import.meta.env.BASE_URL}OrbitLogo.png`}
-              x="64"
+              x="83"
               y="178"
               width="18"
               height="18"
               opacity="0.9"
             />
-            <rect x="30" y="195" width="28" height="22" fill="#1a222c" />
-            <rect x="68" y="195" width="28" height="22" fill="#1a222c" />
-            <rect x="30" y="230" width="28" height="22" fill="#1a222c" />
-            <rect x="68" y="230" width="28" height="22" fill="#1a222c" />
+            <rect x="64" y="195" width="20" height="22" fill="#1a222c" />
+            <rect x="100" y="195" width="20" height="22" fill="#1a222c" />
+            <rect x="64" y="230" width="20" height="22" fill="#1a222c" />
+            <rect x="100" y="230" width="20" height="22" fill="#1a222c" />
             <rect
-              x="48"
+              x="74"
               y="268"
-              width="50"
+              width="36"
               height="28"
               fill="#151a21"
               stroke="#5a6574"
             />
             <text
-              x="73"
+              x="92"
               y="165"
               textAnchor="middle"
               fill="#e8f0e4"
@@ -699,6 +854,70 @@ export function IntegratePayloadScene({
               fontWeight="600"
             >
               Launch Pad
+            </text>
+          </g>
+
+          {/* Restricted-airspace placard — decorative only, never interactive. */}
+          <g className="haul-no-fly" aria-hidden="true">
+            <rect
+              x={NO_FLY_ZONE.x}
+              y={NO_FLY_ZONE.y}
+              width={NO_FLY_ZONE.width}
+              height={NO_FLY_ZONE.height}
+              rx="24"
+              fill="none"
+              stroke="rgba(230, 57, 53, 0.75)"
+              strokeWidth="3"
+              strokeDasharray="10 8"
+            />
+            {NO_FLY_MARKERS.map((m, i) => (
+              <g key={i} transform={`translate(${m.x}, ${m.y})`}>
+                <circle
+                  r="13"
+                  fill="rgba(35, 10, 10, 0.9)"
+                  stroke="#ff6b5e"
+                  strokeWidth="2"
+                />
+                <line
+                  x1="-7"
+                  y1="-7"
+                  x2="7"
+                  y2="7"
+                  stroke="#ffcfc9"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="-7"
+                  y1="7"
+                  x2="7"
+                  y2="-7"
+                  stroke="#ffcfc9"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="-10"
+                  y1="10"
+                  x2="10"
+                  y2="-10"
+                  stroke="#ff6b5e"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                />
+              </g>
+            ))}
+            <text
+              x={PAD_SEATED.x}
+              y={NO_FLY_ZONE.y + NO_FLY_ZONE.height + 18}
+              textAnchor="middle"
+              fill="#ff8a75"
+              fontSize="11"
+              fontFamily="Segoe UI, system-ui, sans-serif"
+              fontWeight="700"
+              letterSpacing="1.5"
+            >
+              NO FLY ZONE
             </text>
           </g>
         </svg>
