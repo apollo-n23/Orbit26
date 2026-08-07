@@ -2000,6 +2000,18 @@
   flex-shrink: 0;
 }
 
+/* Gemba: status line + Reset step, side by side */
+.gemba-step-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.gemba-step-toolbar .sim-status {
+  flex: 1;
+}
+
 /* ── Manufacture scene ───────────────────────────────────── */
 
 .manufacture-scene {

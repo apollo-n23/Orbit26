@@ -77,6 +77,12 @@ not a linear Run Process → Proceed playthrough.
   styling). Selecting a step — including re-selecting the current one —
   bumps a `visitNonce` used in each scene's React `key`, forcing a full
   remount so there's never stale seated/positioned state from a prior visit.
+- **Reset step button** (`.gemba-step-toolbar`, next to the status line,
+  Gemba-only — no equivalent in Round 1/2 play or the redesign workshop):
+  calls `selectStep(stepIndex)` with the *current* step, reusing the exact
+  same reset-and-remount path as re-clicking that step's own nav tab. No new
+  reset logic — this button just gives that existing behaviour a dedicated,
+  discoverable affordance.
 - **Reuses the real scene components** (`ManufactureScene`,
   `IntegratePayloadScene`, `LaunchPrepScene`, `LaunchSequenceScene`) and the
   real per-step transition functions (`startMachineWork`,

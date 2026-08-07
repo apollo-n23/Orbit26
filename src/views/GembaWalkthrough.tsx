@@ -202,8 +202,17 @@ export function GembaWalkthrough() {
               ))}
             </nav>
 
-            <div className="sim-status" aria-live="polite">
-              {statusMessage()}
+            <div className="gemba-step-toolbar">
+              <div className="sim-status" aria-live="polite">
+                {statusMessage()}
+              </div>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => selectStep(stepIndex)}
+              >
+                Reset step
+              </button>
             </div>
 
             {showManufacture && (
