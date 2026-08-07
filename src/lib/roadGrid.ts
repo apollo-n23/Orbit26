@@ -152,27 +152,6 @@ export function pathFromRoadTiles(tiles: Set<CellKey>): Point[] | null {
   return points
 }
 
-/** Paint a straight orthognal corridor from assembly to pad (utility / tests). */
-export function straightRoadTiles(): Set<CellKey> {
-  const { start, end } = requiredEndpointCells()
-  const a = parseCellKey(start)
-  const b = parseCellKey(end)
-  const cells = new Set<CellKey>()
-  // Horizontal then vertical (simple L or straight if aligned).
-  let c = a.col
-  let r = a.row
-  cells.add(cellKey(c, r))
-  while (c !== b.col) {
-    c += c < b.col ? 1 : -1
-    cells.add(cellKey(c, r))
-  }
-  while (r !== b.row) {
-    r += r < b.row ? 1 : -1
-    cells.add(cellKey(c, r))
-  }
-  return cells
-}
-
 /**
  * Cost points charged per road tile, relative to the round's starting
  * (baseline) road — fixed endpoints excluded either way. The existing road

@@ -41,14 +41,6 @@ export function remainingBudget(breakdown: RedesignCostBreakdown): number {
   return REDESIGN_BUDGET - breakdown.total
 }
 
-/** Whether an additional charge of `cost` points still fits the budget. */
-export function canAffordCost(
-  breakdown: RedesignCostBreakdown,
-  cost: number,
-): boolean {
-  return cost <= remainingBudget(breakdown)
-}
-
 /** Baseline (factory-default) line position for each manufacture machine id. */
 const BASELINE_MACHINE_POSITIONS: Record<string, number> = (() => {
   const machines = getManufactureStep(BASELINE_PROCESS)?.machines ?? []

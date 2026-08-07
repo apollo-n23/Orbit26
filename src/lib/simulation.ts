@@ -7,10 +7,7 @@ import type {
   RunState,
   SessionMetrics,
 } from '../types/process'
-import {
-  HAUL_STEP_TIME,
-  LAUNCH_PREP_ACTIONS,
-} from '../types/process'
+import { LAUNCH_PREP_ACTIONS } from '../types/process'
 import { resolveLaunchSeqConfig } from './processEdit'
 
 export function getActiveStep(
@@ -43,11 +40,8 @@ export function beginRun(prev: RunState): RunState {
     nextMachineIndex: 0,
     activeMachineId: null,
     completedMachineIds: [],
-    elapsedTime: 0,
-    valueAddTime: 0,
     runStartedAt: Date.now(),
     runEndedAt: null,
-    unitDefective: false,
   }
 }
 
@@ -64,10 +58,7 @@ export function wallClockMs(run: RunState, now = Date.now()): number | null {
  */
 export function completeUnitRun(
   prev: RunState,
-  patch: Omit<
-    Partial<RunState>,
-    'status' | 'runEndedAt' | 'completedRuns' | 'goodRuns'
-  > = {},
+  patch: Omit<Partial<RunState>, 'status' | 'runEndedAt' | 'completedRuns'> = {},
 ): RunState {
   return {
     ...prev,
@@ -75,7 +66,6 @@ export function completeUnitRun(
     status: 'complete',
     runEndedAt: Date.now(),
     completedRuns: prev.completedRuns + 1,
-    goodRuns: prev.goodRuns + (prev.unitDefective ? 0 : 1),
   }
 }
 
@@ -121,8 +111,6 @@ export function finishMachineWork(
 
   const completedMachineIds = [...prev.completedMachineIds, machine.id]
   const nextMachineIndex = prev.nextMachineIndex + 1
-  const elapsedTime = prev.elapsedTime + machine.workTime
-  const valueAddTime = prev.valueAddTime + machine.workTime
   const allDone = nextMachineIndex >= machines.length
 
   if (allDone) {
@@ -132,8 +120,6 @@ export function finishMachineWork(
       activeMachineId: null,
       nextMachineIndex,
       completedMachineIds,
-      elapsedTime,
-      valueAddTime,
     }
   }
 
@@ -143,8 +129,6 @@ export function finishMachineWork(
     activeMachineId: null,
     nextMachineIndex,
     completedMachineIds,
-    elapsedTime,
-    valueAddTime,
   }
 }
 
@@ -194,13 +178,10 @@ export function completeHaulStep(
   const step = getActiveStep(process, prev)
   if (step?.kind !== 'haul') return prev
 
-  const elapsedTime = prev.elapsedTime + HAUL_STEP_TIME
-  // Haul is mostly non-value-add transport in lean terms; credit a small VA slice.
-  const valueAddTime = prev.valueAddTime + Math.round(HAUL_STEP_TIME * 0.15)
   const isLast = prev.currentStepIndex >= process.steps.length - 1
 
   if (isLast) {
-    return completeUnitRun(prev, { elapsedTime, valueAddTime })
+    return completeUnitRun(prev)
   }
 
   // Auto-advance: seat complete → next step running (skip haul step_complete / Proceed).
@@ -212,8 +193,6 @@ export function completeHaulStep(
     nextMachineIndex: 0,
     activeMachineId: null,
     completedMachineIds: [],
-    elapsedTime,
-    valueAddTime,
   }
 }
 
@@ -236,9 +215,6 @@ export function finishLaunchPrepAction(
 
   const completedMachineIds = [...prev.completedMachineIds, action.id]
   const nextMachineIndex = prev.nextMachineIndex + 1
-  const elapsedTime = prev.elapsedTime + action.workTime
-  const valueAddTime =
-    prev.valueAddTime + Math.round(action.workTime * action.valueAddRatio)
   const allDone = nextMachineIndex >= LAUNCH_PREP_ACTIONS.length
 
   if (allDone) {
@@ -248,8 +224,6 @@ export function finishLaunchPrepAction(
         activeMachineId: null,
         nextMachineIndex,
         completedMachineIds,
-        elapsedTime,
-        valueAddTime,
       })
     }
     return {
@@ -258,8 +232,6 @@ export function finishLaunchPrepAction(
       activeMachineId: null,
       nextMachineIndex,
       completedMachineIds,
-      elapsedTime,
-      valueAddTime,
     }
   }
 
@@ -269,8 +241,6 @@ export function finishLaunchPrepAction(
     activeMachineId: null,
     nextMachineIndex,
     completedMachineIds,
-    elapsedTime,
-    valueAddTime,
   }
 }
 
@@ -297,9 +267,6 @@ export function finishLaunchSequenceAction(
 
   const completedMachineIds = [...prev.completedMachineIds, action.id]
   const nextMachineIndex = prev.nextMachineIndex + 1
-  const elapsedTime = prev.elapsedTime + action.workTime
-  const valueAddTime =
-    prev.valueAddTime + Math.round(action.workTime * action.valueAddRatio)
   const allDone = nextMachineIndex >= actions.length
 
   if (allDone) {
@@ -309,8 +276,6 @@ export function finishLaunchSequenceAction(
         activeMachineId: null,
         nextMachineIndex,
         completedMachineIds,
-        elapsedTime,
-        valueAddTime,
       })
     }
     return {
@@ -319,8 +284,6 @@ export function finishLaunchSequenceAction(
       activeMachineId: null,
       nextMachineIndex,
       completedMachineIds,
-      elapsedTime,
-      valueAddTime,
     }
   }
 
@@ -330,8 +293,6 @@ export function finishLaunchSequenceAction(
     activeMachineId: null,
     nextMachineIndex,
     completedMachineIds,
-    elapsedTime,
-    valueAddTime,
   }
 }
 
@@ -366,9 +327,6 @@ export function formatLeadTime(totalSeconds: number | null): string {
   const sec = s % 60
   return `${m}:${sec.toString().padStart(2, '0')}`
 }
-
-/** @deprecated Prefer formatLeadTime — alias for older call sites. */
-export const formatCycleTime = formatLeadTime
 
 /** Optional process metrics attached when logging a completed unit. */
 export interface LeadTimeEntryExtras {

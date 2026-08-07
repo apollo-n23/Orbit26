@@ -31,6 +31,7 @@ import {
   movedMachineIds,
   RANGE_REMOVAL_COST,
   REDESIGN_BUDGET,
+  remainingBudget as computeRemainingBudget,
 } from '../lib/redesignCost'
 import { Booster } from './Booster'
 import { IntegratePayloadScene } from './IntegratePayloadScene'
@@ -286,7 +287,7 @@ export function RedesignWorkshop({
   )
 
   /** Budget left before hitting REDESIGN_BUDGET — only new charges are gated. */
-  const remainingBudget = REDESIGN_BUDGET - costBreakdown.total
+  const remainingBudget = computeRemainingBudget(costBreakdown)
   const budgetExhausted = remainingBudget <= 0
 
   function blockOverBudget(cost: number, description: string): boolean {

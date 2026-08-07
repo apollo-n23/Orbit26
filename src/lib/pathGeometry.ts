@@ -86,7 +86,7 @@ export const PAD_SEATED = {
 
 export function clampRotation(deg: number): number {
   const n = ((deg % 360) + 360) % 360
-  return n === 270 ? -90 : n > 180 ? n - 360 : n
+  return n > 180 ? n - 360 : n
 }
 
 export function rotatePoint(p: Point, origin: Point, deg: number): Point {

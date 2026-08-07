@@ -273,22 +273,6 @@ export function resolveLaunchSeqRemovedIds(process: ProcessVersion): string[] {
   return normalizeStationIdList(getLaunchSeqStep(process)?.launchSeqRemovedIds)
 }
 
-/** True when the station is currently marked realigned. */
-export function isLaunchSeqStationRealigned(
-  process: ProcessVersion,
-  stationId: string,
-): boolean {
-  return resolveLaunchSeqRealignIds(process).includes(stationId)
-}
-
-/** True when the station is removed from the GO list for this process. */
-export function isLaunchSeqStationRemoved(
-  process: ProcessVersion,
-  stationId: string,
-): boolean {
-  return resolveLaunchSeqRemovedIds(process).includes(stationId)
-}
-
 /**
  * Persist realign + removed lists on the process version and launch-sequence step.
  * Filters unknown ids and drops realign marks for stations that are removed.

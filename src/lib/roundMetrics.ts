@@ -40,13 +40,6 @@ export function saveRound1LeadTimeResults(
   return { avgMs: avg, launchMs }
 }
 
-/** @deprecated Prefer saveRound1LeadTimeResults */
-export function saveRound1AverageLeadTimeMs(
-  entries: LeadTimeEntry[],
-): number | null {
-  return saveRound1LeadTimeResults(entries)?.avgMs ?? null
-}
-
 /** Load Round 1 average for Round 2 Data board (null if missing). */
 export function loadRound1AverageLeadTimeMs(): number | null {
   if (typeof localStorage === 'undefined') return null

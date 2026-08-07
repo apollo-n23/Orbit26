@@ -10,8 +10,6 @@ export interface ProcessMachine {
   linePosition: number
   name: string
   kind: 'robot-arm' | 'welder' | 'laser'
-  /** Simulated work time added to cycle time (minutes). */
-  workTime: number
   /**
    * Extra vertical park distance from the production line (rem).
    * Larger values park further from the belt; approach travels that distance to the line.
@@ -41,9 +39,6 @@ export interface ProcessStep {
   id: string
   name: string
   kind: ProcessStepKind
-  /** Nominal total time for the step. */
-  baseTime: number
-  defectProbability: number
   isWaiting?: boolean
   isInventory?: boolean
   /** Ordered machines for manufacture steps. */
@@ -230,13 +225,6 @@ export interface RunState {
   /** Machine ids finished this step. */
   completedMachineIds: string[]
   /**
-   * Accumulated process work time (simulated minutes) for flow-efficiency math.
-   * Not used for top-bar Lead Time — that uses wall-clock timestamps.
-   */
-  elapsedTime: number
-  /** Value-add slice of process work time (simulated minutes). */
-  valueAddTime: number
-  /**
    * Wall-clock start of this unit run (`Date.now()`).
    * Set on Run Process / `beginRun`; null when idle with no active unit.
    */
@@ -246,9 +234,7 @@ export interface RunState {
    * Null while the run is in progress; freezes the lead-time display.
    */
   runEndedAt: number | null
-  unitDefective: boolean
   completedRuns: number
-  goodRuns: number
 }
 
 /**
@@ -267,13 +253,9 @@ export const INITIAL_RUN_STATE: RunState = {
   nextMachineIndex: 0,
   activeMachineId: null,
   completedMachineIds: [],
-  elapsedTime: 0,
-  valueAddTime: 0,
   runStartedAt: null,
   runEndedAt: null,
-  unitDefective: false,
   completedRuns: 0,
-  goodRuns: 0,
 }
 
 /** Machine slides from parked offset toward the production line (ms). */
@@ -295,17 +277,10 @@ export const MACHINE_CYCLE_MS =
 /** Snap / settle animation when the booster is dropped on a station stop (ms). */
 export const BOOSTER_TRAVEL_MS = 850
 
-/** Time credited when the haul step is completed (minutes). */
-export const HAUL_STEP_TIME = 35
-
 /** Ordered operator actions for the launch-prep step. */
 export interface LaunchPrepAction {
   id: string
   name: string
-  /** Simulated work time added to cycle time (minutes). */
-  workTime: number
-  /** Fraction of workTime counted as value-add (0–1). */
-  valueAddRatio: number
 }
 
 /**
@@ -313,37 +288,11 @@ export interface LaunchPrepAction {
  * mate → crane payload → fuel → power-up.
  */
 export const LAUNCH_PREP_ACTIONS: LaunchPrepAction[] = [
-  {
-    id: 'mate-tower',
-    name: 'Mate booster to tower',
-    workTime: 12,
-    valueAddRatio: 0.75,
-  },
-  {
-    id: 'crane-payload',
-    name: 'Stack payload with crane',
-    workTime: 14,
-    valueAddRatio: 0.85,
-  },
-  {
-    id: 'fuel-vehicle',
-    name: 'Fuel the vehicle',
-    workTime: 16,
-    valueAddRatio: 0.45,
-  },
-  {
-    id: 'power-up',
-    name: 'Power up for launch',
-    workTime: 10,
-    valueAddRatio: 0.7,
-  },
+  { id: 'mate-tower', name: 'Mate booster to tower' },
+  { id: 'crane-payload', name: 'Stack payload with crane' },
+  { id: 'fuel-vehicle', name: 'Fuel the vehicle' },
+  { id: 'power-up', name: 'Power up for launch' },
 ]
-
-/** Nominal total time for launch-prep (sum of action work times). */
-export const LAUNCH_PREP_STEP_TIME = LAUNCH_PREP_ACTIONS.reduce(
-  (sum, a) => sum + a.workTime,
-  0,
-)
 
 /**
  * Mission-control GO stations for the launch-sequence step.
@@ -368,41 +317,3 @@ export const LAUNCH_SEQ_GO_STATIONS: LaunchSeqGoStation[] = [
 
 /** Range Safety station id — only station redesign allows removing from the GO poll. */
 export const LAUNCH_SEQ_RANGE_STATION_ID = 'go-range'
-
-/**
- * Ordered actions for launch-sequence:
- * sequential GO calls → key arm → liftoff.
- * Reuses run nextMachineIndex / completedMachineIds for progress.
- */
-export const LAUNCH_SEQ_ACTIONS: LaunchPrepAction[] = [
-  ...LAUNCH_SEQ_GO_STATIONS.map((s) => ({
-    id: s.id,
-    name: `${s.name} — GO`,
-    workTime: 2,
-    valueAddRatio: 0.25,
-  })),
-  {
-    id: 'key-arm',
-    name: 'Arm launch key',
-    workTime: 5,
-    valueAddRatio: 0.4,
-  },
-  {
-    id: 'liftoff',
-    name: 'Liftoff',
-    workTime: 10,
-    valueAddRatio: 0.95,
-  },
-]
-
-/** Nominal total time for launch-sequence (sum of action work times). */
-export const LAUNCH_SEQ_STEP_TIME = LAUNCH_SEQ_ACTIONS.reduce(
-  (sum, a) => sum + a.workTime,
-  0,
-)
-
-/** Index of the key-arm action within LAUNCH_SEQ_ACTIONS. */
-export const LAUNCH_SEQ_KEY_INDEX = LAUNCH_SEQ_GO_STATIONS.length
-
-/** Index of the liftoff action within LAUNCH_SEQ_ACTIONS. */
-export const LAUNCH_SEQ_LIFTOFF_INDEX = LAUNCH_SEQ_KEY_INDEX + 1
