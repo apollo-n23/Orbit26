@@ -23,6 +23,20 @@
   --color-customer-accent: #b073f0;
   --color-customer-accent-dim: rgba(176, 115, 240, 0.16);
 
+  /* PMI brand palette (official) — hex is authoritative; Pantone/CMYK/RGB are print-only reference. */
+  --color-brand-navy: #00538a; /* Pantone 7452 */
+  --color-brand-orange: #ff8300; /* Pantone 151 */
+  --color-brand-cyan: #00b2e2; /* Pantone 306 */
+  --color-brand-lime: #c3d500; /* Pantone 382 */
+  --color-brand-magenta: #b00060; /* Pantone 227 */
+
+  --color-brand-indigo: #1e345d; /* Pantone 534 */
+  --color-brand-gold: #ffc627; /* Pantone 123 */
+  --color-brand-blue: #0081c9; /* Pantone Process Blue */
+  --color-brand-green: #82bc00; /* Pantone 376 */
+  --color-brand-grey: #777779; /* Pantone Cool Grey 9 */
+  --color-brand-grey-light: #c9c8c7; /* Pantone Cool Grey 3 */
+
   --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace;
 
