@@ -220,6 +220,35 @@
   min-width: 0;
 }
 
+/* Leftmost — the intranet hub everything else is reached from. */
+.stage-nav__home-btn {
+  flex-shrink: 0;
+  padding: 0.65rem 1.25rem;
+  border: 1px solid var(--color-orbital);
+  border-radius: var(--radius-md);
+  background: var(--color-orbital-dim);
+  color: var(--color-orbital-strong);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.stage-nav__home-btn:hover {
+  background: color-mix(in srgb, var(--color-orbital) 30%, var(--color-orbital-dim));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital) 55%, transparent);
+}
+
+.stage-nav__home-btn--active {
+  background: var(--color-orbital);
+  color: #eaf6ff;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital) 75%, transparent);
+}
+
 /* Off to the side, deliberately not part of the centered stage group. */
 .stage-nav__customer-btn {
   flex-shrink: 0;
@@ -5853,4 +5882,232 @@
   .top-bar__actions {
     justify-content: flex-start;
   }
+}
+
+/* ── Home (Orb-it intranet landing page) ─────────────────── */
+
+.home-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.home-header__logo {
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+}
+
+.intranet-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-4);
+}
+
+.intranet-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  text-align: left;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease;
+}
+
+.intranet-tile:hover {
+  border-color: var(--color-orbital);
+  background: color-mix(in srgb, var(--color-orbital-dim) 60%, var(--color-surface-raised));
+  transform: translateY(-2px);
+}
+
+.intranet-tile__icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.intranet-tile__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.intranet-tile__description {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Training (video placeholder) ────────────────────────── */
+
+.training-video-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 16rem;
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-bg) 55%, var(--color-surface));
+}
+
+.training-video-pane__icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--color-orbital-dim);
+  color: var(--color-orbital-strong);
+  font-size: 1.25rem;
+}
+
+.training-video-pane__text {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.training-cta {
+  margin-top: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.training-cta__link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-orbital-strong);
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* ── Annual Report ────────────────────────────────────────── */
+
+.annual-report__masthead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.annual-report__masthead-logo {
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+}
+
+.annual-report__eyebrow {
+  margin: 0 0 var(--space-1);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand-orange);
+}
+
+.annual-report__body {
+  max-width: 52rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.annual-report__section h3 {
+  margin: 0 0 var(--space-3);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.annual-report__section p {
+  margin: 0 0 var(--space-3);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.annual-report-chart {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
+.annual-report-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.annual-report-chart__caption {
+  margin-top: var(--space-2);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.annual-report__challenges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-4);
+}
+
+.annual-report__challenge-card {
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-brand-orange) 35%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-brand-orange) 6%, var(--color-surface-raised));
+}
+
+.annual-report__challenge-card h4 {
+  margin: 0 0 var(--space-2);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.annual-report__challenge-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.annual-report__call-to-arms {
+  padding: var(--space-5);
+  border: 2px solid var(--color-amber);
+  border-radius: var(--radius-md);
+  background: var(--color-amber-dim);
+}
+
+.annual-report__call-to-arms h3 {
+  margin: 0 0 var(--space-3);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-amber);
+}
+
+.annual-report__call-to-arms p {
+  margin: 0 0 var(--space-4);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+.annual-report__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.annual-report__footer img {
+  border-radius: var(--radius-sm);
 }

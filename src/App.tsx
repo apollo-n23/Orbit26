@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { RoundSession } from './components/RoundSession'
 import { GembaWalkthrough } from './views/GembaWalkthrough'
 import { CustomerPortalView } from './views/CustomerPortalView'
+import { HomeView } from './views/HomeView'
+import { TrainingView } from './views/TrainingView'
+import { AnnualReportView } from './views/AnnualReportView'
+import { CreateInvoicesView } from './views/CreateInvoicesView'
 import { getRoundConfig } from './data/rounds'
 import {
   hashForStage,
@@ -14,7 +18,8 @@ import './App.css'
 
 /**
  * Root shell: hash routes so tutors can deep-link stages.
- * - `#/round/1` (default) — as-is process, three launches
+ * - `#/home` (default) — Orb-it intranet landing page
+ * - `#/round/1` — as-is process, three launches
  * - `#/redesign` — Round 2 redesign workshop
  * - `#/round/2` — Round 2 (play / orbit-complete)
  *
@@ -37,9 +42,9 @@ function App() {
   )
 
   useEffect(() => {
-    // Normalise empty hash to round 1 so the URL is shareable.
+    // Normalise empty hash to home so the URL is shareable.
     if (!window.location.hash || window.location.hash === '#') {
-      window.location.hash = hashForStage('round1')
+      window.location.hash = hashForStage('home')
     }
 
     const onHashChange = () => {
@@ -88,6 +93,24 @@ function App() {
 
   return (
     <>
+      {stage === 'home' && (
+        <HomeView activeStage={stage} onNavigateStage={navigateToStage} />
+      )}
+      {stage === 'training' && (
+        <TrainingView activeStage={stage} onNavigateStage={navigateToStage} />
+      )}
+      {stage === 'annual-report' && (
+        <AnnualReportView
+          activeStage={stage}
+          onNavigateStage={navigateToStage}
+        />
+      )}
+      {stage === 'invoices' && (
+        <CreateInvoicesView
+          activeStage={stage}
+          onNavigateStage={navigateToStage}
+        />
+      )}
       {stage === 'gemba' && (
         <GembaWalkthrough
           activeStage={stage}

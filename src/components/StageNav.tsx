@@ -21,9 +21,18 @@ const STAGES: { id: AppStage; label: string }[] = [
  * learning-loop flow, just an outside voice-of-customer view.
  */
 export function StageNav({ activeStage, onNavigate }: StageNavProps) {
+  const isHome = activeStage === 'home'
   const isCustomers = activeStage === 'customers'
   return (
     <nav className="stage-nav" aria-label="Round stages">
+      <button
+        type="button"
+        className={`stage-nav__home-btn${isHome ? ' stage-nav__home-btn--active' : ''}`}
+        aria-current={isHome ? 'page' : undefined}
+        onClick={() => onNavigate('home')}
+      >
+        Home
+      </button>
       <div className="stage-nav__group">
         {STAGES.map((stage) => {
           const isActive = stage.id === activeStage

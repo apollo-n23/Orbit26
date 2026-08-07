@@ -13,6 +13,30 @@ Tone: Professional, precise, operational. Light narrative framing only. No carto
 3. **Rounds** — Round 1 = as-is (3 launches); Round 2 = redesign then 3 launches; compare outcomes on Data.
 4. **Redesign / Validate** — Round 2 workshop locks improvements into the process used for that round’s launches.
 
+The learning loop above is reached **through** the Home intranet page (see
+"Home & intranet pages" below) — it's no longer the thing a learner lands
+on directly.
+
+---
+
+## Home & intranet pages (settled)
+
+**Default landing screen (settled):** `#/home` (or an empty/`#` hash,
+normalised to it) — an in-fiction Orb-it corporate intranet page, not the
+simulator. `views/HomeView.tsx`. Three tiles, each navigating via
+`onNavigateStage`:
+
+| Tile | Destination | Behaviour |
+|------|--------------|-----------|
+| **Train** | `#/training` (`views/TrainingView.tsx`) | A pane reserved for an embedded training video — **stub only**: no video yet, just a placeholder pane + a "Jump into the interactive simulator" link (→ `round1`) so the existing learning loop stays reachable. Embedding the real video is future work. |
+| **Annual Report** | `#/annual-report` (`views/AnnualReportView.tsx`) | Static in-fiction content: company overview, a declining-net-revenue chart (inline SVG, no charting library — FY21→FY25, `SalesDeclineChart` local to the file), three challenge call-outs (customer feedback / lead time / cost — deliberately mirrors the app's own metrics and the Customer Portal's complaints), and a "call to arms" banner with a **Join the improvement project** button (→ `gemba`). This is the in-fiction reason the whole exercise exists. |
+| **Create Invoices** | `#/invoices` (`views/CreateInvoicesView.tsx`) | Placeholder only — **to be redesigned later**, per explicit instruction. |
+
+- All four (`HomeView`, `TrainingView`, `AnnualReportView`, `CreateInvoicesView`) follow the same **mount-only-while-active, no state to preserve** pattern as `GembaWalkthrough`/`CustomerPortalView` — not part of the persistent-`RoundSession` group.
+- Each renders its own PMI banner (`SiteBrand`) + `StageNav` beneath it, same convention as every other page (see "Stage nav" below).
+- `StageNav` gained a **Home** button (`.stage-nav__home-btn`, orbital-blue accent) at the far left, before the centered Gemba/Round 1/Redesign/Round 2 group, so Home is reachable from anywhere — this is the only way back once inside any other stage, since none of the intranet pages are part of the round-based flow.
+- Orb-it logo (`public/OrbitLogo.png`) appears on Home (next to "Welcome back") and on the Annual Report (masthead + footer signature) — in-fiction branding, same convention as the booster decal / Assembly badge / Launch Pad mark.
+
 ---
 
 ## Rounds model (settled)
@@ -188,12 +212,13 @@ Resolve via `resolveLaunchPrepTechs(process)` (returns `LaunchPrepTech[]`). Scen
 ### Round architecture
 | Piece | Role |
 |--------|------|
-| `App.tsx` | Hash router; owns `AppStage`; mounts **both** rounds' `RoundSession` permanently (visibility-toggled, never unmounted) so stage hops keep state; mounts/unmounts `GembaWalkthrough`/`CustomerPortalView` on demand (no cross-stage state to keep); passes `activeStage`/`onNavigateStage` down to each page rather than rendering `StageNav` itself |
+| `App.tsx` | Hash router; owns `AppStage`; mounts **both** rounds' `RoundSession` permanently (visibility-toggled, never unmounted) so stage hops keep state; mounts/unmounts `GembaWalkthrough`/`CustomerPortalView`/`HomeView`/`TrainingView`/`AnnualReportView`/`CreateInvoicesView` on demand (no cross-stage state to keep); passes `activeStage`/`onNavigateStage` down to each page rather than rendering `StageNav` itself; normalises an empty hash to `#/home` |
 | `types/round.ts`, `data/rounds.ts` | Round configs; `AppStage` + `hashForStage` / `stageFromHash` |
 | `RoundSession.tsx` | redesign / play / orbit-complete for one round; accepts `hidden`, `requestedPhase`, `onPhaseChange`, `activeStage`, `onNavigateStage`; renders its own `StageNav` beneath its own banner in all three phase branches |
 | `views/GembaWalkthrough.tsx` | Gemba walk — see below |
-| `StageNav.tsx` | Stage nav: Gemba · Round 1 · Redesign · Round 2, plus a separately-styled Customer Portal button off to the side. Rendered by each page beneath its own PMI banner, not once at the `App.tsx` level — see "Stage nav (settled)" below |
+| `StageNav.tsx` | Stage nav: **Home** (leftmost, orbital-blue), then Gemba · Round 1 · Redesign · Round 2, plus a separately-styled Customer Portal button off to the side. Rendered by each page beneath its own PMI banner, not once at the `App.tsx` level — see "Stage nav (settled)" below |
 | `views/CustomerPortalView.tsx` | Customer Portal — see below |
+| `views/HomeView.tsx`, `views/TrainingView.tsx`, `views/AnnualReportView.tsx`, `views/CreateInvoicesView.tsx` | Home intranet page + its three destinations — see "Home & intranet pages" above |
 | `RedesignWorkshop.tsx` | Round 2 pre-play redesign |
 | `processEdit.ts`, `roadGrid.ts` | Apply/resolve redesign fields |
 | `lib/redesignCost.ts` | Point costs + `RedesignCostBreakdown` builder for the total cost of improvement |
@@ -207,8 +232,9 @@ Resolve via `resolveLaunchPrepTechs(process)` (returns `LaunchPrepTech[]`). Scen
 
 Persistent stage nav (`StageNav.tsx`) lets a tutor/learner hop directly between **Round 1**, **Redesign**, and **Round 2** — independent of the as-is → redesign → launches linear flow.
 
-- **Position: beneath the PMI brand banner, on every page.** `StageNav` is **not** rendered once at the `App.tsx` level — `App.tsx` only owns the `stage` state and passes `activeStage`/`onNavigateStage` down as props. Each page renders its own `<StageNav>` immediately after its own PMI banner header: `RoundSession` renders it in all three of its phase branches (orbit-complete, redesign, and play — right after `TopBar` in the play branch), and `GembaWalkthrough` / `CustomerPortalView` each render it right after their own `<SiteBrand>` header. This keeps the nav directly under the "PMI · Orb-it" banner everywhere, rather than above it.
-- **Routes:** `#/round/1` · `#/redesign` · `#/round/2` (`AppStage` in `types/round.ts`).
+- **Position: beneath the PMI brand banner, on every page.** `StageNav` is **not** rendered once at the `App.tsx` level — `App.tsx` only owns the `stage` state and passes `activeStage`/`onNavigateStage` down as props. Each page renders its own `<StageNav>` immediately after its own PMI banner header: `RoundSession` renders it in all three of its phase branches (orbit-complete, redesign, and play — right after `TopBar` in the play branch), and `GembaWalkthrough` / `CustomerPortalView` / `HomeView` / `TrainingView` / `AnnualReportView` / `CreateInvoicesView` each render it right after their own `<SiteBrand>` header. This keeps the nav directly under the "PMI · Orb-it" banner everywhere, rather than above it.
+- **Default route is `#/home`, not `#/round/1`.** An empty/`#` hash is normalised to `#/home` on mount (`App.tsx`) — the intranet Home page is the true landing screen; the round-based learning loop is reached through it (see "Home & intranet pages" above).
+- **Routes:** `#/home` · `#/round/1` · `#/redesign` · `#/round/2` · `#/training` · `#/annual-report` · `#/invoices` (`AppStage` in `types/round.ts`).
 - **Both rounds stay mounted for the app's lifetime** (`App.tsx` renders both `RoundSession`s, hidden via inline `display: none` rather than unmounted) — hopping never loses in-progress state (process edits, run in flight, lead-time log).
 - **Round 2 phase is nav-controlled** via `requestedPhase`/`onPhaseChange` props on `RoundSession`:
   - Clicking **Redesign** always jumps into the workshop (even mid-round or post-completion) — and **resets that round's play state** (session, run, lead-time log) so it plays out fresh under whatever design is confirmed next.
@@ -320,6 +346,8 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 - Mobile-first / in-app process map / waste-tagging UI
 - Comparison tab (removed; use Data board for Round 1 vs Round 2 averages)
 - Cross-round cloud persistence (localStorage Round 1 average → Round 2 Data is in scope)
+- Embedded training video on `#/training` (placeholder pane only, deliberately — video to be added later)
+- Real invoice creation on `#/invoices` (placeholder only, deliberately — to be redesigned later)
 
 ## Working Style
 - Small incremental working steps; keep app runnable.
