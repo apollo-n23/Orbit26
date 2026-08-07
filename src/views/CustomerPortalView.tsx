@@ -318,28 +318,15 @@ const HEADER_STARS: {
 
 export function CustomerPortalView() {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
-  // Whichever post's replies were most recently opened — drives the company
-  // side panel. Cleared when that same post is collapsed again.
-  const [activeCompanyHandle, setActiveCompanyHandle] = useState<
-    string | null
-  >(null)
 
   function toggleExpanded(handle: string) {
-    const isOpen = expanded.has(handle)
-    if (isOpen) {
-      setExpanded((prev) => {
-        const next = new Set(prev)
-        next.delete(handle)
-        return next
-      })
-      setActiveCompanyHandle((current) => (current === handle ? null : current))
-    } else {
-      setExpanded((prev) => new Set(prev).add(handle))
-      setActiveCompanyHandle(handle)
-    }
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(handle)) next.delete(handle)
+      else next.add(handle)
+      return next
+    })
   }
-
-  const activeCompanyPost = POSTS.find((p) => p.handle === activeCompanyHandle)
 
   return (
     <div className="app-shell">
@@ -435,116 +422,110 @@ export function CustomerPortalView() {
                 {POSTS.map((post) => {
                   const isOpen = expanded.has(post.handle)
                   return (
-                    <article
-                      key={post.handle}
-                      className="customer-post"
-                      role="button"
-                      tabIndex={0}
-                      aria-expanded={isOpen}
-                      onClick={() => toggleExpanded(post.handle)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          toggleExpanded(post.handle)
-                        }
-                      }}
-                    >
-                      <div className="customer-post__avatar" aria-hidden="true">
-                        {initials(post.displayName)}
-                      </div>
-                      <div className="customer-post__body">
-                        <div className="customer-post__meta">
-                          <span className="customer-post__name">{post.displayName}</span>
-                          <span className="customer-post__handle">{post.handle}</span>
-                          <span className="customer-post__dot" aria-hidden="true">
-                            ·
-                          </span>
-                          <span className="customer-post__time">{post.timeAgo}</span>
+                    <div key={post.handle} className="customer-post-row">
+                      <article
+                        className="customer-post"
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={isOpen}
+                        onClick={() => toggleExpanded(post.handle)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            toggleExpanded(post.handle)
+                          }
+                        }}
+                      >
+                        <div className="customer-post__avatar" aria-hidden="true">
+                          {initials(post.displayName)}
                         </div>
-                        <p className="customer-post__text">{post.body}</p>
-                        <div className="customer-post__stats">
-                          <span className="customer-post__reply-toggle">
-                            💬 {post.replies.length}{' '}
-                            {isOpen ? '· Hide replies' : '· Show replies'}
-                          </span>
-                          <span aria-hidden="true">🔁 {post.shares}</span>
-                          <span aria-hidden="true">❤ {post.likes}</span>
-                        </div>
-
-                        {isOpen && (
-                          <div className="customer-replies">
-                            {post.replies.map((reply, i) => (
-                              <div
-                                key={i}
-                                className={
-                                  reply.isCompany
-                                    ? 'customer-reply customer-reply--company'
-                                    : 'customer-reply'
-                                }
-                              >
-                                <div className="customer-reply__avatar" aria-hidden="true">
-                                  {reply.isCompany ? (
-                                    <img src={ORBIT_LOGO_SRC} alt="" />
-                                  ) : (
-                                    initials(reply.displayName)
-                                  )}
-                                </div>
-                                <div className="customer-reply__body">
-                                  <div className="customer-post__meta">
-                                    <span className="customer-post__name">
-                                      {reply.displayName}
-                                    </span>
-                                    <span className="customer-post__handle">
-                                      {reply.handle}
-                                    </span>
-                                    <span className="customer-post__dot" aria-hidden="true">
-                                      ·
-                                    </span>
-                                    <span className="customer-post__time">
-                                      {reply.timeAgo}
-                                    </span>
-                                  </div>
-                                  <p className="customer-reply__text">{reply.body}</p>
-                                </div>
-                              </div>
-                            ))}
+                        <div className="customer-post__body">
+                          <div className="customer-post__meta">
+                            <span className="customer-post__name">{post.displayName}</span>
+                            <span className="customer-post__handle">{post.handle}</span>
+                            <span className="customer-post__dot" aria-hidden="true">
+                              ·
+                            </span>
+                            <span className="customer-post__time">{post.timeAgo}</span>
                           </div>
-                        )}
-                      </div>
-                    </article>
+                          <p className="customer-post__text">{post.body}</p>
+                          <div className="customer-post__stats">
+                            <span className="customer-post__reply-toggle">
+                              💬 {post.replies.length}{' '}
+                              {isOpen ? '· Hide replies' : '· Show replies'}
+                            </span>
+                            <span aria-hidden="true">🔁 {post.shares}</span>
+                            <span aria-hidden="true">❤ {post.likes}</span>
+                          </div>
+
+                          {isOpen && (
+                            <div className="customer-replies">
+                              {post.replies.map((reply, i) => (
+                                <div
+                                  key={i}
+                                  className={
+                                    reply.isCompany
+                                      ? 'customer-reply customer-reply--company'
+                                      : 'customer-reply'
+                                  }
+                                >
+                                  <div className="customer-reply__avatar" aria-hidden="true">
+                                    {reply.isCompany ? (
+                                      <img src={ORBIT_LOGO_SRC} alt="" />
+                                    ) : (
+                                      initials(reply.displayName)
+                                    )}
+                                  </div>
+                                  <div className="customer-reply__body">
+                                    <div className="customer-post__meta">
+                                      <span className="customer-post__name">
+                                        {reply.displayName}
+                                      </span>
+                                      <span className="customer-post__handle">
+                                        {reply.handle}
+                                      </span>
+                                      <span className="customer-post__dot" aria-hidden="true">
+                                        ·
+                                      </span>
+                                      <span className="customer-post__time">
+                                        {reply.timeAgo}
+                                      </span>
+                                    </div>
+                                    <p className="customer-reply__text">{reply.body}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </article>
+
+                      {isOpen && (
+                        <aside
+                          className="customer-company-card"
+                          aria-label={`${post.displayName}'s company profile`}
+                        >
+                          <p className="customer-company-card__kicker">
+                            Who's behind this post
+                          </p>
+                          <p className="customer-company-card__name">
+                            {post.company.name}
+                          </p>
+                          <p className="customer-company-card__industry">
+                            {post.company.industry}
+                          </p>
+                          <p className="customer-company-card__bio">
+                            {post.company.bio}
+                          </p>
+                          <p className="customer-company-card__attribution">
+                            {post.displayName} · {post.handle}
+                          </p>
+                        </aside>
+                      )}
+                    </div>
                   )
                 })}
               </div>
-
-              <aside
-                className="customer-company-panel"
-                aria-live="polite"
-                aria-label="Customer company profile"
-              >
-                {activeCompanyPost ? (
-                  <div className="customer-company-card">
-                    <p className="customer-company-card__kicker">
-                      Who's behind this post
-                    </p>
-                    <p className="customer-company-card__name">
-                      {activeCompanyPost.company.name}
-                    </p>
-                    <p className="customer-company-card__industry">
-                      {activeCompanyPost.company.industry}
-                    </p>
-                    <p className="customer-company-card__bio">
-                      {activeCompanyPost.company.bio}
-                    </p>
-                    <p className="customer-company-card__attribution">
-                      {activeCompanyPost.displayName} · {activeCompanyPost.handle}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="customer-company-panel__placeholder">
-                    Click a post to see who's behind it.
-                  </p>
-                )}
-              </aside>
             </div>
           </div>
         </section>

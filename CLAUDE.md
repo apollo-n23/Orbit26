@@ -136,19 +136,22 @@ learning-loop group — a static, read-only "voice of customer" feed.
   via `.customer-reply--company`) apologising and committing to a named
   improvement project (cadence, haul-road safety, altitude consistency,
   process cycle time) — a deliberate nod to the app's own Lean/VOC theme.
-- **Company panel** (`.customer-company-panel`, a sticky "small window" to
-  the right of the feed, in what was previously just empty space at wide
-  viewports): each `CustomerPost.company` names who that customer works for
-  — a realistic mix of telecoms, defence, science/research, and other space
-  customers (2 each: NimbusLink/Continental, Ironhold/Sentinel,
-  Halcyon/Arcvale, Aegis Orbital Logistics/Lumen Constellation). Bios
-  scatter callbacks to the app's own themes ("operating at 75 miles",
-  "creating evenly spaced satellite networks", "requiring scientific
-  precision" — verbatim, plus creative variations). Opening a post's replies
-  (`toggleExpanded`) also sets `activeCompanyHandle` to that post, which the
-  panel renders; collapsing that same post clears it back to a placeholder.
-  Only one post's company shows at a time even if several are expanded —
-  whichever was toggled open most recently.
+- **Company card** (`.customer-company-card`): each `CustomerPost.company`
+  names who that customer works for — a realistic mix of telecoms, defence,
+  science/research, and other space customers (2 each: NimbusLink/
+  Continental, Ironhold/Sentinel, Halcyon/Arcvale, Aegis Orbital Logistics/
+  Lumen Constellation). Bios scatter callbacks to the app's own themes
+  ("operating at 75 miles", "creating evenly spaced satellite networks",
+  "requiring scientific precision" — verbatim, plus creative variations).
+  Renders **beside that specific post** — each post is wrapped in a
+  `.customer-post-row` (flex row, `flex-wrap: wrap`) containing the
+  `<article>` and, only while that post's own `isOpen` is true, an `<aside>`
+  companion card right next to it — so it always appears at whatever scroll
+  position the post is at, no sticky/absolute positioning and no "scroll
+  back up to read it." Wraps to its own line below the post when the
+  viewport's too narrow for both side by side (same breakpoint as the nav
+  collapsing, 860px). Multiple posts can show their own card at once if more
+  than one is expanded — there's no single shared "active" state anymore.
 - Mounted only while `stage === 'customers'`, like `GembaWalkthrough` — no
   state to preserve across hops (the expanded-replies state resets each
   time you leave and come back).

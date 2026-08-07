@@ -5561,10 +5561,21 @@
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
-  max-width: 42rem;
+  max-width: 60rem;
+}
+
+/* Each post + its (conditional) company card side by side; wraps the
+   card below the post on its own when there isn't room beside it. */
+.customer-post-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
 .customer-post {
+  flex: 1 1 26rem;
+  max-width: 42rem;
   display: flex;
   gap: var(--space-3);
   padding: var(--space-4);
@@ -5707,25 +5718,27 @@
   color: var(--color-text);
 }
 
-/* ── Company panel — the "who's behind this post" side window ───── */
+/* ── Company card — "who's behind this post", right beside it ───── */
 
-.customer-company-panel {
-  flex-shrink: 0;
-  width: 15rem;
-  position: sticky;
-  top: var(--space-4);
+.customer-company-card {
+  flex: 1 1 14rem;
+  max-width: 16rem;
   padding: var(--space-4);
-  border: 1px solid var(--color-border);
+  border: 1px solid color-mix(in srgb, var(--color-customer-accent) 40%, var(--color-border));
   border-radius: var(--radius-md);
   background: var(--color-surface-raised);
+  animation: customer-company-card-in 180ms ease-out both;
 }
 
-.customer-company-panel__placeholder {
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--color-text-dim);
-  line-height: 1.5;
-  text-align: center;
+@keyframes customer-company-card-in {
+  from {
+    opacity: 0;
+    transform: translateX(-0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .customer-company-card__kicker {
@@ -5794,9 +5807,9 @@
     margin-left: auto;
   }
 
-  .customer-company-panel {
-    width: 100%;
-    position: static;
+  .customer-company-card {
+    flex-basis: 100%;
+    max-width: none;
   }
 }
 
