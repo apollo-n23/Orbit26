@@ -58,15 +58,35 @@ Use them the same way every other design token in this file is used —
 
 ## Relationship to the existing app tokens
 
-This palette is additive — it sits alongside the existing dark-chrome UI
-tokens already in `:root` (`--color-bg`, `--color-surface`,
-`--color-border`, `--color-text*`) and the existing named accents
-(`--color-orbital`, `--color-amber`, `--color-nav-accent`,
-`--color-customer-accent`). Those existing tokens were **not** changed or
-mapped onto the brand palette as part of adding these tokens — see the
-reconciliation report (shared separately) for which hardcoded colours in
-the codebase are close to a brand colour and might be worth migrating onto
-one of these tokens.
+The existing named accent tokens now **alias** the brand palette rather than
+carrying their own ad-hoc hex:
+
+| Token | Now aliases | Was |
+|---|---|---|
+| `--color-orbital` | `var(--color-brand-blue)` | `#3b82c4` |
+| `--color-orbital-strong` | `var(--color-brand-cyan)` | `#5ba0db` |
+| `--color-amber` | `var(--color-brand-gold)` | `#d4a017` |
+| `--color-nav-accent` | `var(--color-brand-orange)` | `#ff7a33` |
+| `--color-text-dim` | `var(--color-brand-grey)` | `#6b7685` |
+
+Every hardcoded literal identified as a duplicate or close match of one of
+these (across `App.css` and the scene components) was migrated onto the
+matching `--color-brand-*` token (or, in `.tsx` SVG attributes — which don't
+use `var()` anywhere else in this codebase — the literal brand hex value).
+
+`--color-customer-accent` (purple) is **not** part of this reconciliation —
+it's intentionally scoped to the Customer Portal page only, per existing
+project convention, and isn't close to any brand colour.
+
+The near-black dark-chrome UI tokens (`--color-bg`, `--color-surface`,
+`--color-border`, `--color-border-strong`, `--color-surface-raised`) were
+**deliberately left alone**, along with the many hand-tuned shading stops in
+illustrated scene art (tank/gauge/building gradients, glow shadows). These
+are neutral UI chrome and illustrative light/shadow tints, not brand-identity
+colours, even where a couple of them land mathematically close to
+`brand-indigo` or `brand-grey` — remapping them would visibly clash with the
+project's documented "dark professional chrome" look (see `CLAUDE.md`)
+without doing anything to make the site more "on brand."
 
 ## Naming
 

@@ -565,10 +565,11 @@ export function IntegratePayloadScene({
               <circle cx="7" cy="7" r="0.5" fill="rgba(110, 82, 34, 0.3)" />
               <circle cx="5" cy="2" r="0.4" fill="rgba(255, 255, 255, 0.18)" />
             </pattern>
+            {/* Sea gradient stops match the brand palette (brand-indigo / brand-navy — see index.css). */}
             <linearGradient id="haul-sea" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#123f57" />
-              <stop offset="45%" stopColor="#155f86" />
-              <stop offset="100%" stopColor="#0d4a6b" />
+              <stop offset="0%" stopColor="#1e345d" />
+              <stop offset="45%" stopColor="#00538a" />
+              <stop offset="100%" stopColor="#1e345d" />
             </linearGradient>
             <pattern
               id="haul-sea-texture"
@@ -740,7 +741,7 @@ export function IntegratePayloadScene({
               height="130"
               rx="4"
               fill="#2a3038"
-              stroke="#5a6574"
+              stroke="#777779"
               strokeWidth="2"
             />
             <rect x="18" y="195" width="20" height="22" fill="#1a222c" />
@@ -751,14 +752,14 @@ export function IntegratePayloadScene({
               width="20"
               height="28"
               fill="#151a21"
-              stroke="#5a6574"
+              stroke="#777779"
             />
             <text
               x="28"
               y="240"
               textAnchor="middle"
               transform="rotate(-90 28 240)"
-              fill="#c7cdd3"
+              fill="#c9c8c7"
               fontSize="11"
               fontFamily="Segoe UI, system-ui, sans-serif"
               fontWeight="600"
@@ -776,7 +777,7 @@ export function IntegratePayloadScene({
               height="130"
               rx="4"
               fill="#2a3038"
-              stroke="#5a6574"
+              stroke="#777779"
               strokeWidth="2"
             />
             <image
@@ -797,7 +798,7 @@ export function IntegratePayloadScene({
               width="36"
               height="28"
               fill="#151a21"
-              stroke="#5a6574"
+              stroke="#777779"
             />
             <text
               x="92"
