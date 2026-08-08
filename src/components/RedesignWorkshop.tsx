@@ -56,6 +56,7 @@ import {
   type CellKey,
 } from '../lib/roadGrid'
 import { HAUL_PATH, SCENE_HEIGHT, SCENE_WIDTH } from '../lib/pathGeometry'
+import { downloadTextFile } from '../lib/fileDownload'
 
 type RedesignTab = 'manufacture' | 'haul' | 'launch-prep' | 'launch-sequence'
 
@@ -406,6 +407,60 @@ export function RedesignWorkshop({
     setRoadError(null)
   }
 
+  /** Plain-text snapshot of every choice made so far, for "Save my current choices". */
+  function buildChoicesSummary(): string {
+    const movedNow = new Set(movedMachineIds(machinesSorted))
+    const lineOrder = machinesSorted.map((m) => m.name).join(', ')
+    const movedNames = machinesSorted
+      .filter((m) => movedNow.has(m.id))
+      .map((m) => m.name)
+    const techNames = launchPrepTechs.map(
+      (id) => LAUNCH_PREP_TECH_OPTIONS.find((o) => o.id === id)?.name ?? id,
+    )
+    const realignedNames = launchSeqRealignIds.map(
+      (id) => LAUNCH_SEQ_GO_STATIONS.find((s) => s.id === id)?.name ?? id,
+    )
+    const savedAt = new Date().toLocaleString()
+
+    const lines = [
+      'Orb-it Redesign Workshop — saved choices',
+      `${roundLabel}`,
+      `Saved: ${savedAt}`,
+      '',
+      'MANUFACTURE',
+      `Line order (left to right): ${lineOrder || 'unchanged'}`,
+      `Machines moved from factory position: ${movedNames.length > 0 ? movedNames.join(', ') : 'none'}`,
+      `Auto-transfer upgrade: ${autoMoveBooster ? 'On' : 'Off'}`,
+      '',
+      'HAUL ROAD',
+      `Net road cost: ${roadCost} pts (tiles painted beyond the original road, minus any baseline tiles sold)`,
+      '',
+      'LAUNCH PREP TECHNOLOGY',
+      `Selected: ${techNames.length > 0 ? techNames.join(', ') : 'none'}`,
+      '',
+      'LAUNCH SEQUENCE',
+      `Realigned GO calls: ${realignedNames.length > 0 ? realignedNames.join(', ') : 'none'}`,
+      `Range Safety removed from poll: ${rangeRemoved ? 'Yes' : 'No'}`,
+      `Key lubrication: ${keyLubrication ? 'Yes' : 'No'}`,
+      '',
+      'COST OF IMPROVEMENT',
+      `Manufacture: ${costBreakdown.machineMoveCost + costBreakdown.autoTransferCost} pts`,
+      `Haul road: ${costBreakdown.roadCost} pts`,
+      `Launch prep technology: ${costBreakdown.launchPrepTechCost} pts`,
+      `Launch sequence: ${costBreakdown.goRealignCost + costBreakdown.rangeRemovalCost + costBreakdown.keyLubricationCost} pts`,
+      `Total: ${costBreakdown.total} pts`,
+      '',
+      'BUDGET',
+      `Redesign budget: ${REDESIGN_BUDGET} pts`,
+      `Remaining: ${remainingBudget} pts`,
+    ]
+    return lines.join('\r\n')
+  }
+
+  function handleSaveChoices() {
+    downloadTextFile('orbit26-redesign-choices.txt', buildChoicesSummary())
+  }
+
   function validateAndLockIn() {
     const path = pathFromRoadTiles(roadTiles)
     if (!path || path.length < 2) {
@@ -459,6 +514,13 @@ export function RedesignWorkshop({
           </p>
         </div>
         <div className="sim-header__controls">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleSaveChoices}
+          >
+            Save my current choices
+          </button>
           <button
             type="button"
             className="btn btn--primary"

@@ -1,4 +1,5 @@
 import type { LeadTimeEntry } from '../types/process'
+import { downloadTextFile } from './fileDownload'
 
 const CSV_HEADERS = [
   'Round',
@@ -62,13 +63,5 @@ export function buildDataCsv(
 
 /** Trigger a browser download of `content` as a file named `filename`. */
 export function downloadCsv(filename: string, content: string): void {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+  downloadTextFile(filename, content, 'text/csv;charset=utf-8;')
 }
