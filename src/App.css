@@ -1523,6 +1523,7 @@
   width: 100%;
   height: 100%;
   min-height: 16rem;
+  isolation: isolate;
 }
 
 .redesign-haul__cell {
@@ -1569,28 +1570,66 @@
   cursor: default;
 }
 
+/*
+ * Fixed tree-cluster cells (2×3 = 6). CSS-drawn canopy + trunk — not emoji —
+ * so encoding never breaks and the icons read as trees at cell scale.
+ * overflow: visible so the larger canopy can slightly overspill the cell.
+ */
 .redesign-haul__cell--tree {
   position: relative;
-  background: color-mix(in srgb, #2f6a2a 55%, #1f4a1c);
+  z-index: 1;
+  overflow: visible;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 70%, rgba(8, 24, 6, 0.35), transparent 70%),
+    color-mix(in srgb, #2f6a2a 55%, #1f4a1c);
   cursor: default;
   box-shadow: none;
 }
 
-.redesign-haul__cell--tree::after {
-  content: 'ðŸŒ²';
+/* Trunk */
+.redesign-haul__cell--tree::before {
+  content: '';
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  line-height: 1;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
+  left: 50%;
+  bottom: 6%;
+  z-index: 1;
+  width: 22%;
+  min-width: 0.28rem;
+  height: 38%;
+  transform: translateX(-50%);
+  border-radius: 2px 2px 1px 1px;
+  background: linear-gradient(90deg, #3d2614 0%, #7a4f2a 45%, #4a2e18 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+/* Canopy — layered rounded crown, larger than the cell for presence */
+.redesign-haul__cell--tree::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -18%;
+  z-index: 2;
+  width: 118%;
+  height: 88%;
+  transform: translateX(-50%);
+  border-radius: 48% 48% 42% 42%;
+  background:
+    radial-gradient(circle at 32% 38%, #6bc468 0%, transparent 42%),
+    radial-gradient(circle at 68% 32%, #4a9e46 0%, transparent 48%),
+    radial-gradient(circle at 50% 55%, #2f7a2c 0%, #1a4f18 72%, #0f3210 100%);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.25),
+    inset 0 2px 4px rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(12, 40, 10, 0.55);
   pointer-events: none;
 }
 
 .redesign-haul__cell--tree:hover:not(:disabled) {
-  background: color-mix(in srgb, #2f6a2a 55%, #1f4a1c);
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 70%, rgba(8, 24, 6, 0.35), transparent 70%),
+    color-mix(in srgb, #2f6a2a 55%, #1f4a1c);
 }
 
 .redesign-haul__label {

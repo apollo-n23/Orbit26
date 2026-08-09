@@ -671,55 +671,91 @@ export function IntegratePayloadScene({
               matching grid cells are locked from being painted as road in
               the To-be redesign workshop.
             */}
+            {/*
+              Scene trees stay modest (execute / redesign haul preview).
+              Redesign grid cell trees are styled separately in App.css and
+              remain larger for map readability.
+            */}
             {[
-              { cx: 340, cy: 250, r: 17 },
-              { cx: 298, cy: 258, r: 20 },
-              { cx: 302, cy: 300, r: 21 },
-              { cx: 343, cy: 293, r: 17 },
-              { cx: 316, cy: 336, r: 19 },
-              { cx: 350, cy: 330, r: 16 },
+              { cx: 340, cy: 250, r: 18 },
+              { cx: 298, cy: 258, r: 21 },
+              { cx: 302, cy: 300, r: 22 },
+              { cx: 343, cy: 293, r: 18 },
+              { cx: 316, cy: 336, r: 20 },
+              { cx: 350, cy: 330, r: 17 },
             ].map((tree, i) => (
               <g key={i} transform={`translate(${tree.cx}, ${tree.cy})`}>
+                {/* Ground shadow */}
                 <ellipse
                   cx="0"
-                  cy={tree.r * 0.9}
-                  rx={tree.r * 1.0}
-                  ry={tree.r * 0.32}
-                  fill="rgba(6, 16, 5, 0.4)"
+                  cy={tree.r * 1.05}
+                  rx={tree.r * 1.15}
+                  ry={tree.r * 0.28}
+                  fill="rgba(4, 12, 3, 0.45)"
                 />
+                {/* Trunk */}
                 <rect
-                  x={-tree.r * 0.2}
-                  y={tree.r * 0.3}
-                  width={tree.r * 0.4}
-                  height={tree.r * 0.7}
-                  rx={tree.r * 0.05}
+                  x={-tree.r * 0.16}
+                  y={tree.r * 0.15}
+                  width={tree.r * 0.32}
+                  height={tree.r * 0.95}
+                  rx={tree.r * 0.06}
                   fill="#5b3a22"
                   stroke="#2e1c10"
                   strokeWidth="1.5"
                 />
-                <circle
-                  r={tree.r * 1.08}
-                  fill="#0f2b12"
+                <rect
+                  x={-tree.r * 0.06}
+                  y={tree.r * 0.2}
+                  width={tree.r * 0.08}
+                  height={tree.r * 0.7}
+                  rx={tree.r * 0.02}
+                  fill="#7a5230"
                   opacity="0.55"
                 />
+                {/* Foliage mass — layered for a fuller canopy */}
                 <circle
-                  r={tree.r}
-                  fill="#2c6b2c"
-                  stroke="#123714"
-                  strokeWidth="2.25"
-                />
-                <circle
-                  cx={-tree.r * 0.05}
                   cy={-tree.r * 0.05}
-                  r={tree.r * 0.72}
-                  fill="#3c8a3a"
-                  opacity="0.8"
+                  r={tree.r * 1.12}
+                  fill="#0f2b12"
+                  opacity="0.5"
                 />
                 <circle
-                  cx={-tree.r * 0.32}
-                  cy={-tree.r * 0.32}
-                  r={tree.r * 0.4}
+                  cy={-tree.r * 0.12}
+                  r={tree.r * 1.02}
+                  fill="#1f5a20"
+                  stroke="#123714"
+                  strokeWidth="2"
+                />
+                <circle
+                  cx={-tree.r * 0.38}
+                  cy={-tree.r * 0.22}
+                  r={tree.r * 0.62}
+                  fill="#2c6b2c"
+                />
+                <circle
+                  cx={tree.r * 0.36}
+                  cy={-tree.r * 0.18}
+                  r={tree.r * 0.58}
+                  fill="#2f7330"
+                />
+                <circle
+                  cy={-tree.r * 0.48}
+                  r={tree.r * 0.7}
+                  fill="#3c8a3a"
+                />
+                <circle
+                  cx={-tree.r * 0.18}
+                  cy={-tree.r * 0.55}
+                  r={tree.r * 0.42}
                   fill="#57b054"
+                  opacity="0.9"
+                />
+                <circle
+                  cx={tree.r * 0.22}
+                  cy={-tree.r * 0.42}
+                  r={tree.r * 0.36}
+                  fill="#6bc468"
                   opacity="0.75"
                 />
               </g>
