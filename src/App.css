@@ -6080,6 +6080,21 @@
 
 /* ── Home (Orb-it intranet landing page) ─────────────────── */
 
+/* Briefing strip between stage nav and the Welcome back banner. */
+.home-scenario {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-text) 90%, var(--color-text-muted));
+  border: 1px solid color-mix(in srgb, var(--color-orbital) 28%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-orbital) 10%, var(--color-surface));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
 .home-header {
   display: flex;
   align-items: center;
@@ -6283,7 +6298,13 @@
   text-align: center;
 }
 
-/* ── Training (video placeholder) ────────────────────────── */
+/* ── Training (video placeholder + employee instructions) ─ */
+
+.training-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
 
 .training-video-pane {
   display: flex;
@@ -6313,8 +6334,138 @@
   font-size: 0.9rem;
 }
 
+.training-instructions {
+  padding: var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--color-orbital) 28%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-orbital) 8%, var(--color-surface-raised));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.training-instructions h3 {
+  margin: 0 0 var(--space-3);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--color-text);
+}
+
+.training-instructions > p {
+  margin: 0 0 var(--space-3);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--color-text) 88%, var(--color-text-muted));
+}
+
+.training-instructions > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Team photo — full width of the instructions pane, reserved min height. */
+.training-team {
+  display: block;
+  width: 100%;
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #ffffff 12%, var(--color-border));
+  background: #0c1016;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.training-team__image {
+  display: block;
+  width: 100%;
+  /* Fixed height so the photo always occupies visible space (no collapse). */
+  height: 22rem;
+  object-fit: cover;
+  object-position: center 45%;
+  background: #0c1016;
+}
+
+.training-team__caption {
+  display: block;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+  text-align: center;
+  border-top: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface-raised) 92%, transparent);
+}
+
+.training-instructions__steps {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.training-instructions__steps li {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+}
+
+.training-instructions__steps li span {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-text) 86%, var(--color-text-muted));
+  padding-top: 0.2rem;
+}
+
+.training-instructions__stage-btn {
+  justify-self: start;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-nav-accent) 45%, var(--color-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-nav-accent) 14%, var(--color-surface));
+  color: var(--color-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.training-instructions__stage-btn:hover {
+  border-color: var(--color-nav-accent);
+  background: color-mix(in srgb, var(--color-nav-accent) 24%, var(--color-surface));
+}
+
+.training-instructions__inline-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-customer-accent);
+  font-size: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.training-instructions__inline-link:hover {
+  color: var(--color-customer-accent-strong);
+}
+
+@media (max-width: 560px) {
+  .training-instructions__steps li {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+}
+
 .training-cta {
-  margin-top: var(--space-4);
+  margin: 0;
   color: var(--color-text-muted);
   font-size: 0.9rem;
 }
@@ -6331,15 +6482,78 @@
 
 /* ── Annual Report ────────────────────────────────────────── */
 
+/*
+ * Orbital photo is set inline on the panel (backgroundImage) so it always
+ * resolves via BASE_URL. Portrait source (≈9:16 / 1008×1792) uses cover +
+ * center 40% so the booster stays framed on wide viewports.
+ * Do not put an opaque fill on .view-panel__body here — it would hide the photo.
+ */
+.annual-report.view-panel {
+  position: relative;
+  isolation: isolate;
+  /* Fallback only — image/gradient come from the component style prop */
+  background-color: #070b12;
+  border-color: color-mix(in srgb, #ffffff 14%, var(--color-border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 48px rgba(0, 0, 0, 0.35);
+}
+
+/* Shared frosted glass surface for content over the photo. */
+.annual-report__pane {
+  background: rgba(23, 27, 33, 0.62);
+  border: 1px solid color-mix(in srgb, #ffffff 14%, var(--color-border));
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+
 .annual-report__masthead {
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
+  margin: var(--space-4) var(--space-4) 0;
+  padding: var(--space-4) var(--space-5);
+  border-radius: calc(var(--radius-md) + 2px);
+  border-bottom: none;
+  /* Override .view-panel__header solid fill so the photo shows around/through it */
+  background: rgba(23, 27, 33, 0.68);
+}
+
+.annual-report__masthead h2 {
+  color: var(--color-text);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+}
+
+.annual-report__masthead .view-panel__lede {
+  color: color-mix(in srgb, var(--color-text) 82%, var(--color-text-muted));
+}
+
+/* White circular badge behind the logo — same treatment as Home. */
+.annual-report__logo-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.annual-report__logo-badge--masthead {
+  width: 4.25rem;
+  height: 4.25rem;
+}
+
+.annual-report__logo-badge--footer {
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
 .annual-report__masthead-logo {
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
+  display: block;
 }
 
 .annual-report__eyebrow {
@@ -6349,35 +6563,54 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-brand-orange);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 
 .annual-report__body {
   max-width: 52rem;
+  width: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
+  /* Must stay transparent — opaque body would hide the panel photo */
+  background: transparent !important;
+  padding: var(--space-4) var(--space-4) var(--space-5);
+}
+
+.annual-report__section.annual-report__pane {
+  padding: var(--space-5);
+  border-radius: calc(var(--radius-md) + 2px);
 }
 
 .annual-report__section h3 {
   margin: 0 0 var(--space-3);
   font-size: 1.05rem;
   font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.01em;
 }
 
 .annual-report__section p {
   margin: 0 0 var(--space-3);
   font-size: 0.9rem;
-  line-height: 1.6;
-  color: var(--color-text-muted);
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--color-text) 88%, var(--color-text-muted));
+}
+
+.annual-report__section p:last-child {
+  margin-bottom: 0;
 }
 
 .annual-report-chart {
   margin: 0;
   padding: var(--space-4);
-  border: 1px solid var(--color-border);
+  border: 1px solid color-mix(in srgb, #ffffff 10%, var(--color-border));
   border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
+  background: rgba(30, 36, 44, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .annual-report-chart svg {
@@ -6389,41 +6622,45 @@
 .annual-report-chart__caption {
   margin-top: var(--space-2);
   font-size: 0.8rem;
-  color: var(--color-text-muted);
+  color: color-mix(in srgb, var(--color-text) 75%, var(--color-text-muted));
   text-align: center;
 }
 
 .annual-report__challenges {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .annual-report__challenge-card {
   padding: var(--space-4);
-  border: 1px solid color-mix(in srgb, var(--color-brand-orange) 35%, var(--color-border));
+  border: 1px solid color-mix(in srgb, var(--color-brand-orange) 40%, transparent);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-brand-orange) 6%, var(--color-surface-raised));
+  background: rgba(255, 131, 0, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .annual-report__challenge-card h4 {
   margin: 0 0 var(--space-2);
   font-size: 0.9rem;
   font-weight: 700;
+  color: var(--color-text);
 }
 
 .annual-report__challenge-card p {
   margin: 0;
   font-size: 0.85rem;
   line-height: 1.55;
-  color: var(--color-text-muted);
+  color: color-mix(in srgb, var(--color-text) 86%, var(--color-text-muted));
 }
 
 .annual-report__call-to-arms {
   padding: var(--space-5);
-  border: 2px solid var(--color-amber);
-  border-radius: var(--radius-md);
-  background: var(--color-amber-dim);
+  border-radius: calc(var(--radius-md) + 2px);
+  border: 1px solid color-mix(in srgb, var(--color-amber) 55%, transparent);
+  background: rgba(255, 198, 39, 0.14);
 }
 
 .annual-report__call-to-arms h3 {
@@ -6431,12 +6668,13 @@
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--color-amber);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
 }
 
 .annual-report__call-to-arms p {
   margin: 0 0 var(--space-4);
   font-size: 0.9rem;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--color-text);
 }
 
@@ -6444,12 +6682,12 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  padding: var(--space-3) var(--space-4);
+  border-radius: calc(var(--radius-md) + 2px);
+  color: color-mix(in srgb, var(--color-text) 80%, var(--color-text-muted));
   font-size: 0.85rem;
 }
 
 .annual-report__footer img {
-  border-radius: var(--radius-sm);
+  display: block;
 }

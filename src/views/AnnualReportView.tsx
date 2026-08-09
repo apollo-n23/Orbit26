@@ -1,8 +1,11 @@
+import type { CSSProperties } from 'react'
 import { SiteBrand } from '../components/SiteBrand'
 import { StageNav } from '../components/StageNav'
 import type { AppStage } from '../types/round'
 
 const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
+/** Cache-bust when the public file is replaced in-place (same filename). */
+const ORBIT_BOOST_SRC = `${import.meta.env.BASE_URL}OrbitBoost.jpg?v=3`
 
 interface AnnualReportViewProps {
   activeStage: AppStage
@@ -164,16 +167,29 @@ export function AnnualReportView({
         <section
           className="view-panel annual-report"
           aria-labelledby="annual-report-heading"
+          style={
+            {
+              backgroundImage: [
+                'linear-gradient(165deg, rgba(7, 11, 18, 0.42) 0%, rgba(7, 11, 18, 0.18) 45%, rgba(7, 11, 18, 0.5) 100%)',
+                `url("${ORBIT_BOOST_SRC}")`,
+              ].join(', '),
+              backgroundSize: 'cover',
+              backgroundPosition: 'center 40%',
+              backgroundRepeat: 'no-repeat',
+            } satisfies CSSProperties
+          }
         >
-          <header className="view-panel__header annual-report__masthead">
-            <img
-              src={ORBIT_LOGO_SRC}
-              alt="Orb-it"
-              className="annual-report__masthead-logo"
-              width={56}
-              height={56}
-              decoding="async"
-            />
+          <header className="view-panel__header annual-report__masthead annual-report__pane">
+            <span className="annual-report__logo-badge annual-report__logo-badge--masthead">
+              <img
+                src={ORBIT_LOGO_SRC}
+                alt="Orb-it"
+                className="annual-report__masthead-logo"
+                width={56}
+                height={56}
+                decoding="async"
+              />
+            </span>
             <div>
               <p className="annual-report__eyebrow">FY2025 Annual Report</p>
               <h2 id="annual-report-heading">Orb-it Satellite Constellation</h2>
@@ -185,7 +201,7 @@ export function AnnualReportView({
           </header>
 
           <div className="view-panel__body annual-report__body">
-            <section className="annual-report__section">
+            <section className="annual-report__section annual-report__pane">
               <h3>Who we are</h3>
               <p>
                 Orb-it designs, integrates, and launches the boosters that
@@ -203,12 +219,12 @@ export function AnnualReportView({
               </p>
             </section>
 
-            <section className="annual-report__section">
+            <section className="annual-report__section annual-report__pane">
               <h3>Net revenue, FY21–FY25</h3>
               <SalesDeclineChart />
             </section>
 
-            <section className="annual-report__section">
+            <section className="annual-report__section annual-report__pane">
               <h3>The challenges ahead</h3>
               <div className="annual-report__challenges">
                 <div className="annual-report__challenge-card">
@@ -245,7 +261,7 @@ export function AnnualReportView({
               </div>
             </section>
 
-            <section className="annual-report__call-to-arms">
+            <section className="annual-report__call-to-arms annual-report__pane">
               <h3>A call to arms</h3>
               <p>
                 The Executive Leadership Team is chartering a company-wide
@@ -266,14 +282,16 @@ export function AnnualReportView({
               </button>
             </section>
 
-            <footer className="annual-report__footer">
-              <img
-                src={ORBIT_LOGO_SRC}
-                alt="Orb-it"
-                width={28}
-                height={28}
-                decoding="async"
-              />
+            <footer className="annual-report__footer annual-report__pane">
+              <span className="annual-report__logo-badge annual-report__logo-badge--footer">
+                <img
+                  src={ORBIT_LOGO_SRC}
+                  alt="Orb-it"
+                  width={28}
+                  height={28}
+                  decoding="async"
+                />
+              </span>
               <span>Orb-it Executive Leadership Team</span>
             </footer>
           </div>

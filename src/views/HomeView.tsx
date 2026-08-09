@@ -20,7 +20,7 @@ interface IntranetTile {
 const TILES: IntranetTile[] = [
   {
     stage: 'training',
-    title: 'Train',
+    title: 'Training and help',
     description:
       'Onboarding and process-excellence training materials for Assembly, Integration, and Launch Preparation staff.',
     icon: '🎓',
@@ -53,6 +53,13 @@ export function HomeView({ activeStage, onNavigateStage }: HomeViewProps) {
       </header>
       <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
       <main className="app-main">
+        <p className="home-scenario">
+          Here is a scenario where you have a process which clearly needs
+          improvement: the process of launching a rocket. But you have a
+          limited change budget and specific customer requirements, so you
+          must take a structured approach to figuring out precisely which
+          changes to make an improvement.
+        </p>
         <section className="view-panel" aria-labelledby="home-heading">
           <header className="view-panel__header home-header">
             <span className="home-header__logo-badge">
