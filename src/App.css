@@ -2271,6 +2271,7 @@
   padding: var(--space-5);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  /* Fallback if the floor image fails to load */
   background:
     linear-gradient(180deg, #12161c 0%, #0c0f13 55%, #151a21 100%);
   overflow: hidden;
@@ -2280,20 +2281,45 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-orbital) 35%, transparent);
 }
 
+/* Top-down assembly floor — under machines, line, booster, access banner. */
+.manufacture-scene__floor-bg {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.manufacture-scene__floor-bg-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/*
+ * Legibility wash over the floor photo — keep the art visible but
+ * darken enough that machine cards and chrome read clearly on top.
+ */
 .manufacture-scene__sky {
   pointer-events: none;
   position: absolute;
   inset: 0;
+  z-index: 0;
   background:
-    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0, 129, 201, 0.08), transparent 60%),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 48px,
-      rgba(42, 50, 61, 0.25) 48px,
-      rgba(42, 50, 61, 0.25) 49px
+    radial-gradient(
+      ellipse 90% 75% at 50% 40%,
+      rgba(8, 10, 14, 0.22) 0%,
+      rgba(8, 10, 14, 0.55) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(8, 10, 14, 0.45) 0%,
+      rgba(8, 10, 14, 0.2) 38%,
+      rgba(8, 10, 14, 0.48) 100%
     );
-  opacity: 0.7;
+  opacity: 1;
 }
 
 /* Floor: parked machines above, belt + booster below */
@@ -2357,8 +2383,11 @@
   margin-top: -1.375rem;
   border-radius: 4px;
   background: linear-gradient(180deg, #2a3038 0%, #1a1e24 45%, #252b33 100%);
-  border: 1px solid #3a424e;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+  border: 1px solid #4a5462;
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.45),
+    0 4px 14px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: space-evenly;
@@ -2380,8 +2409,9 @@
   margin-top: -0.28rem;
   margin-left: -0.28rem;
   border-radius: 50%;
-  background: #4a5462;
-  border: 1px solid var(--color-brand-grey);
+  background: #6a7482;
+  border: 1px solid #c5ccd6;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45);
   transform: translateX(0);
   z-index: 1;
 }
@@ -2473,7 +2503,7 @@
   display: flex;
   align-items: center;
   gap: 0;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.65));
   transition: transform 300ms ease;
 }
 
@@ -2764,7 +2794,7 @@
   padding: 0.15rem 0.5rem;
 }
 
-/* Access-code banner â€” current station code for the operator */
+/* Access-code banner — current station code for the operator */
 
 .manufacture-code-banner {
   position: relative;
@@ -2776,15 +2806,18 @@
   gap: var(--space-3);
   margin: 0 var(--space-4);
   padding: var(--space-2) var(--space-4);
-  border: 1px solid color-mix(in srgb, var(--color-amber) 55%, var(--color-border));
+  border: 1px solid color-mix(in srgb, var(--color-amber) 65%, var(--color-border));
   border-radius: var(--radius-md);
   background:
     linear-gradient(
       90deg,
-      color-mix(in srgb, var(--color-amber-dim) 80%, transparent),
-      color-mix(in srgb, var(--color-surface-raised) 90%, #000)
+      color-mix(in srgb, var(--color-surface) 92%, #000),
+      color-mix(in srgb, var(--color-surface-raised) 96%, #000)
     );
-  box-shadow: 0 0 20px color-mix(in srgb, var(--color-amber) 12%, transparent);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 24px color-mix(in srgb, var(--color-amber) 18%, transparent);
 }
 
 .manufacture-code-banner__kicker {
@@ -2793,11 +2826,13 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-amber);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
 .manufacture-code-banner__body {
   font-size: 0.85rem;
-  color: var(--color-text-muted);
+  color: var(--color-text);
+  font-weight: 600;
 }
 
 .manufacture-code-banner__code {
@@ -2808,11 +2843,12 @@
   color: var(--color-text);
   padding: 0.15rem 0.65rem 0.15rem 0.85rem;
   border-radius: var(--radius-sm);
-  border: 1px solid color-mix(in srgb, var(--color-amber) 50%, var(--color-border));
-  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-amber) 55%, var(--color-border));
+  background: #0a0d12;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
 
-/* Machines â€” parkOffset varies per station; approach slides down to the belt */
+/* Machines — parkOffset varies per station; approach slides down to the belt */
 
 .factory-machine {
   position: relative;
@@ -2825,10 +2861,20 @@
   max-width: 10.5rem;
   min-width: 0;
   padding: var(--space-3) var(--space-2) var(--space-2);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-surface-raised) 88%, #000);
+  /* Opaque dark chrome so idle machines stay visible over the floor photo */
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-raised) 96%, #2a323d) 0%,
+      #12161c 100%
+    );
   color: var(--color-text);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   /* Park above the line by --park-offset; travel uses --machine-travel-ms */
   --park-offset: 1.5rem;
   --line-approach-y: 5.25rem;
@@ -2841,19 +2887,25 @@
 }
 
 .factory-machine--locked {
-  opacity: 0.45;
+  /* Keep locked cards legible — dim slightly, do not fade into the floor */
+  opacity: 0.72;
+  filter: saturate(0.85);
 }
 
 .factory-machine--awaiting {
-  border-color: color-mix(in srgb, var(--color-orbital) 45%, var(--color-border));
-  opacity: 0.9;
+  border-color: color-mix(in srgb, var(--color-orbital) 55%, var(--color-border-strong));
+  opacity: 1;
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.55),
+    0 0 0 1px color-mix(in srgb, var(--color-orbital) 25%, transparent);
 }
 
 .factory-machine--required {
   border-color: var(--color-orbital);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-orbital) 40%, transparent),
-    0 0 18px color-mix(in srgb, var(--color-orbital) 25%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--color-orbital) 50%, transparent),
+    0 0 20px color-mix(in srgb, var(--color-orbital) 35%, transparent),
+    0 8px 20px rgba(0, 0, 0, 0.5);
   animation: machine-pulse 1.4s ease-in-out infinite;
 }
 
@@ -2889,8 +2941,14 @@
 }
 
 .factory-machine--done {
-  border-color: color-mix(in srgb, var(--color-orbital) 40%, var(--color-border));
-  opacity: 0.85;
+  border-color: color-mix(in srgb, var(--color-orbital) 50%, var(--color-border-strong));
+  opacity: 0.95;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-raised) 90%, var(--color-orbital)) 0%,
+      #12161c 100%
+    );
 }
 
 @keyframes machine-pulse {
@@ -2909,49 +2967,68 @@
 
 .factory-machine__badge {
   position: absolute;
-  top: -0.55rem;
-  left: -0.55rem;
-  width: 1.5rem;
-  height: 1.5rem;
+  top: -1.1rem;
+  left: -1.1rem;
+  /* ~3× the previous 1.5rem badge for stronger station numbering */
+  width: 4.5rem;
+  height: 4.5rem;
   display: grid;
   place-items: center;
   border-radius: 50%;
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-  font-weight: 700;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
-  color: var(--color-text-muted);
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  background: #141a22;
+  border: 3px solid var(--color-border-strong);
+  color: var(--color-text);
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  z-index: 3;
 }
 
 .factory-machine--required .factory-machine__badge {
   background: var(--color-orbital);
   border-color: var(--color-orbital-strong);
   color: #fff;
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.55),
+    0 0 16px color-mix(in srgb, var(--color-orbital) 45%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .factory-machine--done .factory-machine__badge {
-  background: color-mix(in srgb, var(--color-orbital) 35%, var(--color-surface));
-  border-color: var(--color-orbital);
-  color: var(--color-orbital-strong);
+  background: color-mix(in srgb, var(--color-orbital) 45%, #141a22);
+  border-color: var(--color-orbital-strong);
+  color: #eaf6ff;
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.55),
+    0 0 0 1px color-mix(in srgb, var(--color-orbital) 35%, transparent);
 }
 
 .factory-machine__label {
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
   line-height: 1.25;
+  color: var(--color-text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
 }
 
 .factory-machine__hint {
   font-size: 0.68rem;
+  font-weight: 600;
   color: var(--color-orbital-strong);
   min-height: 1rem;
   text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
 .factory-machine__hint--done {
-  color: var(--color-text-dim);
+  color: color-mix(in srgb, var(--color-text) 70%, var(--color-text-muted));
 }
 
 .factory-machine__code {
@@ -2976,13 +3053,14 @@
   padding: 0.3rem 0.4rem;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
-  background: var(--color-bg);
+  background: #0a0d12;
   color: var(--color-text);
   font-family: var(--font-mono);
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-align: center;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 .factory-machine__code-input:focus {
@@ -3203,16 +3281,25 @@
 .manufacture-scene__feedback {
   position: relative;
   z-index: 2;
-  margin: var(--space-2) 0 0;
+  margin: var(--space-2) auto 0;
+  max-width: 36rem;
+  padding: 0.4rem 0.85rem;
   text-align: center;
   font-size: 0.85rem;
-  color: var(--color-text-muted);
+  font-weight: 600;
+  color: var(--color-text);
   min-height: 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  background: color-mix(in srgb, var(--color-surface) 94%, #000);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 
 .manufacture-scene__feedback--alert {
   color: var(--color-amber);
-  font-weight: 600;
+  font-weight: 700;
+  border-color: color-mix(in srgb, var(--color-amber) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-surface) 88%, var(--color-amber-dim));
 }
 
 .manufacture-scene__proceed {
@@ -6702,31 +6789,27 @@
 }
 
 .training-video-pane {
+  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
   min-height: 16rem;
-  border: 2px dashed var(--color-border-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-bg) 55%, var(--color-surface));
+  background: #05070a;
+  overflow: hidden;
+  /* Block click/tap so the loop cannot be paused or scrubbed. */
+  pointer-events: none;
+  user-select: none;
 }
 
-.training-video-pane__icon {
-  display: grid;
-  place-items: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 50%;
-  background: var(--color-orbital-dim);
-  color: var(--color-orbital-strong);
-  font-size: 1.25rem;
-}
-
-.training-video-pane__text {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
+.training-video-pane__video {
+  display: block;
+  width: 100%;
+  max-height: min(28rem, 55vh);
+  height: auto;
+  object-fit: contain;
+  background: #05070a;
 }
 
 .training-instructions {

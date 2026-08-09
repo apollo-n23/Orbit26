@@ -1,32 +1,42 @@
-# React + TypeScript + Vite
+# Orbit26 — Orb-it Process Excellence Simulator
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Web-based Lean Six Sigma learning tool set at **Orb-it**, a fictional satellite constellation company. Learners improve a satellite integration and launch value stream; the primary metric is **lead time** across **As-is** and **To-be** rounds.
 
-Currently, two official plugins are available:
+## Quick start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Open [http://127.0.0.1:5173/](http://127.0.0.1:5173/). On Windows PowerShell, use `npm.cmd` if `npm` is blocked by execution policy.
+
+| Script | Purpose |
+|--------|---------|
+| `npm run dev` | Vite dev server |
+| `npm run build` | Typecheck + production build |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Oxlint |
+
+## Learning loop (high level)
+
+1. **Home** (`#/home`) — intranet hub (Training and help, Annual Report, Create Invoices).
+2. **Training** — looping teaser video + employee instructions.
+3. **Regulation** — fictional NSLA rules (Weather / Range optional; Capcom required).
+4. **Customer Portal** — Starfeed voice-of-customer.
+5. **Gemba** — inspect As-is process steps freely.
+6. **As-is** — three launches on the baseline process; lead times saved locally.
+7. **Redesign** — budgeted improvements (manufacture, haul road, launch-prep tech, launch sequence).
+8. **To-be** — three launches on the locked design; compare to As-is on Data.
+
+Product rules, routes, redesign costs, and scene conventions live in **[CLAUDE.md](./CLAUDE.md)** (project instructions for agents and contributors). Brand palette: **[docs/brand/brand-tokens.md](./docs/brand/brand-tokens.md)**.
+
+## Stack
+
+- TypeScript + React 19 + Vite 8
+- Client-side hash routing (`AppStage` / `stageFromHash`)
+- No heavy game engines or charting libraries
+
+## Deploy
+
+Built for static hosting (e.g. Vercel) from `main`. Production output: `npm run build` → `dist/`.

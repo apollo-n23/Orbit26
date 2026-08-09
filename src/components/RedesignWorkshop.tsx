@@ -57,6 +57,7 @@ import {
 } from '../lib/roadGrid'
 import { HAUL_PATH, SCENE_HEIGHT, SCENE_WIDTH } from '../lib/pathGeometry'
 import { downloadTextFile } from '../lib/fileDownload'
+import { getRoundConfig } from '../data/rounds'
 
 type RedesignTab = 'manufacture' | 'haul' | 'launch-prep' | 'launch-sequence'
 
@@ -147,10 +148,10 @@ export function RedesignWorkshop({
   const [roadTiles, setRoadTiles] = useState<Set<CellKey>>(() =>
     rasterizePath(haulDefaultPath),
   )
-  // The road as it stood when this redesign session started — already
-  // built, so it's free. Frozen at mount; never mutated afterward.
-  const [baselineRoadTiles] = useState<Set<CellKey>>(() =>
-    rasterizePath(haulDefaultPath),
+  // The road that is free this session (0 pts). Normally frozen at mount;
+  // "Reset to the as-is" rewrites it so the baseline road is free again.
+  const [baselineRoadTiles, setBaselineRoadTiles] = useState<Set<CellKey>>(
+    () => rasterizePath(haulDefaultPath),
   )
 
   const machinesSorted = useMemo(() => {
@@ -545,6 +546,58 @@ export function RedesignWorkshop({
     downloadTextFile('orbit26-redesign-choices.txt', buildChoicesSummary())
   }
 
+  /**
+   * Discard every redesign choice and restore the As-is baseline layout
+   * (machines, road, pad tech, launch sequence). Clears cost ratchets so
+   * the budget starts from 0 again — same spirit as a fresh workshop visit.
+   */
+  function handleResetToAsIs() {
+    const asIs = structuredClone(getRoundConfig(1).process)
+    // Keep this round's process identity (To-be id / name / version).
+    const reset: ProcessVersion = {
+      ...asIs,
+      id: initialProcess.id,
+      name: initialProcess.name,
+      version: initialProcess.version,
+    }
+    // Ensure no residual redesign fields on version or steps.
+    delete reset.launchPrepTechs
+    delete reset.launchSeqRealignIds
+    delete reset.launchSeqRemovedIds
+    delete reset.keyLubrication
+    delete reset.haulPathOverride
+    delete reset.costBreakdown
+    delete reset.autoMoveBooster
+    reset.steps = reset.steps.map((step) => {
+      const next = { ...step }
+      delete next.launchPrepTechs
+      delete next.launchSeqRealignIds
+      delete next.launchSeqRemovedIds
+      delete next.keyLubrication
+      delete next.haulPath
+      delete next.autoMoveBooster
+      return next
+    })
+
+    const asIsPath = getHaulStep(reset)?.haulPath ?? HAUL_PATH
+    const asIsTiles = rasterizePath(asIsPath)
+
+    setDraft(reset)
+    setRoadTiles(asIsTiles)
+    setBaselineRoadTiles(asIsTiles)
+    setEverMovedMachineIds(new Set())
+    setEverAutoTransferOn(false)
+    setEverSelectedTechIds(new Set())
+    setEverRealignedGoIds(new Set())
+    setEverRemovedGoIds(new Set())
+    setEverKeyLubricationOn(false)
+    setUpgradePanelOpen(false)
+    setLaunchSeqInfoId(null)
+    setRoadError(null)
+    setBudgetError(null)
+    setShowConfirmDialog(false)
+  }
+
   function validateAndLockIn() {
     const path = pathFromRoadTiles(roadTiles)
     if (!path || path.length < 2) {
@@ -598,6 +651,13 @@ export function RedesignWorkshop({
           </p>
         </div>
         <div className="sim-header__controls">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleResetToAsIs}
+          >
+            Reset to the as-is
+          </button>
           <button
             type="button"
             className="btn btn--ghost"

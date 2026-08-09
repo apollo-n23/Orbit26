@@ -4,6 +4,7 @@ import type { AppStage } from '../types/round'
 
 /** Public asset — cache-bust if the file is replaced in place. */
 const ORBIT_TEAM_SRC = `${import.meta.env.BASE_URL}OrbitTeam.jpg?v=2`
+const TRAINING_TEASER_SRC = `${import.meta.env.BASE_URL}${encodeURIComponent('Orbit26 Teaser.mp4')}`
 
 interface TrainingViewProps {
   activeStage: AppStage
@@ -11,10 +12,9 @@ interface TrainingViewProps {
 }
 
 /**
- * Training destination reached from Home. For now this is a stub: a pane
- * reserved for an embedded training video (to be added once the video
- * exists) plus a way through to the interactive simulator. No state of its
- * own — mounted only while stage === 'training'.
+ * Training destination reached from Home: looping teaser video plus
+ * employee instructions and a path into the interactive simulator.
+ * Mounted only while stage === 'training'.
  */
 export function TrainingView({
   activeStage,
@@ -29,20 +29,32 @@ export function TrainingView({
       <main className="app-main">
         <section className="view-panel" aria-labelledby="training-heading">
           <header className="view-panel__header">
-            <h2 id="training-heading">Train</h2>
+            <h2 id="training-heading">Training and help</h2>
             <p className="view-panel__lede">
-              Process-excellence training video — coming soon.
+              Process-excellence orientation video and employee instructions.
             </p>
           </header>
 
           <div className="view-panel__body training-body">
-            <div className="training-video-pane" role="img" aria-label="Training video placeholder">
-              <span className="training-video-pane__icon" aria-hidden="true">
-                ▶
-              </span>
-              <p className="training-video-pane__text">
-                Training video will be embedded here.
-              </p>
+            <div className="training-video-pane">
+              {/*
+                Muted is required for reliable autoplay in modern browsers.
+                No controls + pointer-events: none so the loop cannot be paused.
+              */}
+              <video
+                className="training-video-pane__video"
+                src={TRAINING_TEASER_SRC}
+                autoPlay
+                loop
+                muted
+                playsInline
+                disablePictureInPicture
+                disableRemotePlayback
+                controls={false}
+                controlsList="nodownload nofullscreen noremoteplayback"
+                tabIndex={-1}
+                aria-label="Orb-it training teaser video, playing on loop"
+              />
             </div>
 
             <section

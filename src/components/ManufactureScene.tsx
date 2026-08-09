@@ -15,6 +15,8 @@ import {
 } from '../types/process'
 import { Booster } from './Booster'
 
+const ASSEMBLY_BG_SRC = `${import.meta.env.BASE_URL}AssemblyBG.jpg`
+
 interface ManufactureSceneProps {
   machines: ProcessMachine[]
   run: RunState
@@ -533,6 +535,18 @@ export function ManufactureScene({
         .filter(Boolean)
         .join(' ')}
     >
+      {/*
+        Top-down floor art behind machines, belt, booster, and access banner.
+        Shared by every host of this scene (Gemba / As-is / To-be / Redesign).
+      */}
+      <div className="manufacture-scene__floor-bg" aria-hidden="true">
+        <img
+          src={ASSEMBLY_BG_SRC}
+          alt=""
+          className="manufacture-scene__floor-bg-img"
+          decoding="async"
+        />
+      </div>
       <div className="manufacture-scene__sky" aria-hidden="true" />
 
       {required && !stepDone && (
