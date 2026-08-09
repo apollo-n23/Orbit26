@@ -5,6 +5,41 @@ import type { AppStage } from '../types/round'
 
 const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
 
+/**
+ * Gender-appropriate profile photo per named customer/reply author (from the
+ * 15 images supplied in public/, named "<M|F> Profile <n>.png" — one letter
+ * denotes gender). Assigned once per handle and never reused, so the same
+ * person shows the same photo everywhere they appear (as a post author or
+ * as a reply). Two names whose gender isn't clear from the name alone
+ * (Dana Kowalski @SatComm_Dana, Jo Simmons @PadWatcherJo) are deliberately
+ * left out — they fall back to initials, per the brief ("some messages
+ * must still just have initials"). Filenames match exactly what's in
+ * public/, including the one lowercase "profile" (M profile 11.png).
+ */
+const AVATAR_FILE_BY_HANDLE: Record<string, string> = {
+  '@AltitudeAnna': 'F Profile 2.png', // Anna Reyes
+  '@OrbitalOlive': 'F Profile 4.png', // Olive Tran
+  '@QuietOrbit_Nia': 'F Profile 6.png', // Nia Fletcher
+  '@ApogeeAmara': 'F Profile 8.png', // Amara Solis
+  '@LEOWatchdog': 'F Profile 9.png', // Priya Chandra
+  '@MissionControl_Karen': 'F Profile 12.png', // Karen Boyle
+  '@LaunchDayLiz': 'F Profile 15.png', // Liz Fontaine
+
+  '@SkyBound_Theo': 'M Profile 1.png', // Theo Marsh
+  '@LaunchLagLarry': 'M Profile 3.png', // Larry Osei
+  '@RideShareRaj': 'M Profile 5.png', // Raj Malhotra
+  '@PayloadPete': 'M Profile 7.png', // Pete Nakamura
+  '@GroundControl_Mo': 'M Profile 10.png', // Mo Abara
+  '@StarGazer_Sal': 'M profile 11.png', // Sal Whitfield
+  '@LeanLuca': 'M Profile 13.png', // Luca Ferretti
+  '@ScheduleSam': 'M Profile 14.png', // Sam Okafor
+}
+
+function avatarSrcForHandle(handle: string): string | null {
+  const file = AVATAR_FILE_BY_HANDLE[handle]
+  return file ? `${import.meta.env.BASE_URL}${encodeURIComponent(file)}` : null
+}
+
 interface CustomerReply {
   handle: string
   displayName: string
@@ -432,6 +467,7 @@ export function CustomerPortalView({
               <div className="customer-feed" aria-label="Customer social feed">
                 {POSTS.map((post) => {
                   const isOpen = expanded.has(post.handle)
+                  const postAvatarSrc = avatarSrcForHandle(post.handle)
                   return (
                     <div key={post.handle} className="customer-post-row">
                       <article
@@ -448,7 +484,11 @@ export function CustomerPortalView({
                         }}
                       >
                         <div className="customer-post__avatar" aria-hidden="true">
-                          {initials(post.displayName)}
+                          {postAvatarSrc ? (
+                            <img src={postAvatarSrc} alt="" />
+                          ) : (
+                            initials(post.displayName)
+                          )}
                         </div>
                         <div className="customer-post__body">
                           <div className="customer-post__meta">
@@ -471,7 +511,11 @@ export function CustomerPortalView({
 
                           {isOpen && (
                             <div className="customer-replies">
-                              {post.replies.map((reply, i) => (
+                              {post.replies.map((reply, i) => {
+                                const replyAvatarSrc = reply.isCompany
+                                  ? ORBIT_LOGO_SRC
+                                  : avatarSrcForHandle(reply.handle)
+                                return (
                                 <div
                                   key={i}
                                   className={
@@ -481,8 +525,8 @@ export function CustomerPortalView({
                                   }
                                 >
                                   <div className="customer-reply__avatar" aria-hidden="true">
-                                    {reply.isCompany ? (
-                                      <img src={ORBIT_LOGO_SRC} alt="" />
+                                    {replyAvatarSrc ? (
+                                      <img src={replyAvatarSrc} alt="" />
                                     ) : (
                                       initials(reply.displayName)
                                     )}
@@ -505,7 +549,7 @@ export function CustomerPortalView({
                                     <p className="customer-reply__text">{reply.body}</p>
                                   </div>
                                 </div>
-                              ))}
+                              )})}
                             </div>
                           )}
                         </div>
