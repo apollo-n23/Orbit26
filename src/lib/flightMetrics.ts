@@ -14,3 +14,12 @@ export function formatHeightMiles(miles: number | undefined): string {
   if (miles == null) return '—'
   return `${miles} mi`
 }
+
+/** Display height for a lead-time board / CSV entry (handles Capcom removal). */
+export function formatHeightAchieved(entry: {
+  heightAchievedMiles?: number
+  heightStatus?: 'no-capcom'
+}): string {
+  if (entry.heightStatus === 'no-capcom') return 'NO CAPCOM'
+  return formatHeightMiles(entry.heightAchievedMiles)
+}

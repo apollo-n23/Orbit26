@@ -11,7 +11,7 @@ interface LaunchPrepSceneProps {
   run: RunState
   onActionComplete: () => void
   /**
-   * Round 2 technology investments (any number — not mutually exclusive).
+   * To-be technology investments (any number — not mutually exclusive).
    * Prefer `process` when available so techs are re-resolved on each run start.
    */
   techs?: LaunchPrepTech[] | null
@@ -52,7 +52,7 @@ function resolveSceneTechs(
 /**
  * Pad-side launch preparation: mate booster to tower, crane-stack payload,
  * fuel umbilicals, power-up checklist. Each sub-task must be completed in order.
- * Optional Round 2 techs simplify fuel, power, or payload stack.
+ * Optional To-be techs simplify fuel, power, or payload stack.
  */
 export function LaunchPrepScene({
   run,

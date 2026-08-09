@@ -40,7 +40,7 @@ import type { LaunchPrepTech, RunState } from '../types/process'
 import {
   INITIAL_RUN_STATE,
   LAUNCH_SEQ_GO_STATIONS,
-  LAUNCH_SEQ_RANGE_STATION_ID,
+  isLaunchSeqRemovableStationId,
 } from '../types/process'
 import { finishLaunchSequenceAction, markOnPad } from '../lib/simulation'
 import {
@@ -60,10 +60,68 @@ import { downloadTextFile } from '../lib/fileDownload'
 
 type RedesignTab = 'manufacture' | 'haul' | 'launch-prep' | 'launch-sequence'
 
+/** Icon filenames in `public/` for launch-prep upgrade cards. */
+const LAUNCH_PREP_TECH_ICONS: Record<LaunchPrepTech, string> = {
+  'faster-pumps': 'UpgradeIconPump.jpg',
+  'auto-power': 'UpdateIconPowerup.jpg',
+  'payload-drone': 'UpdateIconDrone.jpg',
+  'strongback-redesign': 'UpdateIconStrongback.jpg',
+}
+
 interface RedesignWorkshopProps {
   initialProcess: ProcessVersion
   roundLabel: string
   onConfirm: (process: ProcessVersion) => void
+}
+
+/** Cost sub-banner for tech / key-lube investment cards (coin + pts + optional note). */
+function RedesignTechCostBanner({
+  cost,
+  note,
+}: {
+  cost: number
+  note?: string
+}) {
+  const ariaLabel = note
+    ? `Cost ${cost} points — ${note}`
+    : `Cost ${cost} points`
+  return (
+    <div className="redesign-tech-card__cost-banner" aria-label={ariaLabel}>
+      <span className="redesign-tech-card__coin" aria-hidden="true">
+        <svg viewBox="0 0 16 16" width="14" height="14" focusable="false">
+          <circle cx="8" cy="8" r="7" fill="currentColor" opacity="0.22" />
+          <circle
+            cx="8"
+            cy="8"
+            r="6.2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.35"
+          />
+          <circle
+            cx="8"
+            cy="8"
+            r="3.7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="0.95"
+            opacity="0.9"
+          />
+          <path
+            d="M8 5.35v5.3M6.45 6.45h3.1M6.45 9.55h3.1"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.15"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+      <span className="redesign-tech-card__cost-value">{cost} pts</span>
+      {note ? (
+        <span className="redesign-tech-card__cost-note">{note}</span>
+      ) : null}
+    </div>
+  )
 }
 
 export function RedesignWorkshop({
@@ -105,7 +163,6 @@ export function RedesignWorkshop({
   const launchPrepTechs = resolveLaunchPrepTechs(draft)
   const launchSeqRealignIds = resolveLaunchSeqRealignIds(draft)
   const launchSeqRemovedIds = resolveLaunchSeqRemovedIds(draft)
-  const rangeRemoved = launchSeqRemovedIds.includes(LAUNCH_SEQ_RANGE_STATION_ID)
   const keyLubrication = resolveKeyLubrication(draft)
   const endpoints = requiredEndpointCells()
   const roadCost = useMemo(
@@ -252,10 +309,25 @@ export function RedesignWorkshop({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [launchSeqRealignIds.join(',')])
 
-  const [everRangeRemoved, setEverRangeRemoved] = useState(false)
+  const [everRemovedGoIds, setEverRemovedGoIds] = useState(
+    () => new Set<string>(),
+  )
   useEffect(() => {
-    if (rangeRemoved) setEverRangeRemoved(true)
-  }, [rangeRemoved])
+    if (launchSeqRemovedIds.length === 0) return
+    setEverRemovedGoIds((prev) => {
+      let changed = false
+      const next = new Set(prev)
+      for (const id of launchSeqRemovedIds) {
+        if (isLaunchSeqRemovableStationId(id) && !next.has(id)) {
+          next.add(id)
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+    // launchSeqRemovedIds is a fresh array each render — only its content matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [launchSeqRemovedIds.join(',')])
 
   const [everKeyLubricationOn, setEverKeyLubricationOn] = useState(false)
   useEffect(() => {
@@ -273,7 +345,7 @@ export function RedesignWorkshop({
           0,
         ),
         goRealignCost: everRealignedGoIds.size * GO_REALIGN_COST,
-        rangeRemovalCost: everRangeRemoved ? RANGE_REMOVAL_COST : 0,
+        rangeRemovalCost: everRemovedGoIds.size * RANGE_REMOVAL_COST,
         keyLubricationCost: everKeyLubricationOn ? KEY_LUBRICATION_COST : 0,
       }),
     [
@@ -282,7 +354,7 @@ export function RedesignWorkshop({
       roadCost,
       everSelectedTechIds,
       everRealignedGoIds,
-      everRangeRemoved,
+      everRemovedGoIds,
       everKeyLubricationOn,
     ],
   )
@@ -356,18 +428,22 @@ export function RedesignWorkshop({
     setDraft((p) => applyLaunchSeqRealign(p, stationId, !realigned))
   }
 
-  function handleDeleteRangeFromSequence() {
-    if (!everRangeRemoved) {
-      if (blockOverBudget(RANGE_REMOVAL_COST, 'remove Range Safety')) return
+  function handleDeleteStationFromSequence(stationId: string) {
+    if (!isLaunchSeqRemovableStationId(stationId)) return
+    if (!everRemovedGoIds.has(stationId)) {
+      const stationName =
+        LAUNCH_SEQ_GO_STATIONS.find((s) => s.id === stationId)?.name ?? stationId
+      if (blockOverBudget(RANGE_REMOVAL_COST, `remove ${stationName}`)) return
     } else {
       setBudgetError(null)
     }
-    setDraft((p) => applyLaunchSeqRemove(p, LAUNCH_SEQ_RANGE_STATION_ID, true))
+    setDraft((p) => applyLaunchSeqRemove(p, stationId, true))
     setLaunchSeqInfoId(null)
   }
 
-  function handleRestoreRangeToSequence() {
-    setDraft((p) => applyLaunchSeqRemove(p, LAUNCH_SEQ_RANGE_STATION_ID, false))
+  function handleRestoreStationToSequence(stationId: string) {
+    if (!isLaunchSeqRemovableStationId(stationId)) return
+    setDraft((p) => applyLaunchSeqRemove(p, stationId, false))
   }
 
   function handleToggleKeyLubrication() {
@@ -440,7 +516,15 @@ export function RedesignWorkshop({
       '',
       'LAUNCH SEQUENCE',
       `Realigned GO calls: ${realignedNames.length > 0 ? realignedNames.join(', ') : 'none'}`,
-      `Range Safety removed from poll: ${rangeRemoved ? 'Yes' : 'No'}`,
+      `Removed from poll: ${
+        launchSeqRemovedIds.length > 0
+          ? launchSeqRemovedIds
+              .map(
+                (id) => LAUNCH_SEQ_GO_STATIONS.find((s) => s.id === id)?.name ?? id,
+              )
+              .join(', ')
+          : 'none'
+      }`,
       `Key lubrication: ${keyLubrication ? 'Yes' : 'No'}`,
       '',
       'COST OF IMPROVEMENT',
@@ -480,7 +564,7 @@ export function RedesignWorkshop({
     let withRoad = applyHaulPath(structuredClone(draft), path)
     // Re-stamp launch-prep techs after haul apply (defensive: same field on version + step).
     withRoad = applyLaunchPrepTechs(withRoad, selectedTechs)
-    // Re-stamp launch-sequence redesign (realign + optional Range removal).
+    // Re-stamp launch-sequence redesign (realign + station removals).
     withRoad = applyLaunchSeqRedesign(withRoad, realignIds, removedIds)
     // Re-stamp key lubrication (defensive: same field on version + step).
     withRoad = applyKeyLubrication(withRoad, keyLubricationSelected)
@@ -716,6 +800,7 @@ export function RedesignWorkshop({
                   >
                     <Booster
                       className="booster--redesign"
+                      showNose={false}
                       label="Booster — open transfer upgrade"
                     />
                   </button>
@@ -793,31 +878,67 @@ export function RedesignWorkshop({
                   !selected &&
                   !everTried &&
                   LAUNCH_PREP_TECH_COST[opt.id] > remainingBudget
+                const iconSrc = `${import.meta.env.BASE_URL}${encodeURIComponent(LAUNCH_PREP_TECH_ICONS[opt.id])}`
                 return (
-                  <button
+                  <div
                     key={opt.id}
-                    type="button"
-                    aria-pressed={selected}
                     className={[
-                      'redesign-tech-card',
-                      selected ? 'redesign-tech-card--selected' : '',
+                      'redesign-tech-slot',
+                      selected ? 'redesign-tech-slot--selected' : '',
+                      overBudget ? 'redesign-tech-slot--disabled' : '',
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    onClick={() => handleToggleLaunchPrepTech(opt.id)}
-                    disabled={overBudget}
                   >
-                    <span className="redesign-tech-card__name">{opt.name}</span>
-                    <span className="redesign-tech-card__summary">{opt.summary}</span>
-                    <span className="redesign-tech-card__cost">
-                      {LAUNCH_PREP_TECH_COST[opt.id]} pts
-                      {everTried && !selected ? ' · already spent' : ''}
-                      {overBudget ? ' · over budget' : ''}
-                    </span>
-                    <span className="redesign-tech-card__status">
-                      {selected ? 'Selected' : 'Select investment'}
-                    </span>
-                  </button>
+                    <div className="redesign-tech-slot__hero" aria-hidden="true">
+                      <img
+                        src={iconSrc}
+                        alt=""
+                        className="redesign-tech-slot__hero-img"
+                        decoding="async"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      aria-pressed={selected}
+                      className={[
+                        'redesign-tech-card',
+                        selected ? 'redesign-tech-card--selected' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      onClick={() => handleToggleLaunchPrepTech(opt.id)}
+                      disabled={overBudget}
+                    >
+                      <span className="redesign-tech-card__name">{opt.name}</span>
+                      <span className="redesign-tech-card__summary">
+                        {opt.summary}
+                      </span>
+                      <RedesignTechCostBanner
+                        cost={LAUNCH_PREP_TECH_COST[opt.id]}
+                        note={
+                          everTried && !selected
+                            ? 'already spent'
+                            : overBudget
+                              ? 'over budget'
+                              : undefined
+                        }
+                      />
+                      <div className="redesign-tech-card__media">
+                        <div className="redesign-tech-card__icon-wrap">
+                          <img
+                            src={iconSrc}
+                            alt=""
+                            className="redesign-tech-card__icon"
+                            decoding="async"
+                          />
+                        </div>
+                        <span className="redesign-tech-card__status">
+                          {selected ? 'Selected' : 'Select investment'}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
                 )
               })}
             </div>
@@ -844,8 +965,9 @@ export function RedesignWorkshop({
               Mission-control GO stations for the launch poll. Use{' '}
               <strong>Realign</strong> to cut as-is misalignment friction on a
               station (<strong>{GO_REALIGN_COST} pts</strong> each). Open the
-              info panel for operational criticality. Range Safety can be
-              removed from the sequence entirely ({RANGE_REMOVAL_COST} pts).
+              info panel for operational criticality. Weather, Capcom, and
+              Range Safety can be removed from the sequence (
+              {RANGE_REMOVAL_COST} pts each).
             </p>
 
             <button
@@ -871,157 +993,191 @@ export function RedesignWorkshop({
                 key mechanism so the hold-to-turn arming action is almost
                 instantaneous instead of a long deliberate hold.
               </span>
-              <span className="redesign-tech-card__cost">
-                {KEY_LUBRICATION_COST} pts
-                {!keyLubrication && everKeyLubricationOn ? ' · already spent' : ''}
-                {!keyLubrication &&
-                !everKeyLubricationOn &&
-                KEY_LUBRICATION_COST > remainingBudget
-                  ? ' · over budget'
-                  : ''}
-              </span>
+              <RedesignTechCostBanner
+                cost={KEY_LUBRICATION_COST}
+                note={
+                  !keyLubrication && everKeyLubricationOn
+                    ? 'already spent'
+                    : !keyLubrication &&
+                        !everKeyLubricationOn &&
+                        KEY_LUBRICATION_COST > remainingBudget
+                      ? 'over budget'
+                      : undefined
+                }
+              />
               <span className="redesign-tech-card__status">
                 {keyLubrication ? 'Enabled' : 'Enable'}
               </span>
             </button>
 
-            <ul className="redesign-seq__list" aria-label="GO stations">
-              {LAUNCH_SEQ_GO_STATIONS.map((station) => {
-                const removed = launchSeqRemovedIds.includes(station.id)
-                const realigned = launchSeqRealignIds.includes(station.id)
-                const infoOpen = launchSeqInfoId === station.id
-                const isRange = station.id === LAUNCH_SEQ_RANGE_STATION_ID
-                const criticality =
-                  LAUNCH_SEQ_STATION_CRITICALITY[station.id] ??
-                  'Station contributes to the mission-control GO poll.'
+            <div className="redesign-seq__go-layout">
+              <ul className="redesign-seq__list" aria-label="GO stations">
+                {LAUNCH_SEQ_GO_STATIONS.map((station) => {
+                  const removed = launchSeqRemovedIds.includes(station.id)
+                  const realigned = launchSeqRealignIds.includes(station.id)
+                  const infoOpen = launchSeqInfoId === station.id
+                  const isRemovable = isLaunchSeqRemovableStationId(station.id)
+                  const everRemoved = everRemovedGoIds.has(station.id)
+                  const criticality =
+                    LAUNCH_SEQ_STATION_CRITICALITY[station.id] ??
+                    'Station contributes to the mission-control GO poll.'
 
-                return (
-                  <li
-                    key={station.id}
-                    className={[
-                      'redesign-seq__row',
-                      realigned ? 'redesign-seq__row--realigned' : '',
-                      removed ? 'redesign-seq__row--removed' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                  >
-                    <div className="redesign-seq__main">
-                      <div className="redesign-seq__identity">
-                        <span className="redesign-seq__callsign">
-                          {station.callsign}
-                        </span>
-                        <span className="redesign-seq__name">{station.name}</span>
-                        {removed && (
-                          <span className="redesign-seq__badge redesign-seq__badge--removed">
-                            Removed
+                  return (
+                    <li
+                      key={station.id}
+                      className={[
+                        'redesign-seq__row',
+                        realigned ? 'redesign-seq__row--realigned' : '',
+                        removed ? 'redesign-seq__row--removed' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      <div className="redesign-seq__main">
+                        <div className="redesign-seq__identity">
+                          <span className="redesign-seq__callsign">
+                            {station.callsign}
                           </span>
-                        )}
-                        {!removed && realigned && (
-                          <span className="redesign-seq__badge redesign-seq__badge--realigned">
-                            Realigned
+                          <span className="redesign-seq__name">
+                            {station.name}
                           </span>
-                        )}
-                      </div>
-                      <div className="redesign-seq__actions">
-                        {!removed && (
-                          <button
-                            type="button"
-                            className={
-                              realigned
-                                ? 'btn btn--ghost redesign-seq__realign redesign-seq__realign--on'
-                                : 'btn btn--primary redesign-seq__realign'
-                            }
-                            onClick={() =>
-                              handleToggleLaunchSeqRealign(station.id)
-                            }
-                            aria-pressed={realigned}
-                            disabled={
-                              !realigned &&
-                              !everRealignedGoIds.has(station.id) &&
-                              GO_REALIGN_COST > remainingBudget
-                            }
-                          >
-                            {realigned
-                              ? 'Undo realign'
-                              : !everRealignedGoIds.has(station.id) &&
-                                  GO_REALIGN_COST > remainingBudget
-                                ? 'Realign (over budget)'
-                                : `Realign (${GO_REALIGN_COST} pts)`}
-                          </button>
-                        )}
-                        {removed && isRange && (
-                          <button
-                            type="button"
-                            className="btn btn--ghost"
-                            onClick={handleRestoreRangeToSequence}
-                          >
-                            Restore to sequence
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className={[
-                            'redesign-seq__info-btn',
-                            infoOpen ? 'redesign-seq__info-btn--open' : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                          onClick={() => toggleLaunchSeqInfo(station.id)}
-                          aria-expanded={infoOpen}
-                          aria-controls={`launch-seq-info-${station.id}`}
-                          aria-label={
-                            infoOpen
-                              ? `Hide criticality for ${station.name}`
-                              : `Show criticality for ${station.name}`
-                          }
-                          title={`${station.name} criticality`}
-                        >
-                          <span className="redesign-seq__info-icon" aria-hidden="true">
-                            i
-                          </span>
-                        </button>
-                      </div>
-                    </div>
-                    {infoOpen && (
-                      <div
-                        id={`launch-seq-info-${station.id}`}
-                        className="redesign-seq__info-panel"
-                        role="region"
-                        aria-label={`${station.name} criticality`}
-                      >
-                        <p className="redesign-seq__info-copy">{criticality}</p>
-                        {isRange && !removed && (
-                          <div className="redesign-seq__info-actions">
+                          {removed && (
+                            <span className="redesign-seq__badge redesign-seq__badge--removed">
+                              Removed
+                            </span>
+                          )}
+                          {!removed && realigned && (
+                            <span className="redesign-seq__badge redesign-seq__badge--realigned">
+                              Realigned
+                            </span>
+                          )}
+                        </div>
+                        <div className="redesign-seq__actions">
+                          {!removed && (
                             <button
                               type="button"
-                              className="btn btn--ghost redesign-seq__delete"
-                              onClick={handleDeleteRangeFromSequence}
+                              className={
+                                realigned
+                                  ? 'btn btn--ghost redesign-seq__realign redesign-seq__realign--on'
+                                  : 'btn btn--primary redesign-seq__realign'
+                              }
+                              onClick={() =>
+                                handleToggleLaunchSeqRealign(station.id)
+                              }
+                              aria-pressed={realigned}
                               disabled={
-                                !everRangeRemoved &&
-                                RANGE_REMOVAL_COST > remainingBudget
+                                !realigned &&
+                                !everRealignedGoIds.has(station.id) &&
+                                GO_REALIGN_COST > remainingBudget
                               }
                             >
-                              {!everRangeRemoved &&
-                              RANGE_REMOVAL_COST > remainingBudget
-                                ? 'Delete from sequence (over budget)'
-                                : `Delete from sequence (${RANGE_REMOVAL_COST} pts)`}
+                              {realigned
+                                ? 'Undo realign'
+                                : !everRealignedGoIds.has(station.id) &&
+                                    GO_REALIGN_COST > remainingBudget
+                                  ? 'Realign (over budget)'
+                                  : `Realign (${GO_REALIGN_COST} pts)`}
                             </button>
-                          </div>
-                        )}
-                        {isRange && removed && (
-                          <p className="redesign-seq__info-note">
-                            Range Safety will not appear in the GO poll for this
-                            round&apos;s launches.
-                          </p>
-                        )}
+                          )}
+                          {removed && isRemovable && (
+                            <button
+                              type="button"
+                              className="btn btn--ghost"
+                              onClick={() =>
+                                handleRestoreStationToSequence(station.id)
+                              }
+                            >
+                              Restore to sequence
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className={[
+                              'redesign-seq__info-btn',
+                              infoOpen ? 'redesign-seq__info-btn--open' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                            onClick={() => toggleLaunchSeqInfo(station.id)}
+                            aria-expanded={infoOpen}
+                            aria-controls={`launch-seq-info-${station.id}`}
+                            aria-label={
+                              infoOpen
+                                ? `Hide criticality for ${station.name}`
+                                : `Show criticality for ${station.name}`
+                            }
+                            title={`${station.name} criticality`}
+                          >
+                            <span
+                              className="redesign-seq__info-icon"
+                              aria-hidden="true"
+                            >
+                              i
+                            </span>
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-            {(launchSeqRealignIds.length > 0 || rangeRemoved) && (
+                      {infoOpen && (
+                        <div
+                          id={`launch-seq-info-${station.id}`}
+                          className="redesign-seq__info-panel"
+                          role="region"
+                          aria-label={`${station.name} criticality`}
+                        >
+                          <p className="redesign-seq__info-copy">
+                            {criticality}
+                          </p>
+                          {isRemovable && !removed && (
+                            <div className="redesign-seq__info-actions">
+                              <button
+                                type="button"
+                                className="btn btn--ghost redesign-seq__delete"
+                                onClick={() =>
+                                  handleDeleteStationFromSequence(station.id)
+                                }
+                                disabled={
+                                  !everRemoved &&
+                                  RANGE_REMOVAL_COST > remainingBudget
+                                }
+                              >
+                                {!everRemoved &&
+                                RANGE_REMOVAL_COST > remainingBudget
+                                  ? 'Delete from sequence (over budget)'
+                                  : `Delete from sequence (${RANGE_REMOVAL_COST} pts)`}
+                              </button>
+                            </div>
+                          )}
+                          {isRemovable && removed && (
+                            <p className="redesign-seq__info-note">
+                              {station.name} will not appear in the GO poll for
+                              this round&apos;s launches.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+
+              <aside
+                className="redesign-seq__compliance"
+                role="note"
+                aria-label="Regulatory compliance notice"
+              >
+                <span
+                  className="redesign-seq__compliance-icon"
+                  aria-hidden="true"
+                >
+                  !
+                </span>
+                <p className="redesign-seq__compliance-text">
+                  The operation of this interface must comply with regulations.
+                </p>
+              </aside>
+            </div>
+            {(launchSeqRealignIds.length > 0 ||
+              launchSeqRemovedIds.length > 0) && (
               <p className="redesign-hint redesign-hint--ok">
                 {launchSeqRealignIds.length > 0 && (
                   <>
@@ -1037,10 +1193,21 @@ export function RedesignWorkshop({
                     </strong>
                   </>
                 )}
-                {launchSeqRealignIds.length > 0 && rangeRemoved && ' · '}
-                {rangeRemoved && (
+                {launchSeqRealignIds.length > 0 &&
+                  launchSeqRemovedIds.length > 0 &&
+                  ' · '}
+                {launchSeqRemovedIds.length > 0 && (
                   <>
-                    Removed: <strong>RANGE</strong>
+                    Removed:{' '}
+                    <strong>
+                      {launchSeqRemovedIds
+                        .map(
+                          (id) =>
+                            LAUNCH_SEQ_GO_STATIONS.find((s) => s.id === id)
+                              ?.callsign ?? id,
+                        )
+                        .join(', ')}
+                    </strong>
                   </>
                 )}
               </p>

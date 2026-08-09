@@ -22,7 +22,7 @@ const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
 
 /** Hold duration to fully turn the launch key (ms), as-is. */
 const KEY_HOLD_MS_BASELINE = 1400
-/** Round 2 redesign — key lubrication: near-instant turn. */
+/** To-be redesign — key lubrication: near-instant turn. */
 const KEY_HOLD_MS_LUBRICATED = 120
 
 /**
@@ -35,7 +35,7 @@ const LIFTOFF_MS = 3200
  * Mission-control launch sequence: clear GO stations in order, hold-to-turn
  * the launch key, then watch the vehicle leave the pad.
  *
- * Round 2 redesign: removed stations are omitted from the poll; realigned
+ * To-be redesign: removed stations are omitted from the poll; realigned
  * stations drop staggered/misaligned GO layout friction.
  */
 export function LaunchSequenceScene({

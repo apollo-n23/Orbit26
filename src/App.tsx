@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { RoundSession } from './components/RoundSession'
 import { GembaWalkthrough } from './views/GembaWalkthrough'
 import { CustomerPortalView } from './views/CustomerPortalView'
+import { RegulationView } from './views/RegulationView'
 import { HomeView } from './views/HomeView'
 import { TrainingView } from './views/TrainingView'
 import { AnnualReportView } from './views/AnnualReportView'
@@ -19,27 +20,27 @@ import './App.css'
 /**
  * Root shell: hash routes so tutors can deep-link stages.
  * - `#/home` (default) — Orb-it intranet landing page
- * - `#/round/1` — as-is process, three launches
- * - `#/redesign` — Round 2 redesign workshop
- * - `#/round/2` — Round 2 (play / orbit-complete)
+ * - `#/round/1` (also `#/as-is`) — As-is process, three launches
+ * - `#/redesign` — To-be redesign workshop
+ * - `#/round/2` (also `#/to-be`) — To-be (play / orbit-complete)
+ * - `#/customers` — Customer Portal (Starfeed VOC feed)
+ * - `#/regulation` — fictional NSLA regulation library
  *
- * Round 1 and Round 2 sessions stay mounted for the app's lifetime (only
+ * As-is and To-be sessions stay mounted for the app's lifetime (only
  * their visibility toggles) so hopping between stages via the nav bar
  * never loses in-progress state.
  */
 function App() {
   const [stage, setStage] = useState<AppStage>(() => stageFromHash())
   // Live lead-time logs from each round's RoundSession, so the Data tab in
-  // either round can show both rounds' launches simultaneously — both stay
-  // mounted for the app's lifetime, so this is always in sync, not a
+  // either stage can show both As-is and To-be launches simultaneously — both
+  // stay mounted for the app's lifetime, so this is always in sync, not a
   // localStorage snapshot.
-  const [round1Entries, setRound1Entries] = useState<LeadTimeEntry[]>([])
-  const [round2Entries, setRound2Entries] = useState<LeadTimeEntry[]>([])
-  // Round 2's confirmed redesign cost breakdown (null until Confirm), lifted
-  // the same way so either round's Data tab can show it live.
-  const [round2Cost, setRound2Cost] = useState<RedesignCostBreakdown | null>(
-    null,
-  )
+  const [asIsEntries, setAsIsEntries] = useState<LeadTimeEntry[]>([])
+  const [toBeEntries, setToBeEntries] = useState<LeadTimeEntry[]>([])
+  // To-be confirmed redesign cost breakdown (null until Confirm), lifted
+  // the same way so either stage's Data tab can show it live.
+  const [toBeCost, setToBeCost] = useState<RedesignCostBreakdown | null>(null)
 
   useEffect(() => {
     // Normalise empty hash to home so the URL is shareable.
@@ -58,12 +59,12 @@ function App() {
     window.location.hash = hashForStage(next)
   }, [])
 
-  const handleRound2PhaseChange = useCallback(
+  const handleToBePhaseChange = useCallback(
     (phase: 'redesign' | 'play' | 'orbit-complete') => {
       // Keep the nav in sync when the workshop auto-advances to play
-      // (Confirm) without the learner having clicked the "Round 2" tab.
+      // (Confirm) without the learner having clicked the "To-be" tab.
       if (phase !== 'redesign') {
-        setStage((prev) => (prev === 'redesign' ? 'round2' : prev))
+        setStage((prev) => (prev === 'redesign' ? 'to-be' : prev))
       }
     },
     [],
@@ -72,9 +73,9 @@ function App() {
   const handleLeadTimeLogChange = useCallback(
     (roundId: RoundId, entries: LeadTimeEntry[]) => {
       if (roundId === 1) {
-        setRound1Entries(entries)
+        setAsIsEntries(entries)
       } else {
-        setRound2Entries(entries)
+        setToBeEntries(entries)
       }
     },
     [],
@@ -82,14 +83,14 @@ function App() {
 
   const handleCostBreakdownChange = useCallback(
     (roundId: RoundId, cost: RedesignCostBreakdown | null) => {
-      // Only Round 2 ever has a redesign cost (Round 1 has no redesign).
-      if (roundId === 2) setRound2Cost(cost)
+      // Only To-be ever has a redesign cost (As-is has no redesign).
+      if (roundId === 2) setToBeCost(cost)
     },
     [],
   )
 
-  const round1 = getRoundConfig(1)
-  const round2 = getRoundConfig(2)
+  const asIs = getRoundConfig(1)
+  const toBe = getRoundConfig(2)
 
   return (
     <>
@@ -123,35 +124,41 @@ function App() {
           onNavigateStage={navigateToStage}
         />
       )}
+      {stage === 'regulation' && (
+        <RegulationView
+          activeStage={stage}
+          onNavigateStage={navigateToStage}
+        />
+      )}
       <RoundSession
-        round={round1}
+        round={asIs}
         activeStage={stage}
         onNavigateStage={navigateToStage}
-        hidden={stage !== 'round1'}
+        hidden={stage !== 'as-is'}
         onNavigateRound2={() => navigateToStage('redesign')}
         onLeadTimeLogChange={handleLeadTimeLogChange}
         otherRoundEntries={{
-          roundId: round2.id,
-          roundLabel: round2.label,
-          entries: round2Entries,
+          roundId: toBe.id,
+          roundLabel: toBe.label,
+          entries: toBeEntries,
         }}
         onCostBreakdownChange={handleCostBreakdownChange}
-        otherRoundCostBreakdown={round2Cost}
+        otherRoundCostBreakdown={toBeCost}
       />
       <RoundSession
-        round={round2}
+        round={toBe}
         activeStage={stage}
         onNavigateStage={navigateToStage}
-        hidden={stage !== 'redesign' && stage !== 'round2'}
+        hidden={stage !== 'redesign' && stage !== 'to-be'}
         requestedPhase={
-          stage === 'redesign' ? 'redesign' : stage === 'round2' ? 'play' : undefined
+          stage === 'redesign' ? 'redesign' : stage === 'to-be' ? 'play' : undefined
         }
-        onPhaseChange={handleRound2PhaseChange}
+        onPhaseChange={handleToBePhaseChange}
         onLeadTimeLogChange={handleLeadTimeLogChange}
         otherRoundEntries={{
-          roundId: round1.id,
-          roundLabel: round1.label,
-          entries: round1Entries,
+          roundId: asIs.id,
+          roundLabel: asIs.label,
+          entries: asIsEntries,
         }}
         onCostBreakdownChange={handleCostBreakdownChange}
       />

@@ -10,13 +10,14 @@ import { BASELINE_PROCESS } from '../data/baselineProcess'
  * Point costs for each redesign investment, balanced semi-realistically:
  * a cheap operational tweak (nudging a machine, realigning a GO call) costs
  * far less than a capital upgrade (an autonomous drone), and removing a
- * safety-poll station sits mid-scale — a real process change, but not
- * hardware. Road tiles keep their existing per-tile cost (roadGrid.ts) and
- * are the only category that can go back down.
+ * GO-poll station (Range / Weather / Capcom) sits mid-scale — a real process
+ * change, but not hardware. Road tiles keep their existing per-tile cost
+ * (roadGrid.ts) and are the only category that can go back down.
  */
 export const MACHINE_MOVE_COST = 15
 export const AUTO_TRANSFER_COST = 40
 export const GO_REALIGN_COST = 10
+/** Per removable GO station ever deleted from the poll (ratchet). */
 export const RANGE_REMOVAL_COST = 35
 /** Key lubrication: a cheap, simple mechanical fix with an outsized payoff. */
 export const KEY_LUBRICATION_COST = 15
@@ -29,7 +30,7 @@ export const LAUNCH_PREP_TECH_COST: Record<LaunchPrepTech, number> = {
 }
 
 /**
- * Total redesign budget for a Round 2 session (points). Once the running
+ * Total redesign budget for a To-be session (points). Once the running
  * total of improvement reaches this, no further cost-increasing choice can
  * be made — only selling road tiles (which reduces the total) frees up
  * room again.

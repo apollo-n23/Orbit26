@@ -334,6 +334,8 @@ export interface LeadTimeEntryExtras {
   costBreakdown?: RedesignCostBreakdown
   /** Orbital insertion height achieved on this launch, in miles. */
   heightAchievedMiles?: number
+  /** Set when Capcom was removed — no numeric height for this launch. */
+  heightStatus?: 'no-capcom'
   /** Times the booster exploded on the haul road during this launch. */
   defectCount?: number
 }
@@ -360,6 +362,9 @@ export function leadTimeEntryFromRun(
       : {}),
     ...(extras?.heightAchievedMiles !== undefined
       ? { heightAchievedMiles: extras.heightAchievedMiles }
+      : {}),
+    ...(extras?.heightStatus !== undefined
+      ? { heightStatus: extras.heightStatus }
       : {}),
     ...(extras?.defectCount !== undefined
       ? { defectCount: extras.defectCount }

@@ -7,7 +7,7 @@
     var(--color-bg);
 }
 
-/* ── Top bar ─────────────────────────────────────────────── */
+/* â”€â”€ Top bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .top-bar {
   display: grid;
@@ -127,7 +127,7 @@
   justify-content: flex-end;
 }
 
-/* ── Buttons ─────────────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .btn {
   display: inline-flex;
@@ -194,7 +194,7 @@
   animation: machine-pulse 1.4s ease-in-out infinite;
 }
 
-/* ── Stage navigation (Round 1 / Redesign / Round 2) ────────── */
+/* â”€â”€ Stage navigation (As-is / Redesign / To-be) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .stage-nav {
   display: flex;
@@ -220,7 +220,7 @@
   min-width: 0;
 }
 
-/* Leftmost — the intranet hub everything else is reached from. */
+/* Leftmost â€” the intranet hub everything else is reached from. */
 .stage-nav__home-btn {
   flex-shrink: 0;
   padding: 0.65rem 1.25rem;
@@ -301,7 +301,7 @@
   background: var(--color-nav-accent-dim);
 }
 
-/* ── View navigation ─────────────────────────────────────── */
+/* â”€â”€ View navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .view-nav {
   display: flex;
@@ -334,7 +334,7 @@
   border-bottom-color: var(--color-orbital);
 }
 
-/* ── Main content ────────────────────────────────────────── */
+/* â”€â”€ Main content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .app-main {
   flex: 1;
@@ -403,7 +403,7 @@
   line-height: 1.55;
 }
 
-/* ── Data tab — lead time board ──────────────────────────── */
+/* â”€â”€ Data tab â€” lead time board â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .data-body {
   display: flex;
@@ -594,7 +594,7 @@
   color: var(--color-text);
 }
 
-/* ── Round 1 vs Round 2 lead time compare visual ─────────── */
+/* â”€â”€ As-is vs To-be lead time compare visual â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .lt-compare {
   padding: var(--space-4);
@@ -797,7 +797,7 @@
   max-width: min(36rem, 96vw);
 }
 
-/* ── Orbit complete (end of round) ───────────────────────── */
+/* â”€â”€ Orbit complete (end of round) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .app-main--orbit {
   padding: 0;
@@ -1033,7 +1033,7 @@
   text-decoration: underline;
 }
 
-/* ── Round 2 redesign workshop ───────────────────────────── */
+/* â”€â”€ To-be redesign workshop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .redesign-body {
   display: flex;
@@ -1155,7 +1155,7 @@
   min-height: 18rem;
 }
 
-/* Hover the booster to reveal auto-transfer upgrade (Round 2 redesign). */
+/* Hover the booster to reveal auto-transfer upgrade (To-be redesign). */
 .redesign-booster-upgrade {
   position: absolute;
   left: 50%;
@@ -1399,7 +1399,7 @@
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
-/* ── Redesign: total cost of improvement banner (prominent, all tabs) ──── */
+/* â”€â”€ Redesign: total cost of improvement banner (prominent, all tabs) â”€â”€â”€â”€ */
 
 .redesign-cost-banner {
   display: flex;
@@ -1542,7 +1542,7 @@
   box-shadow: inset 0 0 0 1px rgba(255, 220, 90, 0.2);
 }
 
-/* New road tile beyond the free existing road — costs points, so flag it. */
+/* New road tile beyond the free existing road â€” costs points, so flag it. */
 .redesign-haul__cell--road-new {
   background: color-mix(in srgb, var(--color-amber) 30%, #3d4249);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-amber) 55%, transparent);
@@ -1577,7 +1577,7 @@
 }
 
 .redesign-haul__cell--tree::after {
-  content: '🌲';
+  content: 'ðŸŒ²';
   position: absolute;
   inset: 0;
   display: flex;
@@ -1622,8 +1622,51 @@
 .redesign-tech-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  gap: var(--space-3);
+  gap: var(--space-4) var(--space-3);
   margin-top: var(--space-3);
+  align-items: stretch;
+}
+
+/* Column: full-width hero icon above the investment button. */
+.redesign-tech-slot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.redesign-tech-slot__hero {
+  width: 100%;
+  max-height: 30rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  background: var(--color-surface);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+}
+
+.redesign-tech-slot--selected .redesign-tech-slot__hero {
+  border-color: color-mix(in srgb, var(--color-orbital) 55%, var(--color-border));
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.22),
+    0 0 0 1px color-mix(in srgb, var(--color-orbital) 40%, transparent);
+}
+
+.redesign-tech-slot--disabled .redesign-tech-slot__hero {
+  opacity: 0.55;
+}
+
+.redesign-tech-slot__hero-img {
+  display: block;
+  width: 100%;
+  max-height: 26rem;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
 }
 
 .redesign-tech-card {
@@ -1631,6 +1674,8 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
+  width: 100%;
+  flex: 1;
   padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -1678,11 +1723,111 @@
   flex: 1;
 }
 
-.redesign-tech-card__cost {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
+/* Point-cost sub-banner (coin + value + optional note) on tech / key-lube cards */
+.redesign-tech-card__cost-banner {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.4rem;
+  max-width: 100%;
+  padding: 0.28rem 0.6rem 0.28rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-brand-gold) 48%, var(--color-border));
+  background: color-mix(
+    in srgb,
+    var(--color-amber-dim) 85%,
+    var(--color-surface)
+  );
   color: var(--color-amber);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--color-brand-gold) 14%, transparent);
+}
+
+.redesign-tech-card--selected .redesign-tech-card__cost-banner {
+  border-color: color-mix(
+    in srgb,
+    var(--color-brand-gold) 62%,
+    var(--color-orbital)
+  );
+  background: color-mix(
+    in srgb,
+    var(--color-amber-dim) 95%,
+    var(--color-surface-raised)
+  );
+}
+
+.redesign-tech-card__coin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  color: var(--color-brand-gold);
+  filter: drop-shadow(
+    0 0 2px color-mix(in srgb, var(--color-brand-gold) 45%, transparent)
+  );
+}
+
+.redesign-tech-card__coin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.redesign-tech-card__cost-value {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--color-amber);
+  line-height: 1;
+}
+
+.redesign-tech-card__cost-note {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-text-muted);
+  line-height: 1.2;
+}
+
+.redesign-tech-card__cost-note::before {
+  content: '·';
+  margin-right: 0.28rem;
+  color: color-mix(in srgb, var(--color-brand-gold) 50%, var(--color-text-dim));
+}
+
+/* Right-aligned icon + status cluster (launch-prep tech cards) */
+.redesign-tech-card__media {
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.redesign-tech-card__icon-wrap {
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.redesign-tech-card--selected .redesign-tech-card__icon-wrap {
+  border-color: color-mix(in srgb, var(--color-orbital) 55%, var(--color-border));
+}
+
+.redesign-tech-card__icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .redesign-tech-card__status {
@@ -1691,13 +1836,21 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-dim);
+  text-align: right;
 }
 
 .redesign-tech-card--selected .redesign-tech-card__status {
   color: var(--color-orbital-strong);
 }
 
-/* Launch-sequence GO redesign (Round 2 tab 4) */
+/* Key lubrication reuses tech-card layout without icon media */
+.redesign-key-lube .redesign-tech-card__status {
+  align-self: flex-start;
+  text-align: left;
+  margin-top: auto;
+}
+
+/* Launch-sequence GO redesign (To-be redesign tab 4) */
 .redesign-seq {
   display: flex;
   flex-direction: column;
@@ -1715,6 +1868,14 @@
   background: var(--color-surface);
 }
 
+/* GO station list + compliance notice side by side. */
+.redesign-seq__go-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
 .redesign-seq__list {
   list-style: none;
   margin: 0;
@@ -1722,7 +1883,47 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  flex: 1 1 20rem;
   max-width: 40rem;
+  min-width: 0;
+}
+
+.redesign-seq__compliance {
+  flex: 0 1 16rem;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-amber) 55%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: var(--color-amber-dim);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  position: sticky;
+  top: var(--space-3);
+}
+
+.redesign-seq__compliance-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-amber) 35%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-amber) 65%, transparent);
+  color: var(--color-amber);
+  font-size: 0.85rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.redesign-seq__compliance-text {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--color-text);
 }
 
 .redesign-seq__row {
@@ -1989,7 +2190,7 @@
   font-weight: 800;
 }
 
-/* ── Simulation ──────────────────────────────────────────── */
+/* â”€â”€ Simulation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .sim-header {
   display: flex;
@@ -2057,7 +2258,7 @@
   flex: 1;
 }
 
-/* ── Manufacture scene ───────────────────────────────────── */
+/* â”€â”€ Manufacture scene â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .manufacture-scene {
   position: relative;
@@ -2211,7 +2412,7 @@
   outline-offset: 3px;
 }
 
-/* Booster carrier — operator drags along the belt to station stops */
+/* Booster carrier â€” operator drags along the belt to station stops */
 .production-line__carrier {
   position: absolute;
   top: 50%;
@@ -2305,6 +2506,196 @@
   border-radius: 2px;
 }
 
+/* â”€â”€ Assembly (step 1): bare booster â€” fairing not fitted yet â”€â”€ */
+
+.booster--no-nose .booster__body {
+  /* Bands are absolute; keep body clean for logo + seams */
+  gap: 0;
+  border-radius: 0;
+  border-left: none;
+}
+
+/*
+ * Blue hull bands â€” twice the previous centre gap (1.25rem â†’ ~2.5rem each
+ * side of centre) so they clear the enlarged Orb-it logo.
+ */
+.booster--no-nose .booster__band {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  z-index: 1;
+}
+
+.booster--no-nose .booster__band:first-of-type {
+  left: calc(50% - 2.85rem);
+}
+
+.booster--no-nose .booster__band:last-of-type {
+  left: calc(50% + 2.85rem - 4px);
+}
+
+/* Payload-mount face (left): grey metallic seam where fairing will mate. */
+.booster__payload-mount {
+  position: relative;
+  flex-shrink: 0;
+  width: 0.95rem;
+  height: 2.65rem;
+  display: flex;
+  align-items: stretch;
+  z-index: 2;
+}
+
+.booster__payload-face {
+  flex: 1;
+  background:
+    linear-gradient(
+      90deg,
+      #6a7382 0%,
+      #c5ccd6 18%,
+      #8e97a5 42%,
+      #b8c0cb 68%,
+      #5c6574 100%
+    );
+  border: 1px solid #4a5462;
+  border-right: none;
+  border-radius: 2px 0 0 2px;
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.28),
+    inset -1px 0 0 rgba(0, 0, 0, 0.25);
+}
+
+.booster__payload-seam {
+  position: absolute;
+  top: 8%;
+  bottom: 8%;
+  left: 42%;
+  width: 2px;
+  border-radius: 1px;
+  background: linear-gradient(
+    180deg,
+    #3a424e 0%,
+    #9aa5b4 30%,
+    #5a6472 50%,
+    #9aa5b4 70%,
+    #3a424e 100%
+  );
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.booster__payload-bolt {
+  position: absolute;
+  left: 22%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d0d6de 0%, #6b7482 55%, #3a424e 100%);
+  border: 1px solid #2c323b;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.booster__payload-bolt--1 {
+  top: 12%;
+}
+.booster__payload-bolt--2 {
+  top: 34%;
+}
+.booster__payload-bolt--3 {
+  top: 56%;
+}
+.booster__payload-bolt--4 {
+  top: 78%;
+}
+
+.booster__payload-ring {
+  position: absolute;
+  top: 4%;
+  bottom: 4%;
+  right: -1px;
+  width: 4px;
+  background: linear-gradient(
+    90deg,
+    #4a5462 0%,
+    #aeb6c2 40%,
+    #6d7786 100%
+  );
+  border: 1px solid #3a424e;
+  border-left: none;
+  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.25);
+}
+
+/* Expanding engine bell (right) â€” widens toward the exhaust end. */
+.booster__engine--bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 2.15rem;
+  height: 2.5rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.booster__nozzle-throat {
+  flex-shrink: 0;
+  width: 0.45rem;
+  height: 1.55rem;
+  background: linear-gradient(180deg, #5a6472 0%, #2c323b 50%, #4a5462 100%);
+  border: 1px solid #3a424e;
+  border-right: none;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.45);
+}
+
+.booster__nozzle-bell {
+  flex: 1;
+  align-self: stretch;
+  min-width: 0;
+  height: 100%;
+  background:
+    linear-gradient(
+      90deg,
+      #4a5462 0%,
+      #6d7786 35%,
+      #5a6472 70%,
+      #3a424e 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      transparent 35%,
+      transparent 65%,
+      rgba(0, 0, 0, 0.28) 100%
+    );
+  background-blend-mode: normal, soft-light;
+  /* Trapezoid: narrow at throat, flares open to the right */
+  clip-path: polygon(0 22%, 100% 0, 100% 100%, 0 78%);
+  border: 1px solid #3a424e;
+  box-shadow:
+    inset 2px 0 4px rgba(0, 0, 0, 0.35),
+    inset -1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.booster__nozzle-lip {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(
+    180deg,
+    #8b95a3 0%,
+    #5a6472 40%,
+    #3a424e 60%,
+    #8b95a3 100%
+  );
+  clip-path: polygon(0 0, 100% 4%, 100% 96%, 0 100%);
+  border-radius: 0 2px 2px 0;
+  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
 .booster__body {
   position: relative;
   width: 14rem;
@@ -2323,17 +2714,19 @@
   background: color-mix(in srgb, var(--color-orbital) 70%, #334);
 }
 
+/* Assembly-line logo size (haul / launch-prep override with their own scales). */
 .booster__logo {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 2.7rem;
+  height: 2.7rem;
   object-fit: contain;
   opacity: 0.92;
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.45));
   pointer-events: none;
+  z-index: 2;
 }
 
 .booster__engine {
@@ -2371,7 +2764,7 @@
   padding: 0.15rem 0.5rem;
 }
 
-/* Access-code banner — current station code for the operator */
+/* Access-code banner â€” current station code for the operator */
 
 .manufacture-code-banner {
   position: relative;
@@ -2419,7 +2812,7 @@
   background: color-mix(in srgb, var(--color-bg) 70%, transparent);
 }
 
-/* Machines — parkOffset varies per station; approach slides down to the belt */
+/* Machines â€” parkOffset varies per station; approach slides down to the belt */
 
 .factory-machine {
   position: relative;
@@ -2616,7 +3009,7 @@
   font-size: 0.75rem;
 }
 
-/* Machine art — CSS shapes */
+/* Machine art â€” CSS shapes */
 
 .machine-art {
   width: 4.5rem;
@@ -2871,7 +3264,7 @@
   font-size: 0.62rem;
 }
 
-/* ── Integrate payload (haul) scene — outdoor grassy haul ── */
+/* â”€â”€ Integrate payload (haul) scene â€” outdoor grassy haul â”€â”€ */
 
 .haul-scene {
   position: relative;
@@ -3190,7 +3583,7 @@
   }
 }
 
-/* ── Prepare for launch (launch-prep) scene ── */
+/* â”€â”€ Prepare for launch (launch-prep) scene â”€â”€ */
 
 .launch-prep-scene {
   position: relative;
@@ -3528,7 +3921,7 @@
   }
 }
 
-/* Crane — parked just right of mated stack so swing/lower seats fairing on nose */
+/* Crane â€” parked just right of mated stack so swing/lower seats fairing on nose */
 .lp-crane {
   position: absolute;
   /* Mated booster center ~42%; crane cab sits immediately outboard */
@@ -3590,7 +3983,7 @@
 
 /*
  * Swing / lower: hard inboard lean so jib free end (cable) sits over
- * mated booster center (~1.5–2.5rem left of boom base).
+ * mated booster center (~1.5â€“2.5rem left of boom base).
  */
 .lp-crane--phase-3 .lp-crane__boom,
 .lp-crane--phase-4 .lp-crane__boom {
@@ -3623,7 +4016,7 @@
   transform: rotate(2deg);
 }
 
-/* Short jib — free end lands on stack axis, not past the far side of the hull */
+/* Short jib â€” free end lands on stack axis, not past the far side of the hull */
 .lp-crane--phase-3 .lp-crane__jib,
 .lp-crane--phase-4 .lp-crane__jib {
   width: 1.75rem;
@@ -3668,10 +4061,10 @@
   bottom: 0.2rem;
 }
 
-/* Fuel farm + umbilicals — tanks on pad side, lines meet mated hull */
+/* Fuel farm + umbilicals â€” tanks on pad side, lines meet mated hull */
 .lp-umbilicals {
   position: absolute;
-  /* Span from fuel farm (left) to mated booster left face (~42% − half width) */
+  /* Span from fuel farm (left) to mated booster left face (~42% âˆ’ half width) */
   left: calc(42% - 7.1rem);
   bottom: 26%;
   width: 6.35rem;
@@ -3935,7 +4328,7 @@
   cursor: pointer;
 }
 
-/* Strongback redesign: the slider itself is half as wide — half the travel. */
+/* Strongback redesign: the slider itself is half as wide â€” half the travel. */
 .lp-slider__input--short {
   max-width: 50%;
   justify-self: start;
@@ -4107,7 +4500,7 @@
   flex-shrink: 0;
 }
 
-/* ── Launch sequence (mission control) ── */
+/* â”€â”€ Launch sequence (mission control) â”€â”€ */
 
 .launch-seq-scene {
   display: flex;
@@ -4435,7 +4828,7 @@
   pointer-events: none;
 }
 
-/* Lightning rod, top of the mast — thin spike with a red-tipped ball. */
+/* Lightning rod, top of the mast â€” thin spike with a red-tipped ball. */
 .mc-pad-view__tower-rod {
   position: absolute;
   right: 0.42rem;
@@ -4458,7 +4851,7 @@
   box-shadow: 0 0 4px rgba(255, 107, 94, 0.8);
 }
 
-/* Aviation obstruction beacon — a red detail that blinks on and off. */
+/* Aviation obstruction beacon â€” a red detail that blinks on and off. */
 .mc-pad-view__tower-beacon {
   position: absolute;
   right: 0.28rem;
@@ -4543,7 +4936,7 @@
   );
 }
 
-/* Fitting clamp on the conduit — a red detail from time to time. */
+/* Fitting clamp on the conduit â€” a red detail from time to time. */
 .mc-pad-view__tower-pipe::after {
   content: '';
   position: absolute;
@@ -4555,7 +4948,7 @@
   opacity: 0.85;
 }
 
-/* Ground support equipment — small fuel/LOX tanks beside the tower base. */
+/* Ground support equipment â€” small fuel/LOX tanks beside the tower base. */
 .mc-pad-view__tower-tank {
   position: absolute;
   bottom: 0;
@@ -4596,7 +4989,7 @@
   border-radius: 1px 1px 0 0;
 }
 
-/* Hazard stripe on the base — a red detail from time to time. */
+/* Hazard stripe on the base â€” a red detail from time to time. */
 .mc-pad-view__tower-base::after {
   content: '';
   position: absolute;
@@ -4634,7 +5027,7 @@
   transform: translateY(0) scale(0.3);
 }
 
-/* Hold → slow breakaway → accelerate clear of tower, soaring high before fading out. */
+/* Hold â†’ slow breakaway â†’ accelerate clear of tower, soaring high before fading out. */
 @keyframes mc-liftoff {
   0% {
     transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
@@ -4682,7 +5075,7 @@
   opacity: 0.85;
 }
 
-/* Orb-it decal on the booster hull, above the stripe — enlarged for visibility. */
+/* Orb-it decal on the booster hull, above the stripe â€” enlarged for visibility. */
 .mc-rocket__logo {
   position: absolute;
   top: 12%;
@@ -5260,7 +5653,7 @@
   transform: rotate(1.15deg);
 }
 
-/* Round 2 redesign: realigned stations drop staggered spacing / tilt friction.
+/* To-be redesign: realigned stations drop staggered spacing / tilt friction.
    Double class beats `.mc-go-row:nth-child(n)` (0,2,0) so realign actually wins. */
 .mc-go-row.mc-go-row--realigned {
   margin-left: 0;
@@ -5379,7 +5772,7 @@
   transform: translateX(0.45rem) translateY(0.1rem);
 }
 
-/* Realigned GO buttons sit flush — easier to hit in order.
+/* Realigned GO buttons sit flush â€” easier to hit in order.
    Double class matches nth-child button rules (0,2,1) and wins by source order. */
 .mc-go-row.mc-go-row--realigned .mc-go-btn {
   margin-right: 0;
@@ -5613,7 +6006,7 @@
   }
 }
 
-/* ── Customer Portal — fictional "Starfeed" platform mockup ──── */
+/* â”€â”€ Customer Portal â€” fictional "Starfeed" platform mockup â”€â”€â”€â”€ */
 
 .customer-platform-header {
   position: relative;
@@ -5690,7 +6083,7 @@
   margin-top: var(--space-4);
 }
 
-/* ── Left nav — X/Twitter-style mockup, not functional ───────── */
+/* â”€â”€ Left nav â€” X/Twitter-style mockup, not functional â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .customer-nav {
   flex-shrink: 0;
@@ -5791,7 +6184,7 @@
   color: var(--color-text-dim);
 }
 
-/* ── Feed ─────────────────────────────────────────────────────── */
+/* â”€â”€ Feed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .customer-feed {
   flex: 1;
@@ -5902,7 +6295,7 @@
   color: var(--color-customer-accent);
 }
 
-/* ── Replies (revealed on click) ──────────────────────────────── */
+/* â”€â”€ Replies (revealed on click) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .customer-replies {
   display: flex;
@@ -5967,7 +6360,7 @@
   color: var(--color-text);
 }
 
-/* ── Company card — "who's behind this post", right beside it ───── */
+/* â”€â”€ Company card â€” "who's behind this post", right beside it â”€â”€â”€â”€â”€ */
 
 .customer-company-card {
   flex: 1 1 14rem;
@@ -6078,7 +6471,7 @@
   }
 }
 
-/* ── Home (Orb-it intranet landing page) ─────────────────── */
+/* â”€â”€ Home (Orb-it intranet landing page) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 /* Briefing strip between stage nav and the Welcome back banner. */
 .home-scenario {
@@ -6117,7 +6510,7 @@
   display: block;
 }
 
-/* Logo doubled in size (40px → 80px) — heading scaled up to match. */
+/* Logo doubled in size (40px â†’ 80px) â€” heading scaled up to match. */
 .home-header h2 {
   font-size: 2rem;
 }
@@ -6275,7 +6668,7 @@
   color: var(--color-text-muted);
 }
 
-/* Marketing image beneath the tiles — full-width hero shot, not a tile. */
+/* Marketing image beneath the tiles â€” full-width hero shot, not a tile. */
 .home-marketing {
   margin: var(--space-6) 0 0;
   border-radius: var(--radius-md);
@@ -6289,6 +6682,8 @@
   width: 100%;
   max-height: 34rem;
   object-fit: cover;
+  /* Keep the top of the launch-pad shot; crop from the bottom only. */
+  object-position: center top;
 }
 
 .home-marketing__caption {
@@ -6298,7 +6693,7 @@
   text-align: center;
 }
 
-/* ── Training (video placeholder + employee instructions) ─ */
+/* â”€â”€ Training (video placeholder + employee instructions) â”€ */
 
 .training-body {
   display: flex;
@@ -6361,7 +6756,7 @@
   margin-bottom: 0;
 }
 
-/* Team photo — full width of the instructions pane, reserved min height. */
+/* Team photo â€” full width of the instructions pane, reserved min height. */
 .training-team {
   display: block;
   width: 100%;
@@ -6480,18 +6875,18 @@
   text-decoration: underline;
 }
 
-/* ── Annual Report ────────────────────────────────────────── */
+/* â”€â”€ Annual Report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 /*
  * Orbital photo is set inline on the panel (backgroundImage) so it always
- * resolves via BASE_URL. Portrait source (≈9:16 / 1008×1792) uses cover +
+ * resolves via BASE_URL. Portrait source (â‰ˆ9:16 / 1008Ã—1792) uses cover +
  * center 40% so the booster stays framed on wide viewports.
- * Do not put an opaque fill on .view-panel__body here — it would hide the photo.
+ * Do not put an opaque fill on .view-panel__body here â€” it would hide the photo.
  */
 .annual-report.view-panel {
   position: relative;
   isolation: isolate;
-  /* Fallback only — image/gradient come from the component style prop */
+  /* Fallback only â€” image/gradient come from the component style prop */
   background-color: #070b12;
   border-color: color-mix(in srgb, #ffffff 14%, var(--color-border));
   box-shadow:
@@ -6531,7 +6926,7 @@
   color: color-mix(in srgb, var(--color-text) 82%, var(--color-text-muted));
 }
 
-/* White circular badge behind the logo — same treatment as Home. */
+/* White circular badge behind the logo â€” same treatment as Home. */
 .annual-report__logo-badge {
   flex-shrink: 0;
   display: flex;
@@ -6573,7 +6968,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  /* Must stay transparent — opaque body would hide the panel photo */
+  /* Must stay transparent â€” opaque body would hide the panel photo */
   background: transparent !important;
   padding: var(--space-4) var(--space-4) var(--space-5);
 }
@@ -6690,4 +7085,538 @@
 
 .annual-report__footer img {
   display: block;
+}
+
+/* Off-to-the-side pair: Regulation + Customer Portal. */
+.stage-nav__side {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Formal government navy/green - distinct from customer magenta and orange stage group. */
+.stage-nav__regulation-btn {
+  flex-shrink: 0;
+  padding: 0.65rem 1.25rem;
+  border: 1px solid var(--color-regulation-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-regulation-accent-dim);
+  color: color-mix(in srgb, var(--color-brand-green) 55%, white);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.stage-nav__regulation-btn:hover {
+  background: color-mix(in srgb, var(--color-regulation-accent) 28%, var(--color-regulation-accent-dim));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-regulation-accent) 55%, transparent);
+}
+
+.stage-nav__regulation-btn--active {
+  background: var(--color-regulation-accent-strong);
+  color: #e8f0e4;
+  border-color: var(--color-brand-green);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand-green) 50%, transparent);
+}
+
+/* ── Regulation site (fictional NSLA government library) ── */
+
+.regulation-panel .view-panel__body {
+  padding-top: var(--space-3);
+}
+
+.regulation-site {
+  --reg-paper: #f4f1ea;
+  --reg-paper-raised: #fffcf6;
+  --reg-ink: #1a2332;
+  --reg-ink-muted: #4a5568;
+  --reg-rule: #c5c0b4;
+  --reg-accent: #1e345d;
+  --reg-accent-soft: #e8eef5;
+  --reg-green: #3d6b1e;
+  --reg-warn-bg: #fdf6e8;
+  --reg-warn-border: #c9a227;
+  color: var(--reg-ink);
+  background: var(--reg-paper);
+  border: 1px solid color-mix(in srgb, var(--color-brand-indigo) 35%, var(--color-border));
+  border-radius: calc(var(--radius-md) + 2px);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-brand-navy) 20%, transparent),
+    0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.regulation-masthead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: linear-gradient(
+    135deg,
+    var(--color-brand-indigo) 0%,
+    var(--color-brand-navy) 55%,
+    #0a3a5c 100%
+  );
+  color: #f0f4f8;
+}
+
+.regulation-masthead__crest {
+  flex-shrink: 0;
+  width: 3.5rem;
+  height: 3.5rem;
+  color: color-mix(in srgb, var(--color-brand-green) 70%, white);
+}
+
+.regulation-crest {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.regulation-masthead__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.regulation-masthead__agency {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+}
+
+.regulation-masthead__office {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: color-mix(in srgb, #fff 78%, var(--color-brand-green));
+  font-weight: 600;
+}
+
+.regulation-masthead__doc {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, #fff 62%, transparent);
+  line-height: 1.4;
+}
+
+.regulation-masthead__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-end;
+}
+
+.regulation-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 2px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--color-brand-green) 85%, white);
+  color: var(--color-brand-indigo);
+}
+
+.regulation-badge--muted {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, #fff 35%, transparent);
+  color: color-mix(in srgb, #fff 75%, transparent);
+}
+
+.regulation-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem var(--space-5);
+  background: #e8e4db;
+  border-bottom: 1px solid var(--reg-rule);
+  font-size: 0.75rem;
+  color: var(--reg-ink-muted);
+}
+
+.regulation-breadcrumb strong {
+  color: var(--reg-accent);
+  font-weight: 600;
+}
+
+.regulation-doc-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--reg-paper-raised);
+  border-bottom: 1px solid var(--reg-rule);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.regulation-doc-meta__label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--reg-ink-muted);
+  margin-bottom: 0.15rem;
+}
+
+.regulation-layout {
+  display: grid;
+  grid-template-columns: minmax(11rem, 14rem) 1fr;
+  min-height: 28rem;
+}
+
+.regulation-toc {
+  padding: var(--space-4);
+  background: #ebe7de;
+  border-right: 1px solid var(--reg-rule);
+}
+
+.regulation-toc__title {
+  margin: 0 0 var(--space-3);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--reg-ink-muted);
+}
+
+.regulation-toc__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.regulation-toc__link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--reg-ink);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: background 100ms ease, border-color 100ms ease;
+}
+
+.regulation-toc__link:hover {
+  background: color-mix(in srgb, var(--reg-accent) 8%, transparent);
+  border-color: color-mix(in srgb, var(--reg-accent) 18%, transparent);
+}
+
+.regulation-toc__link--active {
+  background: var(--reg-accent-soft);
+  border-color: color-mix(in srgb, var(--reg-accent) 35%, transparent);
+  color: var(--reg-accent);
+  font-weight: 600;
+}
+
+.regulation-toc__part {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--reg-ink-muted);
+  margin-bottom: 0.1rem;
+}
+
+.regulation-toc__link--active .regulation-toc__part {
+  color: var(--color-brand-navy);
+}
+
+.regulation-toc__note {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--reg-rule);
+}
+
+.regulation-toc__note p {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: var(--reg-ink-muted);
+}
+
+.regulation-content {
+  padding: var(--space-5);
+  background: var(--reg-paper-raised);
+  max-height: 42rem;
+  overflow-y: auto;
+}
+
+.regulation-section-head {
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid var(--reg-accent);
+}
+
+.regulation-section-head__part {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-brand-navy);
+}
+
+.regulation-section-head__title {
+  margin: 0.35rem 0 0.25rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--reg-ink);
+  line-height: 1.25;
+}
+
+.regulation-section-head__cite {
+  margin: 0;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--reg-ink-muted);
+}
+
+.regulation-section h4 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--reg-accent);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.regulation-section p {
+  margin: 0 0 var(--space-3);
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--reg-ink);
+}
+
+.regulation-section p em {
+  font-style: italic;
+}
+
+.regulation-muted {
+  color: var(--reg-ink-muted) !important;
+  font-size: 0.82rem !important;
+}
+
+.regulation-ol {
+  margin: 0 0 var(--space-3);
+  padding-left: 1.35rem;
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.regulation-ol li {
+  margin-bottom: var(--space-2);
+}
+
+.regulation-callout {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-left: 4px solid var(--reg-accent);
+  background: var(--reg-accent-soft);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.regulation-callout--info {
+  border-left-color: var(--color-brand-navy);
+  background: color-mix(in srgb, var(--color-brand-navy) 8%, var(--reg-paper-raised));
+}
+
+.regulation-callout--warn {
+  border-left-color: var(--reg-warn-border);
+  background: var(--reg-warn-bg);
+}
+
+.regulation-callout__label {
+  margin: 0 0 0.35rem !important;
+  font-size: 0.68rem !important;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--reg-accent) !important;
+}
+
+.regulation-callout--warn .regulation-callout__label {
+  color: #8a6a10 !important;
+}
+
+.regulation-callout p:last-child {
+  margin-bottom: 0;
+}
+
+.regulation-table-wrap {
+  margin: 0 0 var(--space-4);
+  overflow-x: auto;
+}
+
+.regulation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  background: #fff;
+  border: 1px solid var(--reg-rule);
+}
+
+.regulation-table caption {
+  caption-side: top;
+  text-align: left;
+  padding: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--reg-ink-muted);
+}
+
+.regulation-table th,
+.regulation-table td {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--reg-rule);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.4;
+}
+
+.regulation-table th {
+  background: #e4e0d6;
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--reg-accent);
+}
+
+.regulation-table tbody tr:nth-child(even) {
+  background: #faf8f3;
+}
+
+.regulation-dl {
+  margin: 0;
+}
+
+.regulation-dl > div {
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--reg-rule);
+}
+
+.regulation-dl > div:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.regulation-dl dt {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--reg-accent);
+  font-family: Georgia, 'Times New Roman', serif;
+  margin-bottom: 0.25rem;
+}
+
+.regulation-dl dd {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--reg-ink);
+}
+
+.regulation-footnotes {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-3) var(--space-3) 1.5rem;
+  border-top: 1px solid var(--reg-rule);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--reg-ink-muted);
+}
+
+.regulation-footnotes li {
+  margin-bottom: 0.35rem;
+}
+
+.regulation-footer {
+  padding: var(--space-4) var(--space-5);
+  background: #e0dcd2;
+  border-top: 1px solid var(--reg-rule);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--reg-ink-muted);
+}
+
+.regulation-footer__cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.regulation-footer__heading {
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--reg-accent);
+}
+
+.regulation-footer p {
+  margin: 0;
+}
+
+.regulation-footer__copy {
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--reg-rule);
+  font-size: 0.68rem;
+}
+
+@media (max-width: 860px) {
+  .regulation-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .regulation-toc {
+    border-right: none;
+    border-bottom: 1px solid var(--reg-rule);
+  }
+
+  .regulation-toc__list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .regulation-toc__link {
+    width: auto;
+  }
+
+  .regulation-masthead {
+    flex-wrap: wrap;
+  }
+
+  .regulation-masthead__meta {
+    flex-direction: row;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .regulation-content {
+    max-height: none;
+  }
 }

@@ -25,6 +25,11 @@
   --color-customer-accent-strong: var(--color-brand-magenta); /* true Pantone 227 — solid-fill / high-emphasis use (e.g. the active nav button) */
   --color-customer-accent-dim: color-mix(in srgb, var(--color-customer-accent) 16%, transparent);
 
+  /* Formal government green/navy - Regulation stage nav (distinct from customer magenta + orange stage group). */
+  --color-regulation-accent: color-mix(in srgb, var(--color-brand-green) 35%, var(--color-brand-navy));
+  --color-regulation-accent-strong: var(--color-brand-indigo);
+  --color-regulation-accent-dim: color-mix(in srgb, var(--color-brand-navy) 22%, transparent);
+
   /* PMI brand palette (official) — hex is authoritative; Pantone/CMYK/RGB are print-only reference. */
   --color-brand-navy: #00538a; /* Pantone 7452 */
   --color-brand-orange: #ff8300; /* Pantone 151 */

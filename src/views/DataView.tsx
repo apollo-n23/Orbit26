@@ -2,7 +2,7 @@ import type { LeadTimeEntry, RedesignCostBreakdown } from '../types/process'
 import { formatLeadTime } from '../lib/simulation'
 import { averageLeadTimeMs, launchDurationsMs } from '../lib/roundMetrics'
 import { REDESIGN_BUDGET } from '../lib/redesignCost'
-import { formatHeightMiles } from '../lib/flightMetrics'
+import { formatHeightAchieved } from '../lib/flightMetrics'
 import { buildDataCsv, downloadCsv } from '../lib/csvExport'
 import { RoundLeadTimeCompare } from '../components/RoundLeadTimeCompare'
 
@@ -17,7 +17,7 @@ interface DataViewProps {
   /** Both rounds' live entries, e.g. [round1Section, round2Section]. */
   rounds: RoundLeadTimeSection[]
   rocketsGoal?: number
-  /** Round 2's confirmed redesign cost breakdown, or null before Confirm. */
+  /** To-be confirmed redesign cost breakdown, or null before Confirm. */
   round2CostBreakdown?: RedesignCostBreakdown | null
 }
 
@@ -26,7 +26,7 @@ function formatCost(cost: number | undefined): string {
   return `${cost} pts`
 }
 
-/** Cost of improvement summary: total + breakdown by source, for Round 2. */
+/** Cost of improvement summary: total + breakdown by source, for To-be. */
 function RedesignCostSummary({ cost }: { cost: RedesignCostBreakdown }) {
   const rows: { label: string; value: number }[] = [
     { label: 'Manufacture — machine moves', value: cost.machineMoveCost },
@@ -50,10 +50,10 @@ function RedesignCostSummary({ cost }: { cost: RedesignCostBreakdown }) {
   return (
     <div className="lead-board__round-section">
       <h3 className="lead-board__round-heading">
-        Total cost of improvement — Round 2
+        Total cost of improvement — To-be
       </h3>
       <p className="view-panel__lede">
-        Round 2 has a {REDESIGN_BUDGET} pt improvement budget. Builds as you
+        To-be has a {REDESIGN_BUDGET} pt improvement budget. Builds as you
         invest in redesign upgrades. Only removing road tiles brings it back
         down — every other investment is permanent for the round once
         selected.
@@ -193,7 +193,7 @@ function RoundLeadBoard({
                       {formatLeadTime(entry.durationMs / 1000)}
                     </td>
                     <td className="lead-board__height">
-                      {formatHeightMiles(entry.heightAchievedMiles)}
+                      {formatHeightAchieved(entry)}
                     </td>
                     <td className="lead-board__road-cost">
                       {formatCost(entry.costBreakdown?.total)}

@@ -669,7 +669,7 @@ export function IntegratePayloadScene({
               cols 7–8 / rows 6–8, a 2x3 block). Purely visual: this pocket
               is already outside the drivable safe corridor, and the
               matching grid cells are locked from being painted as road in
-              the Round 2 redesign workshop.
+              the To-be redesign workshop.
             */}
             {[
               { cx: 340, cy: 250, r: 17 },

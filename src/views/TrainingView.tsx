@@ -106,9 +106,9 @@ export function TrainingView({
                   <button
                     type="button"
                     className="training-instructions__stage-btn"
-                    onClick={() => onNavigateStage('round1')}
+                    onClick={() => onNavigateStage('as-is')}
                   >
-                    Round 1
+                    As-is
                   </button>
                   <span>
                     Experience the process as it is. Run three full launches
@@ -135,14 +135,14 @@ export function TrainingView({
                   <button
                     type="button"
                     className="training-instructions__stage-btn"
-                    onClick={() => onNavigateStage('round2')}
+                    onClick={() => onNavigateStage('to-be')}
                   >
-                    Round 2
+                    To-be
                   </button>
                   <span>
                     Test the changes you locked in. Run three more launches
-                    and compare lead times (and redesign cost) against
-                    Round 1 on the Data board.
+                    and compare lead times (and redesign cost) against As-is
+                    on the Data board.
                   </span>
                 </li>
               </ol>
@@ -168,7 +168,7 @@ export function TrainingView({
               <button
                 type="button"
                 className="training-cta__link"
-                onClick={() => onNavigateStage('round1')}
+                onClick={() => onNavigateStage('as-is')}
               >
                 Jump into the interactive simulator
               </button>

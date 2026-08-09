@@ -44,7 +44,11 @@ export function buildDataCsv(
         String(entry.runNumber),
         formatLeadTimeMmSs(entry.durationMs),
         String(entry.durationMs),
-        entry.heightAchievedMiles != null ? String(entry.heightAchievedMiles) : '',
+        entry.heightStatus === 'no-capcom'
+          ? 'NO CAPCOM'
+          : entry.heightAchievedMiles != null
+            ? String(entry.heightAchievedMiles)
+            : '',
         cost != null ? String(cost.total) : '',
         cost != null ? String(cost.machineMoveCost) : '',
         cost != null ? String(cost.autoTransferCost) : '',

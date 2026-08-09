@@ -11,12 +11,12 @@ import { RoundLeadTimeCompare } from '../components/RoundLeadTimeCompare'
 interface OrbitCompleteSceneProps {
   round: RoundConfig
   leadTimes: LeadTimeEntry[]
-  /** Shareable absolute URL for Round 2 (tutor link). */
+  /** Shareable absolute URL for To-be (tutor link). */
   round2ShareUrl: string
   onGoToRound2?: () => void
-  /** Round 1 average (ms) — for Round 2 completion compare. */
+  /** As-is average (ms) — for To-be completion compare. */
   round1AverageMs?: number | null
-  /** Round 1 per-rocket times (ms) — for side-by-side bars. */
+  /** As-is per-rocket times (ms) — for side-by-side bars. */
   round1LaunchesMs?: number[] | null
 }
 
@@ -121,11 +121,11 @@ export function OrbitCompleteScene({
                 className="btn btn--primary"
                 onClick={onGoToRound2}
               >
-                Continue to Round 2
+                Continue to To-be
               </button>
             )}
             <p className="orbit-complete__share">
-              Tutor share link for Round 2:
+              Tutor share link for To-be:
               <a href={hashForRound(2)} className="orbit-complete__link">
                 {round2ShareUrl}
               </a>

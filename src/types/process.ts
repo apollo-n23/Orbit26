@@ -45,7 +45,7 @@ export interface ProcessStep {
   machines?: ProcessMachine[]
   /**
    * Optional custom haul centerline (scene units). When omitted, use default HAUL_PATH.
-   * Set in Round 2 redesign when the learner paints a road.
+   * Set in To-be redesign when the learner paints a road.
    */
   haulPath?: HaulPathPoint[]
   /**
@@ -66,7 +66,8 @@ export interface ProcessStep {
   launchSeqRealignIds?: string[]
   /**
    * Launch-sequence redesign: GO station ids removed from the poll for this round
-   * (e.g. Range Safety). Mirrors process.launchSeqRemovedIds.
+   * (Range Safety, Weather, Capcom — see LAUNCH_SEQ_REMOVABLE_STATION_IDS).
+   * Mirrors process.launchSeqRemovedIds.
    */
   launchSeqRemovedIds?: string[]
   /**
@@ -77,7 +78,7 @@ export interface ProcessStep {
 }
 
 /**
- * Round 2 launch-prep technology investments. Not mutually exclusive — the
+ * To-be launch-prep technology investments. Not mutually exclusive — the
  * learner can select as many as the redesign budget allows.
  * - faster-pumps: LOX/RP-1 fill almost instantly
  * - auto-power: single master ON instead of sequential switches
@@ -91,7 +92,7 @@ export type LaunchPrepTech =
   | 'strongback-redesign'
 
 /**
- * Total cost of improvement for a Round 2 redesign, broken down by where it
+ * Total cost of improvement for a To-be redesign, broken down by where it
  * comes from. Every category except `roadCost` is a one-way ratchet within a
  * redesign session — once an investment is ever selected it stays counted,
  * even if later toggled off. Only removing painted road tiles reduces the
@@ -108,7 +109,7 @@ export interface RedesignCostBreakdown {
   launchPrepTechCost: number
   /** Launch sequence: cost of every GO station ever realigned. */
   goRealignCost: number
-  /** Launch sequence: cost of removing Range Safety from the poll. */
+  /** Launch sequence: cost of every removable GO station ever deleted from the poll. */
   rangeRemovalCost: number
   /** Launch sequence: one-time cost of lubricating the launch key mechanism. */
   keyLubricationCost: number
@@ -124,11 +125,11 @@ export interface ProcessVersion {
   /**
    * Optional round-redesign haul centerline (scene units).
    * Preferred over step.haulPath when resolving the road for play.
-   * Set when the learner confirms a painted road in Round 2 redesign.
+   * Set when the learner confirms a painted road in To-be redesign.
    */
   haulPathOverride?: HaulPathPoint[]
   /**
-   * Total cost of improvement from Round 2 redesign choices, broken down by
+   * Total cost of improvement from To-be redesign choices, broken down by
    * source. Fixed for the round once confirmed.
    */
   costBreakdown?: RedesignCostBreakdown
@@ -137,26 +138,26 @@ export interface ProcessVersion {
    */
   autoMoveBooster?: boolean
   /**
-   * Launch-prep technology investments chosen in Round 2 redesign — as many
+   * Launch-prep technology investments chosen in To-be redesign — as many
    * as the redesign budget allows; not mutually exclusive.
    */
   launchPrepTechs?: LaunchPrepTech[]
   /**
-   * Launch-sequence redesign (Round 2): GO station ids marked realigned.
+   * Launch-sequence redesign (To-be): GO station ids marked realigned.
    * Ids match LAUNCH_SEQ_GO_STATIONS[].id (e.g. 'go-guidance').
    * Play should reduce as-is misalignment friction for these stations.
    * Prefer process-level; may also be mirrored on the launch-sequence step.
    */
   launchSeqRealignIds?: string[]
   /**
-   * Launch-sequence redesign (Round 2): GO station ids removed from the GO poll.
-   * Only Range Safety (`go-range`) is offered for deletion in redesign UI;
-   * field is a list so play can filter generically.
+   * Launch-sequence redesign (To-be): GO station ids removed from the GO poll.
+   * Redesign UI offers deletion for stations in LAUNCH_SEQ_REMOVABLE_STATION_IDS
+   * (Range Safety, Weather, Capcom); field is a list so play can filter generically.
    * Prefer process-level; may also be mirrored on the launch-sequence step.
    */
   launchSeqRemovedIds?: string[]
   /**
-   * Launch-sequence redesign (Round 2): launch key mechanism lubricated so
+   * Launch-sequence redesign (To-be): launch key mechanism lubricated so
    * the hold-to-turn arming action is near-instant instead of a long hold.
    */
   keyLubrication?: boolean
@@ -188,6 +189,12 @@ export interface LeadTimeEntry {
   costBreakdown?: RedesignCostBreakdown
   /** Orbital insertion height achieved on this launch, in miles (randomised per launch). */
   heightAchievedMiles?: number
+  /**
+   * When Capcom is removed from the launch sequence (To-be only), height cannot
+   * be logged — set to 'no-capcom' and leave heightAchievedMiles undefined.
+   * As-is always has Capcom and never uses this.
+   */
+  heightStatus?: 'no-capcom'
   /**
    * Number of times the booster exploded off the haul road (process step 2)
    * during this launch, before it reached the pad.
@@ -315,5 +322,22 @@ export const LAUNCH_SEQ_GO_STATIONS: LaunchSeqGoStation[] = [
   { id: 'go-weather', callsign: 'WEATHER', name: 'Weather' },
 ]
 
-/** Range Safety station id — only station redesign allows removing from the GO poll. */
+/** Range Safety station id (kept for backward compatibility / convenience). */
 export const LAUNCH_SEQ_RANGE_STATION_ID = 'go-range'
+
+/** Capcom station id — removing it disables altitude logging on To-be launches. */
+export const LAUNCH_SEQ_CAPCOM_STATION_ID = 'go-capcom'
+
+/**
+ * GO stations the redesign workshop allows deleting from the poll
+ * (Range Safety, Weather, Capcom). Cost is RANGE_REMOVAL_COST each (ratchet).
+ */
+export const LAUNCH_SEQ_REMOVABLE_STATION_IDS: readonly string[] = [
+  'go-range',
+  'go-weather',
+  'go-capcom',
+]
+
+export function isLaunchSeqRemovableStationId(id: string): boolean {
+  return (LAUNCH_SEQ_REMOVABLE_STATION_IDS as readonly string[]).includes(id)
+}

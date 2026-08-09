@@ -1,7 +1,7 @@
-# CLAUDE.md — Orb-it Process Excellence Simulator
+﻿# CLAUDE.md — Orb-it Process Excellence Simulator
 
 ## Project Goal
-Build a web-based interactive learning tool that teaches Lean Six Sigma concepts through short gameplay loops. The **primary learning measure is lead time** — end-to-end time from starting a unit through launch — and how process design changes improve it across rounds. **Total cost of improvement** (Round 2 redesign, broken down by source) is a secondary scored metric on the Data board.
+Build a web-based interactive learning tool that teaches Lean Six Sigma concepts through short gameplay loops. The **primary learning measure is lead time** — end-to-end time from starting a unit through launch — and how process design changes improve it across rounds. **Total cost of improvement** (To-be redesign, broken down by source) is a secondary scored metric on the Data board.
 
 Setting: Orb-it, a fictional satellite constellation company. Learners act as process engineers improving the satellite integration and launch preparation value stream.
 
@@ -9,9 +9,9 @@ Tone: Professional, precise, operational. Light narrative framing only. No carto
 
 ## Core Learning Loop (must be preserved)
 1. **Execute** — Visualised, interactive process steps (not auto-play lists). Feel friction and waste as lead time.
-2. **Data** — Lap-style board of lead times (and road cost when redesigned). Process mapping is **outside** this app (no Map tab). **No Comparison tab** — comparison of rounds happens on the Data board (e.g. Round 1 average vs Round 2).
-3. **Rounds** — Round 1 = as-is (3 launches); Round 2 = redesign then 3 launches; compare outcomes on Data.
-4. **Redesign / Validate** — Round 2 workshop locks improvements into the process used for that round’s launches.
+2. **Data** — Lap-style board of lead times (and road cost when redesigned). Process mapping is **outside** this app (no Map tab). **No Comparison tab** — comparison of rounds happens on the Data board (e.g. As-is average vs To-be).
+3. **Rounds** — As-is = baseline (3 launches); To-be = redesign then 3 launches; compare outcomes on Data.
+4. **Redesign / Validate** — To-be workshop locks improvements into the process used for that round’s launches.
 
 The learning loop above is reached **through** the Home intranet page (see
 "Home & intranet pages" below) — it's no longer the thing a learner lands
@@ -28,13 +28,13 @@ simulator. `views/HomeView.tsx`. Three tiles, each navigating via
 
 | Tile | Destination | Behaviour |
 |------|--------------|-----------|
-| **Train** | `#/training` (`views/TrainingView.tsx`) | A pane reserved for an embedded training video — **stub only**: no video yet, just a placeholder pane + a "Jump into the interactive simulator" link (→ `round1`) so the existing learning loop stays reachable. Embedding the real video is future work. |
+| **Train** | `#/training` (`views/TrainingView.tsx`) | A pane reserved for an embedded training video — **stub only**: no video yet, just a placeholder pane + a "Jump into the interactive simulator" link (→ `as-is`) so the existing learning loop stays reachable. Embedding the real video is future work. |
 | **Annual Report** | `#/annual-report` (`views/AnnualReportView.tsx`) | Static in-fiction content: company overview, a declining-net-revenue chart (inline SVG, no charting library — FY21→FY25, `SalesDeclineChart` local to the file), three challenge call-outs (customer feedback / lead time / cost — deliberately mirrors the app's own metrics and the Customer Portal's complaints), and a "call to arms" banner with a **Join the improvement project** button (→ `gemba`). This is the in-fiction reason the whole exercise exists. |
 | **Create Invoices** | `#/invoices` (`views/CreateInvoicesView.tsx`) | Placeholder only — **to be redesigned later**, per explicit instruction. |
 
 - All four (`HomeView`, `TrainingView`, `AnnualReportView`, `CreateInvoicesView`) follow the same **mount-only-while-active, no state to preserve** pattern as `GembaWalkthrough`/`CustomerPortalView` — not part of the persistent-`RoundSession` group.
 - Each renders its own PMI banner (`SiteBrand`) + `StageNav` beneath it, same convention as every other page (see "Stage nav" below).
-- `StageNav` gained a **Home** button (`.stage-nav__home-btn`, orbital-blue accent) at the far left, before the centered Gemba/Round 1/Redesign/Round 2 group, so Home is reachable from anywhere — this is the only way back once inside any other stage, since none of the intranet pages are part of the round-based flow.
+- `StageNav` gained a **Home** button (`.stage-nav__home-btn`, orbital-blue accent) at the far left, before the centered Gemba/As-is/Redesign/To-be group, so Home is reachable from anywhere — this is the only way back once inside any other stage, since none of the intranet pages are part of the round-based flow.
 - Orb-it logo (`public/OrbitLogo.png`) appears on Home (next to "Welcome back", 120×120 — up from 80×80, itself doubled from an original 40×40) — floating centered on a plain white circular badge (`.home-header__logo-badge`, 8.5rem diameter, slightly larger than the 120px/7.5rem logo) so the logo reads clearly against the dark chrome — and on the Annual Report (masthead + footer signature) — in-fiction branding, same convention as the booster decal / Assembly badge / Launch Pad mark.
 - **Home banner schematic** (`.home-header__schematic`, right of the "Welcome back" text, filling what was empty space): an inline SVG "orbit schematic" — two dashed ellipse rings rotating at different speeds/directions, glowing pulsing satellite nodes, and a few flowing dashed connector lines — decorative, `aria-hidden`, hidden below 720px viewport width. Purely CSS-animated (`transform`/`opacity`/`stroke-dashoffset`), no JS.
 - **Marketing image** (`public/OrbLaunchPad.png`, a photo-style Orb-it launch vehicle on the pad): rendered on Home below the three tiles as a full-width hero shot (`.home-marketing`, `max-height: 34rem` — up from `26rem` so less of the source photo is cropped), captioned "Every satellite starts here — on the pad, ready for liftoff."
@@ -51,21 +51,21 @@ Each round is a self-contained session: process config, lead-time board, chrome,
 - Each full cycle → one **Data** entry (`LeadTimeEntry`: run number, lead time ms, optional `costBreakdown`, `heightAchievedMiles`, `defectCount`, completedAt).
 - After the third launch → **orbit complete** scene (Earth + three satellites). No further Run Process.
 
-### Round 1 — As-is
+### As-is
 - **Route:** `#/round/1` (default).
 - **Config:** `ROUND_CONFIGS[1]` — baseline inefficient process; **no** redesign phase.
-- **Complete:** “As-is round complete” + lap times + Continue / share link to Round 2.
-- **Persist results:** when all 3 launches are logged, save **Round 1 average** + **per-rocket lead times** via `saveRound1LeadTimeResults` in `lib/roundMetrics.ts` (`localStorage` keys `orbit26.round1.avgLeadTimeMs` and `orbit26.round1.launchLeadTimesMs`).
+- **Complete:** “As-is round complete” + lap times + Continue / share link to To-be.
+- **Persist results:** when all 3 launches are logged, save **As-is average** + **per-rocket lead times** via `saveRound1LeadTimeResults` in `lib/roundMetrics.ts` (`localStorage` keys `orbit26.round1.avgLeadTimeMs` and `orbit26.round1.launchLeadTimesMs`).
 
-### Round 2 — Redesign then execute
+### To-be — Redesign then execute
 - **Route:** `#/round/2` (tutor-shareable deep link).
 - **Config:** `allowsRedesign: true`.
 - **Flow:** `phase: redesign` → `RedesignWorkshop` → confirm (with **are-you-sure**) → `phase: play` (3 launches) → orbit complete.
-- **Data comparison (settled):** load Round 1 average + per-rocket times on mount. Data tab shows **Round 1 average lead time** during Round 2. When Round 2's three launches complete, show full visual compare (`RoundLeadTimeCompare`): Round 1 vs Round 2 averages (difference faster/slower) **and** side-by-side bar chart for Rockets 1–3 of both rounds. Same visual on Round 2 **orbit complete** panel.
-- **State isolation:** fresh `RoundSession` per `round.id`; redesign must **not** be wiped after lock-in (reset only on round id change). Lap logs do not carry across rounds; Round 1 **average + three launch times** carry via localStorage only.
-- **Do not** delete Round 2 or merge it into Round 1.
+- **Data comparison (settled):** load As-is average + per-rocket times on mount. Data tab shows **As-is average lead time** during To-be. When To-be's three launches complete, show full visual compare (`RoundLeadTimeCompare`): As-is vs To-be averages (difference faster/slower) **and** side-by-side bar chart for Rockets 1–3 of both rounds. Same visual on To-be **orbit complete** panel.
+- **State isolation:** fresh `RoundSession` per `round.id`; redesign must **not** be wiped after lock-in (reset only on round id change). Lap logs do not carry across rounds; As-is **average + three launch times** carry via localStorage only.
+- **Do not** delete To-be or merge it into As-is.
 
-### Round 2 redesign workshop (`RedesignWorkshop.tsx`)
+### To-be redesign workshop (`RedesignWorkshop.tsx`)
 Tabs (all available before lock-in):
 
 | Tab | Learner actions | Persisted on `ProcessVersion` (and often mirrored on the step) | Cost |
@@ -73,7 +73,7 @@ Tabs (all available before lock-in):
 | **1 · Manufacture** | Drag stations for **line order**; **parkOffset** sliders; **auto-transfer** upgrade (open panel on hover/click — **panel stays open** so the enable button is clickable) | `linePosition`, `parkOffset` on machines; `autoMoveBooster` | **15 pts** per machine ever moved from its factory slot · **40 pts** one-time for auto-transfer |
 | **2 · Haul road** | Paint/erase tiles only (**no** Straight/Reset shortcuts). Endpoints & tree-cluster tiles fixed and free. | `haulPath` / `haulPathOverride` | The road as it stood when the session started is **free** (0 pts) — only tiles painted **beyond** it cost **10 pts** each; selling an existing tile credits **10 pts** back. The **only** category that can go back down. |
 | **3 · Launch prep tech** | Invest in **as many of the four** techs as the budget allows (not mutually exclusive; toggle each on/off independently) | `launchPrepTechs` | **20/25/50/20 pts** (faster-pumps / auto-power / payload-drone / strongback-redesign) — deselecting a tech does not refund a previously-tried one |
-| **4 · Launch sequence** | **Realign** each GO; **info** criticality; Range Safety may be **deleted** from sequence; **Key lubrication** toggle (near-instant key-arm hold instead of the long as-is hold) | `launchSeqRealignIds`, `launchSeqRemovedIds`, `keyLubrication` | **10 pts** per GO ever realigned · **35 pts** for removing Range Safety · **15 pts** one-time for key lubrication |
+| **4 · Launch sequence** | **Realign** each GO; **info** criticality; **Weather**, **Capcom**, and **Range Safety** may be **deleted** from sequence (`LAUNCH_SEQ_REMOVABLE_STATION_IDS`); **Key lubrication** toggle (near-instant key-arm hold instead of the long as-is hold) | `launchSeqRealignIds`, `launchSeqRemovedIds`, `keyLubrication` | **10 pts** per GO ever realigned · **35 pts** per removable GO ever deleted (ratchet) · **15 pts** one-time for key lubrication |
 
 **Lock-in UX (settled):**
 - Warning banner: finish all tabs before locking; layout is fixed for all three launches.
@@ -81,15 +81,15 @@ Tabs (all available before lock-in):
 - Confirm stamps road path + `costBreakdown`, re-stamps launch-prep tech and launch-seq redesign so fields survive `applyHaulPath`.
 - **Save my current choices** (header, beside Confirm): downloads a plain-text snapshot (`buildChoicesSummary`/`handleSaveChoices` in `RedesignWorkshop.tsx`, via `lib/fileDownload.ts`'s `downloadTextFile` — the same Blob + `<a download>` helper the Data tab's CSV export uses) listing the current line order + moved machines + auto-transfer, net road cost, selected launch-prep techs, launch-sequence realigns/removals/key lubrication, the full cost breakdown, and budget remaining. Reads live local state, updates as choices change, and can be clicked any number of times while the workshop is open — purely informational, doesn't lock in or change anything.
 
-**Total cost of improvement (`lib/redesignCost.ts`):** a prominent banner in the redesign header (visible on every tab, not just Haul road) shows the live running total + a per-category breakdown, and warns that only road tiles are reducible. Starts at **0**. Every category except road tiles is a **one-way ratchet within the redesign session** — tracked via `ever*` state in `RedesignWorkshop.tsx` (`everMovedMachineIds`, `everAutoTransferOn`, `everSelectedTechIds`, `everRealignedGoIds`, `everRangeRemoved`, `everKeyLubricationOn`) that only grows, even if the learner later toggles an investment off — so switching techs or moving a machine back doesn't refund it. Road cost alone is derived live, **relative to the road as it stood at session start** (`roadGrid.ts`'s `roadCostFromTiles(tiles, baselineTiles)`) — that starting road is free, so cost begins at 0 pts; only tiles painted beyond it cost points, and selling an existing tile credits points back (can go negative), while erasing a self-added tile just cancels its own charge. Fixed as `ProcessVersion.costBreakdown` at Confirm; copied to each `LeadTimeEntry.costBreakdown` when a launch is logged. Data board shows a Redesign cost column plus a full breakdown panel (Manufacture / Haul road / Launch prep / Launch sequence) alongside both rounds' lead times. Re-entering the workshop via the stage nav starts a fresh cost session from the carried-over draft (matches the existing reset-on-redesign-reentry behaviour), not a running total across every visit.
+**Total cost of improvement (`lib/redesignCost.ts`):** a prominent banner in the redesign header (visible on every tab, not just Haul road) shows the live running total + a per-category breakdown, and warns that only road tiles are reducible. Starts at **0**. Every category except road tiles is a **one-way ratchet within the redesign session** — tracked via `ever*` state in `RedesignWorkshop.tsx` (`everMovedMachineIds`, `everAutoTransferOn`, `everSelectedTechIds`, `everRealignedGoIds`, `everRemovedGoIds`, `everKeyLubricationOn`) that only grows, even if the learner later toggles an investment off — so switching techs or moving a machine back doesn't refund it. Road cost alone is derived live, **relative to the road as it stood at session start** (`roadGrid.ts`'s `roadCostFromTiles(tiles, baselineTiles)`) — that starting road is free, so cost begins at 0 pts; only tiles painted beyond it cost points, and selling an existing tile credits points back (can go negative), while erasing a self-added tile just cancels its own charge. Fixed as `ProcessVersion.costBreakdown` at Confirm; copied to each `LeadTimeEntry.costBreakdown` when a launch is logged. Data board shows a Redesign cost column plus a full breakdown panel (Manufacture / Haul road / Launch prep / Launch sequence) alongside both rounds' lead times. Re-entering the workshop via the stage nav starts a fresh cost session from the carried-over draft (matches the existing reset-on-redesign-reentry behaviour), not a running total across every visit.
 
 **Budget cap (`REDESIGN_BUDGET` = 90 pts, `lib/redesignCost.ts`):** once the running total would exceed the budget, that specific cost-increasing action is blocked — the control (drag-drop, tech card, Realign, Delete from sequence, an unpainted grass tile) is disabled and/or the click is a no-op with a `budgetError` message surfaced in the cost banner. Gating always compares the marginal cost of *that* action against `REDESIGN_BUDGET − costBreakdown.total`, so already-sunk choices (an `ever*`-tracked tech/realign/move) stay freely reversible even at zero budget. Selling road tiles is never blocked — it only frees up room. The cost banner shows a live "Budget remaining" figure and flips to a red exhausted state at 0.
 
 ### Gemba walk (`views/GembaWalkthrough.tsx`)
 
-A 4th stage-nav tab, positioned **before** Round 1 — "go to the Gemba" (Lean:
+A 4th stage-nav tab, positioned **before** As-is — "go to the Gemba" (Lean:
 observe the real process directly). Lets a tutor/learner open **any** of
-Round 1's as-is process steps directly, in any order, to inspect/demo it —
+As-is as-is process steps directly, in any order, to inspect/demo it —
 not a linear Run Process → Proceed playthrough.
 
 - **Route:** `#/gemba`. `AppStage` includes `'gemba'`; `StageNav` lists it first.
@@ -100,13 +100,13 @@ not a linear Run Process → Proceed playthrough.
   **not** render inside a `RoundSession`, does **not** call
   `onLeadTimeLogChange`/`saveRound1LeadTimeResults`, and is mounted only
   while `stage === 'gemba'` (no state to preserve across hops) — so it can
-  never affect Round 1, the redesign workshop, Round 2, or the Data tab.
+  never affect As-is, the redesign workshop, To-be, or the Data tab.
 - **Step nav:** one tab per `process.steps` entry (reuses `.redesign-tabs`
   styling). Selecting a step — including re-selecting the current one —
   bumps a `visitNonce` used in each scene's React `key`, forcing a full
   remount so there's never stale seated/positioned state from a prior visit.
 - **Reset step button** (`.gemba-step-toolbar`, next to the status line,
-  Gemba-only — no equivalent in Round 1/2 play or the redesign workshop):
+  Gemba-only — no equivalent in As-is/2 play or the redesign workshop):
   calls `selectStep(stepIndex)` with the *current* step, reusing the exact
   same reset-and-remount path as re-clicking that step's own nav tab. No new
   reset logic — this button just gives that existing behaviour a dedicated,
@@ -124,15 +124,14 @@ not a linear Run Process → Proceed playthrough.
 
 ### Customer Portal (`views/CustomerPortalView.tsx`)
 
-A separate stage, deliberately **outside** the Gemba/Round1/Redesign/Round2
+A separate stage, deliberately **outside** the Gemba/As-is/Redesign/To-be
 learning-loop group — a static, read-only "voice of customer" feed.
 
 - **Route:** `#/customers`. `StageNav` renders it as its own
   `stage-nav__customer-btn` (magenta `--color-customer-accent`, built around
   brand-magenta/Pantone 227 — see below — and distinct from the orange
   stage-group accent), positioned to the side: `.stage-nav__group` takes
-  `flex: 1` and centers the 4 main stage buttons, leaving the customer
-  button pinned at the far end of the bar rather than in that group.
+  `flex: 1` and centers the 4 main stage buttons, leaving Regulation + Customer Portal in `.stage-nav__side` at the far end of the bar rather than in that group.
 - **Fictional platform:** "Starfeed" (own name/wordmark/ring-and-dot logo
   mark, `.customer-platform-header` — deliberately distinct from the real
   Orb-it brand, since this page represents a third-party social platform
@@ -185,6 +184,25 @@ learning-loop group — a static, read-only "voice of customer" feed.
   state to preserve across hops (the expanded-replies state resets each
   time you leave and come back).
 
+### Regulation library (`views/RegulationView.tsx`)
+
+A separate stage, deliberately **outside** the Gemba/As-is/Redesign/To-be
+learning-loop group — a static, read-only fictional government regulation
+site (National Space Launch Authority / NSLA).
+
+- **Route:** `#/regulation`. `StageNav` renders it as `stage-nav__regulation-btn`
+  (formal navy/green via `--color-regulation-accent*`, distinct from customer
+  magenta and the orange stage group), in `.stage-nav__side` beside Customer
+  Portal — not in the centered Gemba/As-is/Redesign/To-be group.
+- **Fictional agency site:** light paper aesthetic inside the panel (serif
+  headings, dense statute text, TOC side nav, tables, footnotes, footer).
+  Parts 1–5 + definitions + fee schedule. **Part 4 — Pre-liftoff GO poll**
+  is the narrative payload: required stations include Guidance, Capcom,
+  Propulsion, and Avionics; **Weather** and **Range Safety** GO calls are
+  buried as optional for Type-C licensed commercial launches (§ 432). Capcom
+  is **not** optional. Default open section is Part 4.
+- Mounted only while `stage === 'regulation'` — no state to preserve across hops.
+
 ### Launch-prep tech → play behaviour (`launchPrepTechs`)
 Not mutually exclusive — any combination can be active simultaneously; the only limit is the redesign budget.
 
@@ -199,13 +217,14 @@ Not mutually exclusive — any combination can be active simultaneously; the onl
 Resolve via `resolveLaunchPrepTechs(process)` (returns `LaunchPrepTech[]`). Scene must re-read techs when the launch-prep step starts (do not rely on a stale prop only).
 
 ### Launch-sequence redesign → play (`resolveLaunchSeqConfig`)
-- Filters out `launchSeqRemovedIds` (e.g. `go-range`).
+- Filters out `launchSeqRemovedIds` (removable set: `go-range`, `go-weather`, `go-capcom` — `LAUNCH_SEQ_REMOVABLE_STATION_IDS`).
 - Builds dynamic actions: remaining GOs → key-arm → liftoff (`keyIndex` / `liftoffIndex` from list length).
 - **Realigned** GO rows use CSS that **overrides** stagger (use high enough specificity: `.mc-go-row.mc-go-row--realigned`).
 - Non-realigned keep as-is wide gaps + misalignment.
-- Round 1: full six GOs, all misaligned.
+- As-is: full six GOs, all misaligned; never strips stations or sets `heightStatus`.
+- **Capcom removal consequence (To-be only):** if `go-capcom` is in `launchSeqRemovedIds`, `RoundSession` logs each launch with `heightStatus: 'no-capcom'` (no `heightAchievedMiles`). Data board + CSV show **NO CAPCOM** via `formatHeightAchieved` / `csvExport`. Safe removals (Weather + Range) keep normal randomised miles.
 
-**Branding + rocket scale in this scene (`LaunchSequenceScene.tsx`, all four contexts it renders in — Round 1 play, Round 2 play, Gemba, and the redesign workshop's own preview below):**
+**Branding + rocket scale in this scene (`LaunchSequenceScene.tsx`, all four contexts it renders in — As-is play, To-be play, Gemba, and the redesign workshop's own preview below):**
 - `.mc-pad-view__header` — a translucent bar across the top of `.mc-pad-view` (the window showing the rocket on the pad / lifting off), behind everything else that sits at the top of the window. Holds `.mc-pad-view__live-feed`: a red pulsing dot (`.mc-pad-view__live-feed-dot`, reuses the `mc-live-pulse` keyframe) + "LIVE FEED" text, right-aligned.
 - `.mc-pad-view__brand` — Orb-it logo, **top-right** of `.mc-pad-view` (moved from top-left), `z-index` above `.mc-pad-view__header` so it floats in front of the translucent banner rather than being flush inside it. Not in `.mc-screen__label` (the "PAD 1 · LIVE" bar above the whole window) — specifically inside the viewport itself, per the original brief.
 - `.mc-rocket__logo` — Orb-it decal on the booster hull (`.mc-rocket__body`), above the stripe — `0.95rem` (up from `0.62rem`) for visibility on the taller rocket.
@@ -225,36 +244,37 @@ Resolve via `resolveLaunchPrepTechs(process)` (returns `LaunchPrepTech[]`). Scen
 ### Round architecture
 | Piece | Role |
 |--------|------|
-| `App.tsx` | Hash router; owns `AppStage`; mounts **both** rounds' `RoundSession` permanently (visibility-toggled, never unmounted) so stage hops keep state; mounts/unmounts `GembaWalkthrough`/`CustomerPortalView`/`HomeView`/`TrainingView`/`AnnualReportView`/`CreateInvoicesView` on demand (no cross-stage state to keep); passes `activeStage`/`onNavigateStage` down to each page rather than rendering `StageNav` itself; normalises an empty hash to `#/home` |
+| `App.tsx` | Hash router; owns `AppStage`; mounts **both** rounds' `RoundSession` permanently (visibility-toggled, never unmounted) so stage hops keep state; mounts/unmounts `GembaWalkthrough`/`CustomerPortalView`/`RegulationView`/`HomeView`/`TrainingView`/`AnnualReportView`/`CreateInvoicesView` on demand (no cross-stage state to keep); passes `activeStage`/`onNavigateStage` down to each page rather than rendering `StageNav` itself; normalises an empty hash to `#/home` |
 | `types/round.ts`, `data/rounds.ts` | Round configs; `AppStage` + `hashForStage` / `stageFromHash` |
 | `RoundSession.tsx` | redesign / play / orbit-complete for one round; accepts `hidden`, `requestedPhase`, `onPhaseChange`, `activeStage`, `onNavigateStage`; renders its own `StageNav` beneath its own banner in all three phase branches |
 | `views/GembaWalkthrough.tsx` | Gemba walk — see below |
-| `StageNav.tsx` | Stage nav: **Home** (leftmost, orbital-blue), then Gemba · Round 1 · Redesign · Round 2, plus a separately-styled Customer Portal button off to the side. Rendered by each page beneath its own PMI banner, not once at the `App.tsx` level — see "Stage nav (settled)" below |
+| `StageNav.tsx` | Stage nav: **Home** (leftmost, orbital-blue), then Gemba · As-is · Redesign · To-be, plus separately-styled Regulation and Customer Portal buttons off to the side (`.stage-nav__side`). Rendered by each page beneath its own PMI banner, not once at the `App.tsx` level — see "Stage nav (settled)" below |
 | `views/CustomerPortalView.tsx` | Customer Portal — see below |
+| `views/RegulationView.tsx` | Regulation library (NSLA) — see above |
 | `views/HomeView.tsx`, `views/TrainingView.tsx`, `views/AnnualReportView.tsx`, `views/CreateInvoicesView.tsx` | Home intranet page + its three destinations — see "Home & intranet pages" above |
-| `RedesignWorkshop.tsx` | Round 2 pre-play redesign |
+| `RedesignWorkshop.tsx` | To-be pre-play redesign |
 | `processEdit.ts`, `roadGrid.ts` | Apply/resolve redesign fields |
 | `lib/redesignCost.ts` | Point costs + `RedesignCostBreakdown` builder for the total cost of improvement |
 | `OrbitCompleteScene.tsx` | End-of-round cutaway |
 | `SiteBrand.tsx` | Top banner brand lockup |
-| `lib/roundMetrics.ts` | Round 1 avg + per-launch times save/load; averages |
+| `lib/roundMetrics.ts` | As-is avg + per-launch times save/load; averages |
 | `RoundLeadTimeCompare.tsx` | Visual R1 vs R2 averages + three-launch bar compare (Data + orbit complete) |
 | Views | **Simulation** · **Data** only (**Comparison tab removed**) |
 
 ### Stage nav (settled)
 
-Persistent stage nav (`StageNav.tsx`) lets a tutor/learner hop directly between **Round 1**, **Redesign**, and **Round 2** — independent of the as-is → redesign → launches linear flow.
+Persistent stage nav (`StageNav.tsx`) lets a tutor/learner hop directly between **As-is**, **Redesign**, and **To-be** — independent of the as-is → redesign → launches linear flow.
 
-- **Position: beneath the PMI brand banner, on every page.** `StageNav` is **not** rendered once at the `App.tsx` level — `App.tsx` only owns the `stage` state and passes `activeStage`/`onNavigateStage` down as props. Each page renders its own `<StageNav>` immediately after its own PMI banner header: `RoundSession` renders it in all three of its phase branches (orbit-complete, redesign, and play — right after `TopBar` in the play branch), and `GembaWalkthrough` / `CustomerPortalView` / `HomeView` / `TrainingView` / `AnnualReportView` / `CreateInvoicesView` each render it right after their own `<SiteBrand>` header. This keeps the nav directly under the "PMI · Orb-it" banner everywhere, rather than above it.
+- **Position: beneath the PMI brand banner, on every page.** `StageNav` is **not** rendered once at the `App.tsx` level — `App.tsx` only owns the `stage` state and passes `activeStage`/`onNavigateStage` down as props. Each page renders its own `<StageNav>` immediately after its own PMI banner header: `RoundSession` renders it in all three of its phase branches (orbit-complete, redesign, and play — right after `TopBar` in the play branch), and `GembaWalkthrough` / `CustomerPortalView` / `RegulationView` / `HomeView` / `TrainingView` / `AnnualReportView` / `CreateInvoicesView` each render it right after their own `<SiteBrand>` header. This keeps the nav directly under the "PMI · Orb-it" banner everywhere, rather than above it.
 - **Default route is `#/home`, not `#/round/1`.** An empty/`#` hash is normalised to `#/home` on mount (`App.tsx`) — the intranet Home page is the true landing screen; the round-based learning loop is reached through it (see "Home & intranet pages" above).
-- **Routes:** `#/home` · `#/round/1` · `#/redesign` · `#/round/2` · `#/training` · `#/annual-report` · `#/invoices` (`AppStage` in `types/round.ts`).
+- **Routes:** `#/home` · `#/round/1` · `#/redesign` · `#/round/2` · `#/customers` · `#/regulation` · `#/training` · `#/annual-report` · `#/invoices` (`AppStage` in `types/round.ts`).
 - **Both rounds stay mounted for the app's lifetime** (`App.tsx` renders both `RoundSession`s, hidden via inline `display: none` rather than unmounted) — hopping never loses in-progress state (process edits, run in flight, lead-time log).
-- **Round 2 phase is nav-controlled** via `requestedPhase`/`onPhaseChange` props on `RoundSession`:
+- **To-be phase is nav-controlled** via `requestedPhase`/`onPhaseChange` props on `RoundSession`:
   - Clicking **Redesign** always jumps into the workshop (even mid-round or post-completion) — and **resets that round's play state** (session, run, lead-time log) so it plays out fresh under whatever design is confirmed next.
-  - Clicking **Round 2** only *advances* redesign → play; it never regresses an in-progress or completed round back to the workshop.
-  - A **fresh deep link** (e.g. tutor share URL landing straight on `#/round/2`) is unaffected — the forcing only reacts to a `requestedPhase` *change after mount*, so first load still lands on the round's natural starting phase (redesign, since Round 2 `allowsRedesign`).
+  - Clicking **To-be** only *advances* redesign → play; it never regresses an in-progress or completed round back to the workshop.
+  - A **fresh deep link** (e.g. tutor share URL landing straight on `#/round/2`) is unaffected — the forcing only reacts to a `requestedPhase` *change after mount*, so first load still lands on the round's natural starting phase (redesign, since To-be `allowsRedesign`).
   - Internal auto-advances (Confirm redesign → play) report back via `onPhaseChange` so the nav's active tab stays correct even without a nav click.
-- **Round 1 → Round 2 CTA** (`onNavigateRound2` on Round 1's `RoundSession`, used by the orbit-complete "Continue to Round 2" button) navigates to the **Redesign** stage, not Round 2 play — preserves the original "share link lands on the workshop" flow.
+- **As-is → To-be CTA** (`onNavigateRound2` on As-is `RoundSession`, used by the orbit-complete "Continue to To-be" button) navigates to the **Redesign** stage, not To-be play — preserves the original "share link lands on the workshop" flow.
 
 ---
 
@@ -266,7 +286,7 @@ Persistent stage nav (`StageNav.tsx`) lets a tutor/learner hop directly between 
 - The haul/pad scene (`IntegratePayloadScene.tsx`) didn't render inside the redesign workshop at all until it needed to for this same reason — its Haul road tab now also has a **live preview** (`.redesign-haul-preview`, right after the tile grid) of that scene, driven by a local `haulPreviewRun` against whatever path `pathFromRoadTiles(roadTiles)` currently resolves to (falling back to baseline `HAUL_PATH` if the painted tiles don't yet form a valid connected path). Keyed by the path's own coordinates so repainting the road forces a clean remount instead of leaving the preview booster stranded on a path that no longer exists. Same self-contained, nothing-logged pattern as the launch-sequence preview and `GembaWalkthrough` — `onMountToPad` is a no-op for the same reason `GembaWalkthrough`'s is (the real `completeHaulStep` auto-advances to the next process step, which isn't rendered here).
 - Play top bar metrics: **Lead Time** + **Launches x/3** only (no Yield / Flow Efficiency).
 - Static site assets belong in **`public/`** (not `src/` unless import-bundled).
-- **Brand colour palette:** official PMI Pantone palette lives as `--color-brand-*` CSS custom properties in `src/index.css` (see `docs/brand/brand-tokens.md`). The existing named accent tokens (`--color-orbital`/`--color-orbital-strong`, `--color-amber`, `--color-nav-accent`, `--color-text-dim`) now alias these brand tokens rather than carrying their own hex. `--color-customer-accent`/`--color-customer-accent-strong` are built around `--color-brand-magenta` (Pantone 227, `#B00060`) rather than purple — `-strong` is the true Pantone 227 (solid-fill/high-emphasis use, e.g. the active nav button), the base token is a lightened tint of it for legible text/icon use on the dark chrome. Stays scoped to the Customer Portal only, distinct from the shared accent set. The near-black dark-chrome tokens (`--color-bg`/`--color-surface`/`--color-border*`) and hand-tuned illustrative shading in scene art are intentionally **not** forced onto the brand palette — they're UI neutrals/light-shadow tints, not brand-identity colours. New UI colour choices should use a `--color-brand-*` token (or an existing aliased accent token) rather than a fresh hardcoded hex.
+- **Brand colour palette:** official PMI Pantone palette lives as `--color-brand-*` CSS custom properties in `src/index.css` (see `docs/brand/brand-tokens.md`). The existing named accent tokens (`--color-orbital`/`--color-orbital-strong`, `--color-amber`, `--color-nav-accent`, `--color-text-dim`) now alias these brand tokens rather than carrying their own hex. `--color-customer-accent`/`--color-customer-accent-strong` are built around `--color-brand-magenta` (Pantone 227, `#B00060`) rather than purple — `-strong` is the true Pantone 227 (solid-fill/high-emphasis use, e.g. the active nav button), the base token is a lightened tint of it for legible text/icon use on the dark chrome. Stays scoped to the Customer Portal only, distinct from the shared accent set. `--color-regulation-accent*` (navy/green mix from brand tokens) is scoped to the Regulation nav button the same way. The near-black dark-chrome tokens (`--color-bg`/`--color-surface`/`--color-border*`) and hand-tuned illustrative shading in scene art are intentionally **not** forced onto the brand palette — they're UI neutrals/light-shadow tints, not brand-identity colours. New UI colour choices should use a `--color-brand-*` token (or an existing aliased accent token) rather than a fresh hardcoded hex.
 
 ---
 
@@ -276,7 +296,7 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 
 ### Principles (do not regress)
 - Operator-driven work per step (click, drag, codes, keyboard, hold-to-fill, etc.).
-- **As-is friction is intentional** in Round 1; Round 2 redesign reduces it deliberately.
+- **As-is friction is intentional** in As-is; To-be redesign reduces it deliberately.
 - **Step transitions:**
   - Default: `step_complete` → **Proceed**.
   - Haul: **Mount to launch pad** → auto-advance (no Proceed).
@@ -311,7 +331,7 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 ### 2. Haul (`IntegratePayloadScene.tsx`, `pathGeometry.ts`)
 - Path from `resolveHaulPath(process)` (`haulPathOverride` / step `haulPath` / default winding `HAUL_PATH`). Remount scene when path changes.
 - Arrow keys primary; safe zones: road+margin, assembly, pad; pure grass → explode → reset.
-- **Each explosion is a logged defect.** `onExplode` fires once the reset animation finishes (renamed from the never-wired `onPathReset`) → threaded through `SimulationView`'s `onHaulExplode` → `RoundSession`'s `defectCountRef`, which accumulates for the current launch attempt and resets to 0 in `handleRunProcess` (new Run Process) and every other run/log reset point. Same `RoundSession` component plays both rounds, so this works identically on Round 1 and Round 2 with no extra wiring. The Gemba walkthrough never passes `onExplode`, so exploding there is purely visual and logs nothing.
+- **Each explosion is a logged defect.** `onExplode` fires once the reset animation finishes (renamed from the never-wired `onPathReset`) → threaded through `SimulationView`'s `onHaulExplode` → `RoundSession`'s `defectCountRef`, which accumulates for the current launch attempt and resets to 0 in `handleRunProcess` (new Run Process) and every other run/log reset point. Same `RoundSession` component plays both rounds, so this works identically on As-is and To-be with no extra wiring. The Gemba walkthrough never passes `onExplode`, so exploding there is purely visual and logs nothing.
 - Mount to pad → auto-advance to launch-prep.
 - **Coastline (decorative, non-interactive):** the rightmost road-grid column (`roadGrid.ts` `ROAD_COLS=20`, col 19, scene x=760–800) is sea; a narrow sand band (x=746–760) sits between it and the grass, with a wavy coastline stroke at the sand/sea boundary. Drawn as a background layer *before* the `haul-field-vignette` overlay (so the vignette darkens it consistently with the rest of the map) and *before* the road/buildings/pad (which render on top, since the pad's right edge already sits close to this strip). Purely visual — does not extend `SCENE_WIDTH`/`ROAD_COLS` or otherwise touch gameplay geometry, so none of the safety-zone or road-tile logic changes.
 - **No-fly zone (decorative, non-interactive):** a dashed red placard rect + four small drone-prohibition markers drawn around `LAUNCH_PAD` (`NO_FLY_MARGIN` = 30, corner markers inset so they stay on-canvas) plus a "NO FLY ZONE" label below the pad. Rendered as its own `<g>` after the pad group so it sits on top; no handlers attached, so it is never interactive (same convention as the tree cluster / building groups).
@@ -323,7 +343,7 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 
 ### 4. Launch sequence (`LaunchSequenceScene.tsx`)
 - GO poll (possibly shortened/realigned from redesign) → hold key → liftoff (~3.2s).
-- Liftoff → `completeUnitRun` → Data entry: lead time, redesign cost (if set), a **randomised height achieved** (`lib/flightMetrics.ts`'s `randomHeightAchievedMiles()`, 60–90 **miles** — this app uses miles throughout, never km/kilometers), and this launch's **defect count** (haul-road explosions since the last Run Process). Data board shows both as their own columns per launch, plus a **Total defects** summary stat per round (sum across that round's logged launches).
+- Liftoff → `completeUnitRun` → Data entry: lead time, redesign cost (if set), a **randomised height achieved** (`lib/flightMetrics.ts`'s `randomHeightAchievedMiles()`, 60–90 **miles** — this app uses miles throughout, never km/kilometers) **unless** Capcom was removed in To-be redesign (`heightStatus: 'no-capcom'` → Data/CSV show **NO CAPCOM**), and this launch's **defect count** (haul-road explosions since the last Run Process). Data board shows both as their own columns per launch, plus a **Total defects** summary stat per round (sum across that round's logged launches).
 - **Download CSV** (`DataView.tsx` header, `lib/csvExport.ts`): one row per logged launch across both rounds (round label, rocket #, lead time as m:ss and ms, height achieved, redesign cost total + per-category breakdown, defects, ISO logged-at timestamp). Disabled until at least one launch is logged in either round. Plain browser Blob + temporary `<a download>` — no extra dependency.
 
 ---
@@ -343,7 +363,7 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 
 ## Key Constraints
 - 3 launches per round; workshop may span rounds.
-- Progressive improvement levers mainly via Round 2 redesign.
+- Progressive improvement levers mainly via To-be redesign.
 - Client-side hash routes for deep links.
 - Dark professional chrome; operational language.
 
@@ -357,8 +377,8 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 - Full DMAIC / stats suite / multiplayer
 - Full instructor authoring (tutor **share links** in scope)
 - Mobile-first / in-app process map / waste-tagging UI
-- Comparison tab (removed; use Data board for Round 1 vs Round 2 averages)
-- Cross-round cloud persistence (localStorage Round 1 average → Round 2 Data is in scope)
+- Comparison tab (removed; use Data board for As-is vs To-be averages)
+- Cross-round cloud persistence (localStorage As-is average → To-be Data is in scope)
 - Embedded training video on `#/training` (placeholder pane only, deliberately — video to be added later)
 - Real invoice creation on `#/invoices` (placeholder only, deliberately — to be redesigned later)
 

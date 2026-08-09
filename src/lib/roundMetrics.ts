@@ -1,9 +1,15 @@
 import type { LeadTimeEntry } from '../types/process'
 
-/** localStorage key for Round 1 average end-to-end lead time (ms). */
+/**
+ * localStorage key for As-is average end-to-end lead time (ms).
+ * Key string kept as `round1` for backward compatibility with saved sessions.
+ */
 export const ROUND1_AVG_LEAD_MS_KEY = 'orbit26.round1.avgLeadTimeMs'
 
-/** localStorage key for Round 1 per-rocket lead times (JSON array of ms). */
+/**
+ * localStorage key for As-is per-rocket lead times (JSON array of ms).
+ * Key string kept as `round1` for backward compatibility with saved sessions.
+ */
 export const ROUND1_LAUNCH_MS_KEY = 'orbit26.round1.launchLeadTimesMs'
 
 /** Arithmetic mean of entry durations (ms), or null if empty. */
@@ -21,7 +27,7 @@ export function launchDurationsMs(entries: LeadTimeEntry[]): number[] {
 }
 
 /**
- * Persist Round 1 average + per-launch times after that round’s three launches complete.
+ * Persist As-is average + per-launch times after that stage’s three launches complete.
  */
 export function saveRound1LeadTimeResults(
   entries: LeadTimeEntry[],
@@ -40,7 +46,7 @@ export function saveRound1LeadTimeResults(
   return { avgMs: avg, launchMs }
 }
 
-/** Load Round 1 average for Round 2 Data board (null if missing). */
+/** Load As-is average for To-be Data board (null if missing). */
 export function loadRound1AverageLeadTimeMs(): number | null {
   if (typeof localStorage === 'undefined') return null
   try {
@@ -53,7 +59,7 @@ export function loadRound1AverageLeadTimeMs(): number | null {
   }
 }
 
-/** Load Round 1 per-rocket lead times (ms), ascending rocket order. */
+/** Load As-is per-rocket lead times (ms), ascending rocket order. */
 export function loadRound1LaunchLeadTimesMs(): number[] | null {
   if (typeof localStorage === 'undefined') return null
   try {

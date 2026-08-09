@@ -27,8 +27,9 @@ import type {
   RedesignCostBreakdown,
   RunState,
 } from '../types/process'
-import { INITIAL_RUN_STATE } from '../types/process'
+import { INITIAL_RUN_STATE, LAUNCH_SEQ_CAPCOM_STATION_ID } from '../types/process'
 import { randomHeightAchievedMiles } from '../lib/flightMetrics'
+import { resolveLaunchSeqRemovedIds } from '../lib/processEdit'
 import type { AppStage, RoundConfig, RoundId } from '../types/round'
 import { ROCKETS_PER_ROUND, hashForRound } from '../types/round'
 import {
@@ -99,11 +100,11 @@ export function RoundSession({
   const lastLoggedRunRef = useRef(0)
   /** Explosions on the haul road (step 2) so far this launch attempt. */
   const defectCountRef = useRef(0)
-  /** Round 1 average (ms) for Round 2 Data comparison — from localStorage. */
+  /** As-is average (ms) for To-be Data comparison — from localStorage. */
   const [round1AverageMs, setRound1AverageMs] = useState<number | null>(() =>
     round.id === 2 ? loadRound1AverageLeadTimeMs() : null,
   )
-  /** Round 1 per-rocket lead times (ms) for side-by-side visual compare. */
+  /** As-is per-rocket lead times (ms) for side-by-side visual compare. */
   const [round1LaunchesMs, setRound1LaunchesMs] = useState<number[] | null>(
     () => (round.id === 2 ? loadRound1LaunchLeadTimesMs() : null),
   )
@@ -183,9 +184,15 @@ export function RoundSession({
 
   useEffect(() => {
     if (run.status !== 'complete') return
+    // Capcom removed (To-be redesign) → no altitude telemetry path to log.
+    const capcomRemoved = resolveLaunchSeqRemovedIds(process).includes(
+      LAUNCH_SEQ_CAPCOM_STATION_ID,
+    )
     const entry = leadTimeEntryFromRun(run, {
       costBreakdown: process.costBreakdown,
-      heightAchievedMiles: randomHeightAchievedMiles(),
+      ...(capcomRemoved
+        ? { heightStatus: 'no-capcom' as const }
+        : { heightAchievedMiles: randomHeightAchievedMiles() }),
       defectCount: defectCountRef.current,
     })
     if (!entry) return
@@ -194,7 +201,7 @@ export function RoundSession({
     setLeadTimeLog((prev) => {
       const next = [...prev, entry]
       if (next.length >= ROCKETS_PER_ROUND) {
-        // Persist Round 1 average + per-launch times so Round 2 can compare.
+        // Persist As-is average + per-launch times so To-be can compare.
         if (round.id === 1) {
           saveRound1LeadTimeResults(next)
         }
@@ -208,6 +215,7 @@ export function RoundSession({
     run.runEndedAt,
     run.runStartedAt,
     process.costBreakdown,
+    process.launchSeqRemovedIds,
     round.id,
   ])
 
@@ -359,14 +367,14 @@ export function RoundSession({
                     { roundId: 1, roundLabel: round.label, entries: leadTimeLog },
                     otherRoundEntries ?? {
                       roundId: 2,
-                      roundLabel: 'Round 2',
+                      roundLabel: 'To-be',
                       entries: [],
                     },
                   ]
                 : [
                     otherRoundEntries ?? {
                       roundId: 1,
-                      roundLabel: 'Round 1',
+                      roundLabel: 'As-is',
                       entries: [],
                     },
                     { roundId: 2, roundLabel: round.label, entries: leadTimeLog },

@@ -2,20 +2,20 @@ import { formatLeadTime } from '../lib/simulation'
 import { leadTimeImprovementMs } from '../lib/roundMetrics'
 
 interface RoundLeadTimeCompareProps {
-  /** Round 1 average lead time (ms). */
+  /** As-is average lead time (ms). */
   round1AvgMs: number
-  /** Round 2 average lead time (ms). */
+  /** To-be average lead time (ms). */
   round2AvgMs: number
-  /** Per-rocket lead times for Round 1 (ms), rocket 1..n. */
+  /** Per-rocket lead times for As-is (ms), rocket 1..n. */
   round1LaunchesMs: number[]
-  /** Per-rocket lead times for Round 2 (ms), rocket 1..n. */
+  /** Per-rocket lead times for To-be (ms), rocket 1..n. */
   round2LaunchesMs: number[]
   /** Optional compact layout for orbit panel. */
   compact?: boolean
 }
 
 /**
- * Visual comparison of Round 1 vs Round 2 averages and the three launch lead times.
+ * Visual comparison of As-is vs To-be averages and the three launch lead times.
  */
 export function RoundLeadTimeCompare({
   round1AvgMs,
@@ -58,17 +58,17 @@ export function RoundLeadTimeCompare({
       ]
         .filter(Boolean)
         .join(' ')}
-      aria-label="Round 1 versus Round 2 lead time comparison"
+      aria-label="As-is versus To-be lead time comparison"
     >
       <h3 className="lt-compare__heading">Lead time comparison</h3>
       <p className="lt-compare__lede">
-        Average lead time for three launches — as-is (Round 1) vs redesigned
-        (Round 2).
+        Average lead time for three launches — As-is (baseline) vs To-be
+        (redesigned).
       </p>
 
       <div className="lt-compare__avg-row">
         <div className="lt-compare__avg-card lt-compare__avg-card--r1">
-          <span className="lt-compare__avg-label">Round 1 average</span>
+          <span className="lt-compare__avg-label">As-is average</span>
           <span className="lt-compare__avg-value">
             {formatLeadTime(round1AvgMs / 1000)}
           </span>
@@ -80,7 +80,7 @@ export function RoundLeadTimeCompare({
           </div>
         </div>
         <div className="lt-compare__avg-card lt-compare__avg-card--r2">
-          <span className="lt-compare__avg-label">Round 2 average</span>
+          <span className="lt-compare__avg-label">To-be average</span>
           <span className="lt-compare__avg-value">
             {formatLeadTime(round2AvgMs / 1000)}
           </span>
@@ -113,9 +113,9 @@ export function RoundLeadTimeCompare({
           </span>
           <span className="lt-compare__delta-note">
             {improvementMs > 0
-              ? 'Round 2 faster on average'
+              ? 'To-be faster on average'
               : improvementMs < 0
-                ? 'Round 2 slower on average'
+                ? 'To-be slower on average'
                 : 'Same average lead time'}
           </span>
         </div>
@@ -123,8 +123,8 @@ export function RoundLeadTimeCompare({
 
       <div className="lt-compare__launches">
         <div className="lt-compare__legend" aria-hidden="true">
-          <span className="lt-compare__swatch lt-compare__swatch--r1" /> Round 1
-          <span className="lt-compare__swatch lt-compare__swatch--r2" /> Round 2
+          <span className="lt-compare__swatch lt-compare__swatch--r1" /> As-is
+          <span className="lt-compare__swatch lt-compare__swatch--r2" /> To-be
         </div>
         {pairs.map(({ rocket, r1, r2 }) => {
           const pairDelta =
@@ -134,7 +134,7 @@ export function RoundLeadTimeCompare({
               <div className="lt-compare__pair-label">Rocket {rocket}</div>
               <div className="lt-compare__pair-bars">
                 <div className="lt-compare__pair-row">
-                  <span className="lt-compare__pair-tag">R1</span>
+                  <span className="lt-compare__pair-tag">A</span>
                   <div className="lt-compare__bar-track">
                     <div
                       className="lt-compare__bar lt-compare__bar--r1"
@@ -146,7 +146,7 @@ export function RoundLeadTimeCompare({
                   </span>
                 </div>
                 <div className="lt-compare__pair-row">
-                  <span className="lt-compare__pair-tag">R2</span>
+                  <span className="lt-compare__pair-tag">T</span>
                   <div className="lt-compare__bar-track">
                     <div
                       className="lt-compare__bar lt-compare__bar--r2"

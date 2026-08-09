@@ -23,7 +23,7 @@ interface ManufactureSceneProps {
   showProceed?: boolean
   onProceed?: () => void
   /**
-   * Round 2 redesign upgrade: after each machine finishes, move booster to the
+   * To-be redesign upgrade: after each machine finishes, move booster to the
    * next required station automatically (no drag).
    */
   autoMoveBooster?: boolean
@@ -638,6 +638,7 @@ export function ManufactureScene({
             aria-disabled={!canDrag}
           >
             <Booster
+              showNose={false}
               worked={machinePhase === 'working'}
               ready={stepDone}
               label={

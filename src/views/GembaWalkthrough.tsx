@@ -26,9 +26,9 @@ import {
 } from '../lib/processEdit'
 
 /**
- * Round 1's as-is process, read-only. Never mutated here — Gemba only ever
- * walks it, it never redesigns it. RoundSession clones this same config
- * into its own state on mount, so referencing it directly is safe.
+ * As-is process, read-only. Never mutated here — Gemba only ever walks it,
+ * it never redesigns it. RoundSession clones this same config into its own
+ * state on mount, so referencing it directly is safe.
  */
 const GEMBA_PROCESS = getRoundConfig(1).process
 
@@ -41,11 +41,11 @@ function freshStepRun(stepIndex: number): RunState {
 }
 
 /**
- * "Go to the Gemba" — walk Round 1's as-is process step by step, on demand,
- * to observe and document it. Unlike a real round: any step can be opened
+ * "Go to the Gemba" — walk the as-is process step by step, on demand,
+ * to observe and document it. Unlike a scored round: any step can be opened
  * directly (no sequential Run Process / Proceed gate), nothing is timed,
- * and nothing is ever logged to the Data tab or carried into Round 1,
- * Redesign, or Round 2 — this view owns its own local, throwaway state and
+ * and nothing is ever logged to the Data tab or carried into As-is,
+ * Redesign, or To-be — this view owns its own local, throwaway state and
  * never touches theirs.
  */
 interface GembaWalkthroughProps {
@@ -173,7 +173,7 @@ export function GembaWalkthrough({
   return (
     <div className="app-shell">
       <header className="top-bar top-bar--round-done">
-        <SiteBrand subtitle="Gemba walk · Round 1 as-is" />
+        <SiteBrand subtitle="Gemba walk · As-is" />
       </header>
       <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
       <main className="app-main">
@@ -182,18 +182,18 @@ export function GembaWalkthrough({
             <div>
               <h2 id="gemba-heading">Gemba walk</h2>
               <p className="view-panel__lede">
-                Walk Round 1's as-is process one step at a time to observe
-                and document it — jump to any step directly, in any order.
+                Walk the as-is process one step at a time to observe and
+                document it — jump to any step directly, in any order.
               </p>
             </div>
           </header>
 
           <div className="view-panel__body redesign-body">
             <div className="redesign-warning" role="status">
-              <strong>Go to the Gemba:</strong> this is Round 1's process
+              <strong>Go to the Gemba:</strong> this is the as-is process
               exactly as built — nothing here can be redesigned. Nothing is
-              timed, scored, or logged; it never touches Round 1, the
-              redesign workshop, Round 2, or the Data tab.
+              timed, scored, or logged; it never touches As-is play, the
+              redesign workshop, To-be, or the Data tab.
             </div>
 
             <nav className="redesign-tabs" aria-label="Gemba steps">

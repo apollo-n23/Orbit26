@@ -123,7 +123,7 @@ export function resolveAutoMoveBooster(process: ProcessVersion): boolean {
   return getManufactureStep(process)?.autoMoveBooster === true
 }
 
-/** Enable/disable booster auto-advance between manufacture stations (Round 2 redesign). */
+/** Enable/disable booster auto-advance between manufacture stations (To-be redesign). */
 export function applyAutoMoveBooster(
   process: ProcessVersion,
   enabled: boolean,
@@ -172,7 +172,7 @@ const LAUNCH_PREP_TECH_IDS = new Set<string>(
   LAUNCH_PREP_TECH_OPTIONS.map((o) => o.id),
 )
 
-/** True when value is a known Round 2 launch-prep investment id. */
+/** True when value is a known To-be launch-prep investment id. */
 export function isLaunchPrepTech(value: unknown): value is LaunchPrepTech {
   return typeof value === 'string' && LAUNCH_PREP_TECH_IDS.has(value)
 }
@@ -199,7 +199,7 @@ export function resolveLaunchPrepTechs(process: ProcessVersion): LaunchPrepTech[
   return dedupeLaunchPrepTechs(step?.launchPrepTechs)
 }
 
-/** Set the full list of active launch-prep technology investments (Round 2 redesign). */
+/** Set the full list of active launch-prep technology investments (To-be redesign). */
 export function applyLaunchPrepTechs(
   process: ProcessVersion,
   techs: LaunchPrepTech[],
@@ -214,7 +214,7 @@ export function applyLaunchPrepTechs(
   }
 }
 
-/** Turn a single launch-prep technology investment on/off (Round 2 redesign). */
+/** Turn a single launch-prep technology investment on/off (To-be redesign). */
 export function toggleLaunchPrepTech(
   process: ProcessVersion,
   tech: LaunchPrepTech,
@@ -227,7 +227,7 @@ export function toggleLaunchPrepTech(
 }
 
 // ---------------------------------------------------------------------------
-// Launch-sequence redesign (Round 2): GO realign + optional Range deletion
+// Launch-sequence redesign (To-be): GO realign + optional Range deletion
 // ---------------------------------------------------------------------------
 
 const LAUNCH_SEQ_STATION_IDS = new Set(
@@ -321,8 +321,8 @@ export function applyLaunchSeqRealign(
 
 /**
  * Remove or restore a GO station from the sequence.
- * Redesign UI only offers this for Range Safety (`go-range`); helper accepts any
- * known station id for play/tests.
+ * Redesign UI offers this for stations in LAUNCH_SEQ_REMOVABLE_STATION_IDS;
+ * helper accepts any known station id for play/tests.
  */
 export function applyLaunchSeqRemove(
   process: ProcessVersion,
@@ -337,7 +337,7 @@ export function applyLaunchSeqRemove(
   return applyLaunchSeqRedesign(process, realign, [...current])
 }
 
-/** Convenience: delete Range Safety from the GO poll (Round 2 redesign). */
+/** Convenience: delete Range Safety from the GO poll (To-be redesign). */
 export function applyLaunchSeqRemoveRange(
   process: ProcessVersion,
   removed: boolean = true,
@@ -345,14 +345,14 @@ export function applyLaunchSeqRemoveRange(
   return applyLaunchSeqRemove(process, LAUNCH_SEQ_RANGE_STATION_ID, removed)
 }
 
-/** Whether the launch key mechanism is lubricated (Round 2 redesign). */
+/** Whether the launch key mechanism is lubricated (To-be redesign). */
 export function resolveKeyLubrication(process: ProcessVersion): boolean {
   if (process.keyLubrication === true) return true
   return getLaunchSeqStep(process)?.keyLubrication === true
 }
 
 /**
- * Enable/disable key lubrication (Round 2 redesign): near-instant hold-to-turn
+ * Enable/disable key lubrication (To-be redesign): near-instant hold-to-turn
  * arming instead of the long as-is hold.
  */
 export function applyKeyLubrication(
@@ -370,7 +370,7 @@ export function applyKeyLubrication(
 
 /**
  * Resolved launch-sequence play config from redesign fields.
- * Round 1 / unset fields → full baseline GO list, no realign (as-is friction).
+ * As-is / unset fields → full baseline GO list, no realign (as-is friction).
  */
 export interface ResolvedLaunchSeqConfig {
   /** GO stations still in the poll (baseline order; removed filtered out). */
@@ -442,7 +442,7 @@ export const LAUNCH_SEQ_STATION_CRITICALITY: Record<string, string> = {
   'go-guidance':
     'Confirms navigation and flight-path computers are ready. A NO-GO here can scrub the attempt — high impact on mission progress.',
   'go-capcom':
-    'Communications bridge to the vehicle and crew procedures. Holds up the poll until voice/data links are clear.',
+    'Communications bridge to the vehicle and the telemetry path used for altitude reporting. Capcom clears voice/data links before commit; altitude delivery to customers depends on this station remaining in the poll.',
   'go-propulsion':
     'Propellant state and engine readiness. Critical for commit-to-launch; misalignment here burns wall-clock before you can arm the key.',
   'go-avionics':
@@ -450,5 +450,5 @@ export const LAUNCH_SEQ_STATION_CRITICALITY: Record<string, string> = {
   'go-range':
     'Range Safety is a traditional GO call, but it is not actually required for this launch. You may delete it from the sequence to remove a non-value poll step.',
   'go-weather':
-    'Pad weather and upper-winds constraints. Can hold the poll when conditions are marginal; realigning reduces friction on clear days.',
+    'Pad weather and upper-winds constraints. Optional for this launch profile — you may delete Weather from the sequence when conditions do not justify a separate poll step. Realigning reduces friction on clear days if you keep it.',
 }
