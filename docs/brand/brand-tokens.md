@@ -1,8 +1,12 @@
 # Brand colour tokens
 
-Official brand palette, added as reusable design tokens so the codebase has
-one authoritative source for these colours instead of hardcoded hex values
-scattered across components.
+Official PMI brand palette for the Orbit26 / Orb-it Process Excellence
+Simulator. Reusable design tokens so the codebase has one authoritative
+source for these colours instead of hardcoded hex values scattered across
+components.
+
+Product behaviour: [`CLAUDE.md`](../../CLAUDE.md). Repo map:
+[`project-structure.md`](../project-structure.md).
 
 ## Where the tokens live
 

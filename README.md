@@ -18,6 +18,12 @@ Open [http://127.0.0.1:5173/](http://127.0.0.1:5173/). On Windows PowerShell, us
 | `npm run preview` | Preview production build |
 | `npm run lint` | Oxlint |
 
+## Live production
+
+- **Site:** [https://orbit26-one.vercel.app](https://orbit26-one.vercel.app)
+- **Repo:** [github.com/apollo-n23/Orbit26](https://github.com/apollo-n23/Orbit26)
+- Push to `main` triggers a Vercel production deploy.
+
 ## Learning loop (high level)
 
 1. **Home** (`#/home`) — intranet hub (Training and help, Annual Report, Create Invoices).
@@ -26,11 +32,27 @@ Open [http://127.0.0.1:5173/](http://127.0.0.1:5173/). On Windows PowerShell, us
 4. **Customer Portal** — Starfeed voice-of-customer.
 5. **Gemba** — inspect As-is process steps freely (with context panel).
 6. **As-is** — three launches on the baseline process; lead times saved locally.
-7. **Redesign** — budgeted improvements (manufacture, haul road, launch-prep tech, launch sequence; 100 pt budget).
+7. **Redesign** — budgeted improvements (manufacture, haul road, launch-prep tech, launch sequence; **100 pt** budget).
 8. **To-be** — three launches on the locked design; compare to As-is on Data.
 9. **Data** — lead times, defects, redesign cost, Save/Upload Session Data (CSV + restore).
 
-Product rules, routes, redesign costs, and scene conventions live in **[CLAUDE.md](./CLAUDE.md)** (project instructions for agents and contributors). Repository map: **[docs/project-structure.md](./docs/project-structure.md)**. Brand palette: **[docs/brand/brand-tokens.md](./docs/brand/brand-tokens.md)**.
+## Process steps (Execute)
+
+| Step | Scene | Highlights |
+|------|--------|------------|
+| 1 · Manufacture | `ManufactureScene` | Machines aligned to belt stops; floating access-code monitor (`AccessCodeMonitor.png`); bare booster sprite; sequence badges on lower-left of machine cards |
+| 2 · Haul road | `HaulRoadScene` | Same bare booster on crawler; isometric cutaway Offices/Assembly (`HaulOfficesTop.png` / `HaulAssemblyTop.png`); dirt service track + NPC vehicle/pedestrians |
+| 3 · Launch prep | `LaunchPrepScene` | Mate, payload (crane or drone), fuel, power — redesigned by launch-prep techs |
+| 4 · Launch sequence | `LaunchSequenceScene` | GO poll, key arm, liftoff; optional Capcom removal → NO CAPCOM height |
+
+## Documentation
+
+| Doc | Contents |
+|-----|----------|
+| **[CLAUDE.md](./CLAUDE.md)** | Full product rules, routes, redesign costs, scene conventions (source of truth for agents) |
+| **[docs/project-structure.md](./docs/project-structure.md)** | Repository tree, routing table, where-to-change map |
+| **[docs/assets.md](./docs/assets.md)** | `public/` asset inventory |
+| **[docs/brand/brand-tokens.md](./docs/brand/brand-tokens.md)** | PMI brand palette ↔ CSS tokens |
 
 ## Stack
 
@@ -46,15 +68,14 @@ Product rules, routes, redesign costs, and scene conventions live in **[CLAUDE.m
 | Round lifecycle | `src/components/RoundSession.tsx` |
 | Redesign workshop | `src/components/RedesignWorkshop.tsx` |
 | Process scenes | `src/components/*Scene.tsx` |
+| Shared booster art | `src/components/Booster.tsx` |
 | Simulation + Data views | `src/views/SimulationView.tsx`, `DataView.tsx` |
 | Intranet + side stages | `src/views/HomeView.tsx`, `GembaWalkthrough.tsx`, `CustomerPortalView.tsx`, `RegulationView.tsx`, … |
 | 5S invoice module | `src/views/CreateInvoicesView.tsx` + `src/data/historicLaunches.ts` / `invoiceLevers.ts` |
 | Types / baseline / rounds | `src/types/`, `src/data/` |
 | Simulation & redesign libs | `src/lib/` |
-| Static assets | `public/` |
-
-See [docs/project-structure.md](./docs/project-structure.md) for the full tree and “where to change what” table.
+| Static assets | `public/` (see [docs/assets.md](./docs/assets.md)) |
 
 ## Deploy
 
-Built for static hosting (e.g. Vercel) from `main`. Production output: `npm run build` → `dist/`.
+Built for static hosting (Vercel) from `main`. Production output: `npm run build` → `dist/`.

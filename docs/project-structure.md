@@ -2,7 +2,8 @@
 
 Agent-oriented map of the Orbit26 / Orb-it Process Excellence Simulator
 repository. Product rules and settled behaviour live in [`CLAUDE.md`](../CLAUDE.md);
-this file only orients you in the tree.
+this file only orients you in the tree. Asset inventory: [`assets.md`](./assets.md).
+Brand palette: [`brand/brand-tokens.md`](./brand/brand-tokens.md).
 
 ## Root
 
@@ -12,9 +13,9 @@ this file only orients you in the tree.
 | `README.md` | Quick start, high-level learning loop, deploy notes. |
 | `package.json` | Scripts: `dev`, `build` (`tsc -b && vite build`), `lint` (oxlint), `preview`. |
 | `vite.config.ts` / `tsconfig*.json` / `index.html` | Vite + TypeScript app shell. |
-| `public/` | Static assets (logos, photos, teaser video, Gemba step images, upgrade icons, manufacture `AccessCodeMonitor.png`, bare-booster sprite `AssemblyBooster.png`, haul top-down buildings `HaulOfficesTop.png` / `HaulAssemblyTop.png`). Served as-is; reference via `import.meta.env.BASE_URL`. |
-| `docs/brand/brand-tokens.md` | PMI brand palette ↔ CSS custom properties in `src/index.css`. |
-| `.gitignore` | Ignores `node_modules/`, `dist/`, env files, editor noise; keeps `CLAUDE.md`. |
+| `public/` | Static assets — see [`assets.md`](./assets.md). Served as-is via `import.meta.env.BASE_URL`. |
+| `docs/` | This map, brand tokens, asset inventory. |
+| `.gitignore` | Ignores `node_modules/`, `dist/`, env files, editor noise, `.tmp-screenshots/`; keeps `CLAUDE.md`. |
 
 ## `src/` layout
 
@@ -55,11 +56,11 @@ src/
     ViewNav.tsx            Simulation | Data tabs
     StepIcon.tsx           Shared step-kind glyphs (Gemba + Redesign steppers)
     GembaContextPanel.tsx  Gemba-only context rail
-    ManufactureScene.tsx   Step 1
-    HaulRoadScene.tsx      Step 2 (formerly IntegratePayloadScene)
+    ManufactureScene.tsx   Step 1 — belt, machines, access-code monitor, booster sprite
+    HaulRoadScene.tsx      Step 2 — map, cutaway buildings, crawler, NPC ambient life
     LaunchPrepScene.tsx    Step 3
     LaunchSequenceScene.tsx Step 4
-    Booster.tsx            Shared booster art
+    Booster.tsx            Shared booster art (sprite when bare; CSS when nosed)
     RoundLeadTimeCompare.tsx As-is vs To-be visual compare
   views/
     HomeView.tsx           Default landing `#/home`
@@ -111,10 +112,22 @@ Every page renders its own:
 | Brand colour | `src/index.css` + `docs/brand/brand-tokens.md` |
 | Nav / stages | `types/round.ts` (`AppStage`, hash helpers) + `App.tsx` + `StageNav` / `SiteBrand` |
 | Invoice 5S module | `CreateInvoicesView`, `historicLaunches`, `invoiceLevers`, `types/invoice.ts` (standalone; no round budget) |
+| Manufacture layout / monitor / machine badges | `ManufactureScene.tsx` + `App.css` (`.manufacture-*`, `.factory-machine*`) + `public/AccessCodeMonitor.png` |
+| Bare booster art | `Booster.tsx` + `public/AssemblyBooster.png` + `.booster__sprite` / `.booster--haul-sprite` in `App.css` |
+| Haul buildings / NPC ambient / dirt track | `HaulRoadScene.tsx` + `public/HaulOfficesTop.png` / `HaulAssemblyTop.png` + `.haul-npc-*` in `App.css` |
+
+## Deploy & remotes
+
+| Item | Value |
+|------|--------|
+| Git remote | `origin` → `https://github.com/apollo-n23/Orbit26.git` |
+| Default branch | `main` |
+| Production (Vercel) | https://orbit26-one.vercel.app |
+| Build | `npm run build` → static `dist/` |
+| Vercel project | GitHub-connected; push to `main` deploys production |
 
 ## Local git notes
 
-- Branch: `main` tracks `origin` (`https://github.com/apollo-n23/Orbit26.git`).
-- Prefer meaningful local commits; push only when asked.
+- Prefer meaningful local commits; push only when asked (unless the user requests deploy).
 - On Windows PowerShell, use `npm.cmd` if `npm.ps1` is blocked by execution policy.
 - `dist/` and `node_modules/` are gitignored; do not commit build output.
