@@ -12,7 +12,7 @@ this file only orients you in the tree.
 | `README.md` | Quick start, high-level learning loop, deploy notes. |
 | `package.json` | Scripts: `dev`, `build` (`tsc -b && vite build`), `lint` (oxlint), `preview`. |
 | `vite.config.ts` / `tsconfig*.json` / `index.html` | Vite + TypeScript app shell. |
-| `public/` | Static assets (logos, photos, teaser video, Gemba step images, upgrade icons). Served as-is; reference via `import.meta.env.BASE_URL`. |
+| `public/` | Static assets (logos, photos, teaser video, Gemba step images, upgrade icons, manufacture `AccessCodeMonitor.png`, bare-booster sprite `AssemblyBooster.png`, haul top-down buildings `HaulOfficesTop.png` / `HaulAssemblyTop.png`). Served as-is; reference via `import.meta.env.BASE_URL`. |
 | `docs/brand/brand-tokens.md` | PMI brand palette ↔ CSS custom properties in `src/index.css`. |
 | `.gitignore` | Ignores `node_modules/`, `dist/`, env files, editor noise; keeps `CLAUDE.md`. |
 

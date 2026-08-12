@@ -56,3 +56,6 @@ Desktop.ini
 
 # Optional local agent / session noise (keep project docs, e.g. CLAUDE.md)
 .claude/settings.local.json
+
+# Local headless browser / screenshot scratch (never commit)
+.tmp-screenshots/

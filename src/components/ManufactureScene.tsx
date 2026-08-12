@@ -20,6 +20,8 @@ import {
 import { Booster } from './Booster'
 
 const ASSEMBLY_BG_SRC = `${import.meta.env.BASE_URL}AssemblyBG.jpg`
+/** Square HD access-code monitor face (Orb-it branded bezel + power LED). */
+const ACCESS_CODE_MONITOR_SRC = `${import.meta.env.BASE_URL}AccessCodeMonitor.png`
 
 interface ManufactureSceneProps {
   machines: ProcessMachine[]
@@ -42,10 +44,10 @@ type DropFeedback = 'wrong' | 'miss' | null
 
 /**
  * Entrance of the belt (left of first stop), as % of production-line width.
- * Kept positive so the booster starts fully on-screen (a negative value here
- * previously spawned it partly clipped by manufacture-scene's overflow:hidden).
+ * Raised so the long assembly sprite (centered on this %) sits fully on the
+ * belt instead of under the access-code monitor / clipped by overflow:hidden.
  */
-const ENTRANCE_LEFT_PCT = 4
+const ENTRANCE_LEFT_PCT = 16
 /** How close (line %) a drop must be to snap onto a station stop. */
 const SNAP_THRESHOLD_PCT = 9
 /**
@@ -467,13 +469,17 @@ export function ManufactureScene({
     else if (isRetreating) hint = 'Returning…'
     else if (isDone) hint = 'Complete'
 
+    // Park the bay on the same horizontal % as the matching belt stop so the
+    // machine sits above its line position (not a compressed side-by-side grid).
+    const stationLeftPct = linePosPercent(machine.linePosition, stationCount)
+
     return (
       <div
         key={machine.id}
         className="station-bay"
         style={
           {
-            gridColumn: machine.linePosition + 1,
+            left: `${stationLeftPct}%`,
             ['--park-offset']: `${offset}rem`,
             ['--drop-min-height']: `${Math.max(1.5, offset + 0.4)}rem`,
           } as CSSProperties
@@ -634,53 +640,14 @@ export function ManufactureScene({
       <div className="manufacture-scene__sky" aria-hidden="true" />
 
       <div className="manufacture-floor">
-        <div className="manufacture-stations-row">
-          <div
-            className="station-row"
-            style={{
-              gridTemplateColumns: `repeat(${stationCount}, minmax(0, 1fr))`,
-            }}
-          >
-            {stations.map(renderMachine)}
-          </div>
-
-          {/*
-            Access-code terminal — sits beside the station cards (not floating
-            over the top of the scene) so parked machines have the full floor
-            height above the belt to work with. Always rendered (even with no
-            active code) so the station row's width never jumps when the code
-            appears/disappears. `.manufacture-terminal__screen` is a plain dark
-            panel today — a future pass can drop a computer-terminal background
-            image onto it without touching this markup.
-          */}
-          <div
-            className="manufacture-terminal"
-            role="status"
-            aria-live="polite"
-          >
-            <div className="manufacture-terminal__screen">
-              {required && !stepDone ? (
-                <>
-                  <span className="manufacture-terminal__kicker">
-                    Station access code
-                  </span>
-                  <span className="manufacture-terminal__body">
-                    Station {required.sequence} · {required.name}
-                  </span>
-                  <span
-                    className="manufacture-terminal__code"
-                    aria-label="Access code"
-                  >
-                    {required.accessCode}
-                  </span>
-                </>
-              ) : (
-                <span className="manufacture-terminal__standby">
-                  Standby
-                </span>
-              )}
-            </div>
-          </div>
+        {/*
+          Machine bays are absolutely positioned at the same horizontal % as
+          the belt stops below (linePosition → linePosPercent), so each card
+          parks above its corresponding production-line slot. Vertical park
+          distance still comes from parkOffset + approach travel.
+        */}
+        <div className="station-row">
+          {stations.map(renderMachine)}
         </div>
 
         <div className="manufacture-drag-guide-wrap">
@@ -805,6 +772,45 @@ export function ManufactureScene({
               />
             </svg>
           )}
+        </div>
+      </div>
+
+      {/*
+        Access-code monitor — floating square HD flat-screen on the clear
+        mid-left of the floor (above the belt entrance). Asset provides bezel,
+        Orb-it logo, and power LED; live station code is overlaid on the glass.
+        Always rendered (even standby). On narrow viewports it drops into
+        normal flow below the belt so it never covers machine cards.
+      */}
+      <div className="manufacture-terminal" role="status" aria-live="polite">
+        <div className="manufacture-terminal__panel">
+          <img
+            src={ACCESS_CODE_MONITOR_SRC}
+            alt=""
+            className="manufacture-terminal__bg"
+            decoding="async"
+            draggable={false}
+          />
+          <div className="manufacture-terminal__content">
+            {required && !stepDone ? (
+              <>
+                <span className="manufacture-terminal__kicker">
+                  Station access code
+                </span>
+                <span className="manufacture-terminal__body">
+                  Station {required.sequence} · {required.name}
+                </span>
+                <span
+                  className="manufacture-terminal__code"
+                  aria-label="Access code"
+                >
+                  {required.accessCode}
+                </span>
+              </>
+            ) : (
+              <span className="manufacture-terminal__standby">Standby</span>
+            )}
+          </div>
         </div>
       </div>
 

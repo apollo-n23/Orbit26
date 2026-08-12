@@ -18,6 +18,19 @@ import {
 } from '../lib/pathGeometry'
 import type { RunState } from '../types/process'
 
+/** Isometric cutaway building sprites for the haul map (public/). */
+const HAUL_OFFICES_SRC = `${import.meta.env.BASE_URL}HaulOfficesTop.png?v=2`
+const HAUL_ASSEMBLY_SRC = `${import.meta.env.BASE_URL}HaulAssemblyTop.png?v=2`
+
+/**
+ * Building placement on the haul map. Logical footprints stay clear of the
+ * gameplay road (Offices left of Assembly; Assembly right edge at x=128 for
+ * the HAUL_START exit apron). Visuals are slightly larger so the 3D cutaways
+ * read clearly without changing road geometry.
+ */
+const OFFICES_BUILDING = { x: 4, y: 158, width: 52, height: 148 }
+const ASSEMBLY_BUILDING = { x: 48, y: 152, width: 88, height: 154 }
+
 interface HaulRoadSceneProps {
   run: RunState
   /** Optional redesigned haul centerline; defaults to HAUL_PATH. */
@@ -781,122 +794,72 @@ export function HaulRoadScene({
             ))}
           </g>
 
-          <g className="haul-building haul-building--offices" aria-hidden="true">
-            {/*
-              Offices annex, to the left of Assembly, clear of the road (the
-              nearest road segment runs x=95-220 at y=240 — this sits at
-              x=8-48). Assembly's own rect kept its right edge at x=128 (the
-              HAUL_START exit-apron alignment) and only lost width off its
-              left side to make room here.
-            */}
-            <rect
-              x="8"
-              y="175"
-              width="40"
-              height="130"
-              rx="4"
-              fill="#2a3038"
-              stroke="#777779"
-              strokeWidth="2"
-            />
-            <rect x="18" y="195" width="20" height="22" fill="#1a222c" />
-            <rect x="18" y="230" width="20" height="22" fill="#1a222c" />
-            <rect
-              x="18"
-              y="268"
-              width="20"
-              height="28"
-              fill="#151a21"
-              stroke="#777779"
-            />
-            <text
-              x="28"
-              y="240"
-              textAnchor="middle"
-              transform="rotate(-90 28 240)"
-              fill="#c9c8c7"
-              fontSize="11"
-              fontFamily="Segoe UI, system-ui, sans-serif"
-              fontWeight="600"
-              letterSpacing="1"
-            >
-              Offices
-            </text>
-          </g>
-
-          <g className="haul-building">
-            <rect
-              x="56"
-              y="175"
-              width="72"
-              height="130"
-              rx="4"
-              fill="#2a3038"
-              stroke="#777779"
-              strokeWidth="2"
-            />
-            <image
-              href={`${import.meta.env.BASE_URL}OrbitLogo.png`}
-              x="83"
-              y="178"
-              width="18"
-              height="18"
-              opacity="0.9"
-            />
-            <rect x="64" y="195" width="20" height="22" fill="#1a222c" />
-            <rect x="100" y="195" width="20" height="22" fill="#1a222c" />
-            <rect x="64" y="230" width="20" height="22" fill="#1a222c" />
-            <rect x="100" y="230" width="20" height="22" fill="#1a222c" />
-            <rect
-              x="74"
-              y="268"
-              width="36"
-              height="28"
-              fill="#151a21"
-              stroke="#777779"
-            />
-            <text
-              x="92"
-              y="165"
-              textAnchor="middle"
-              fill="#e8f0e4"
-              fontSize="13"
-              fontFamily="Segoe UI, system-ui, sans-serif"
-              fontWeight="600"
-            >
-              Assembly
-            </text>
-          </g>
-
           {/*
-            Ambient life on the left side of the map, in the open ground
-            strip below the Offices/Assembly buildings (y >= 306) — clear of
-            both building footprints (bottom edge y=305), the haul road
-            corridor (nearest segments at x=95-220/y=240 and x=220/y=240-380,
-            both well east of x=122), and each other (separate y-bands).
-            Pure CSS transform animation, aria-hidden, no handlers — purely
-            decorative, never read by isBoosterSafe/isPointSafe or any other
-            gameplay logic.
+            Ambient life + dirt service track (decorative, non-interactive).
+            Layer order matters: dirt → people → buildings so walkers
+            disappear under the façades when they enter a doorway.
+            Never read by isBoosterSafe / isPointSafe.
           */}
-          <g className="haul-npc-traffic" aria-hidden="true">
-            <rect
-              className="haul-npc-vehicle"
-              x="20"
-              y="322"
-              width="12"
-              height="7"
-              rx="1.5"
-              fill="#4a4f56"
-              stroke="#25292f"
-              strokeWidth="1"
+          {/*
+            Curved dirt track: Offices door → yard → Assembly door (and
+            reverse for the NPC car along the horizontal stretch).
+            Offices door ~ (28, 296); Assembly door ~ (92, 296).
+          */}
+          <g className="haul-npc-dirt-road" aria-hidden="true">
+            <path
+              className="haul-npc-dirt-road__bed"
+              d="M 28 296
+                 L 28 316
+                 Q 28 327 40 327
+                 L 80 327
+                 Q 92 327 92 316
+                 L 92 296"
+              fill="none"
+              stroke="#6b5a3e"
+              strokeWidth="11"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.92"
+            />
+            <path
+              className="haul-npc-dirt-road__highlight"
+              d="M 28 296
+                 L 28 316
+                 Q 28 327 40 327
+                 L 80 327
+                 Q 92 327 92 316
+                 L 92 296"
+              fill="none"
+              stroke="#8a7550"
+              strokeWidth="4.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.5"
+            />
+            <path
+              d="M 30 300 L 30 316 Q 30 325 42 325 L 78 325 Q 90 325 90 316 L 90 300"
+              fill="none"
+              stroke="#5a4a32"
+              strokeWidth="0.7"
+              strokeLinecap="round"
+              opacity="0.4"
+            />
+            <path
+              d="M 34 318 Q 50 329 70 326 T 96 318"
+              fill="none"
+              stroke="#9a8460"
+              strokeWidth="0.55"
+              strokeLinecap="round"
+              opacity="0.32"
             />
           </g>
 
+          {/* People drawn under buildings so they vanish into doorways. */}
           <g className="haul-npc-people" aria-hidden="true">
             <circle
               className="haul-npc-person haul-npc-person--1"
-              cx="18"
-              cy="311"
+              cx="28"
+              cy="314"
               r="2.3"
               fill="#cbd5df"
               stroke="#5a6672"
@@ -904,8 +867,8 @@ export function HaulRoadScene({
             />
             <circle
               className="haul-npc-person haul-npc-person--2"
-              cx="30"
-              cy="312"
+              cx="34"
+              cy="316"
               r="2.2"
               fill="#d8c9a3"
               stroke="#6b5d42"
@@ -913,11 +876,91 @@ export function HaulRoadScene({
             />
             <circle
               className="haul-npc-person haul-npc-person--3"
-              cx="40"
-              cy="310"
+              cx="88"
+              cy="315"
               r="2.3"
               fill="#c9a8c0"
               stroke="#6a4f63"
+              strokeWidth="1"
+            />
+          </g>
+
+          {/*
+            3D isometric cutaway building sprites (public/HaulOfficesTop.png,
+            public/HaulAssemblyTop.png). Drawn after people so walkers vanish
+            under the buildings at doorways. href + xlinkHref for SVG image
+            compatibility; preserveAspectRatio keeps the 3D cutaway readable.
+          */}
+          <g className="haul-building haul-building--offices" aria-hidden="true">
+            <image
+              href={HAUL_OFFICES_SRC}
+              xlinkHref={HAUL_OFFICES_SRC}
+              x={OFFICES_BUILDING.x}
+              y={OFFICES_BUILDING.y}
+              width={OFFICES_BUILDING.width}
+              height={OFFICES_BUILDING.height}
+              preserveAspectRatio="xMidYMax meet"
+              style={{ filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))' }}
+            />
+            <text
+              x={OFFICES_BUILDING.x + OFFICES_BUILDING.width / 2}
+              y={OFFICES_BUILDING.y + 14}
+              textAnchor="middle"
+              fill="#e8f0e4"
+              fontSize="11"
+              fontFamily="Segoe UI, system-ui, sans-serif"
+              fontWeight="700"
+              letterSpacing="0.5"
+              style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.75)', strokeWidth: 2.5 }}
+            >
+              Offices
+            </text>
+          </g>
+
+          <g className="haul-building haul-building--assembly" aria-hidden="true">
+            <image
+              href={HAUL_ASSEMBLY_SRC}
+              xlinkHref={HAUL_ASSEMBLY_SRC}
+              x={ASSEMBLY_BUILDING.x}
+              y={ASSEMBLY_BUILDING.y}
+              width={ASSEMBLY_BUILDING.width}
+              height={ASSEMBLY_BUILDING.height}
+              preserveAspectRatio="xMidYMax meet"
+              style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.55))' }}
+            />
+            <image
+              href={`${import.meta.env.BASE_URL}OrbitLogo.png`}
+              xlinkHref={`${import.meta.env.BASE_URL}OrbitLogo.png`}
+              x={ASSEMBLY_BUILDING.x + ASSEMBLY_BUILDING.width / 2 - 11}
+              y={ASSEMBLY_BUILDING.y + 4}
+              width="22"
+              height="22"
+              opacity="0.95"
+            />
+            <text
+              x={ASSEMBLY_BUILDING.x + ASSEMBLY_BUILDING.width / 2}
+              y={ASSEMBLY_BUILDING.y - 6}
+              textAnchor="middle"
+              fill="#e8f0e4"
+              fontSize="13"
+              fontFamily="Segoe UI, system-ui, sans-serif"
+              fontWeight="700"
+              style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.75)', strokeWidth: 2.5 }}
+            >
+              Assembly
+            </text>
+          </g>
+
+          <g className="haul-npc-traffic" aria-hidden="true">
+            <rect
+              className="haul-npc-vehicle"
+              x="34"
+              y="322.5"
+              width="12"
+              height="7"
+              rx="1.5"
+              fill="#4a4f56"
+              stroke="#25292f"
               strokeWidth="1"
             />
           </g>
@@ -1138,8 +1181,9 @@ export function HaulRoadScene({
         >
           {!exploding && <div className="haul-crawler" aria-hidden="true" />}
           {!exploding && (
+            /* Same bare-booster HD sprite as manufacture (showNose=false → AssemblyBooster.png). */
             <Booster
-              className="booster--haul"
+              className="booster--haul booster--haul-sprite"
               showNose={false}
               multiNozzleEngine
               ready={seated}
