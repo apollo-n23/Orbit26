@@ -8,6 +8,7 @@ import {
   applyLaunchSeqRealign,
   applyLaunchSeqRedesign,
   applyLaunchSeqRemove,
+  applyMachineDamaged,
   applyMachineLineOrder,
   applyMachineParkOffset,
   getHaulStep,
@@ -24,6 +25,7 @@ import {
 import {
   AUTO_TRANSFER_COST,
   buildCostBreakdown,
+  FORM_PRESS_REPAIR_COST,
   GO_REALIGN_COST,
   KEY_LUBRICATION_COST,
   LAUNCH_PREP_TECH_COST,
@@ -34,8 +36,9 @@ import {
   remainingBudget as computeRemainingBudget,
 } from '../lib/redesignCost'
 import { Booster } from './Booster'
-import { IntegratePayloadScene } from './IntegratePayloadScene'
+import { HaulRoadScene } from './HaulRoadScene'
 import { LaunchSequenceScene } from './LaunchSequenceScene'
+import { StepIcon } from './StepIcon'
 import type { LaunchPrepTech, RunState } from '../types/process'
 import {
   INITIAL_RUN_STATE,
@@ -57,9 +60,18 @@ import {
 } from '../lib/roadGrid'
 import { HAUL_PATH, SCENE_HEIGHT, SCENE_WIDTH } from '../lib/pathGeometry'
 import { downloadTextFile } from '../lib/fileDownload'
+import { buildRedesignChoicesSummary } from '../lib/redesignSummary'
 import { getRoundConfig } from '../data/rounds'
 
 type RedesignTab = 'manufacture' | 'haul' | 'launch-prep' | 'launch-sequence'
+
+/** Drives the icon-led stepper nav below — id doubles as a ProcessStep kind for StepIcon. */
+const REDESIGN_TABS: { id: RedesignTab; label: string }[] = [
+  { id: 'manufacture', label: 'Manufacture line' },
+  { id: 'haul', label: 'Haul road' },
+  { id: 'launch-prep', label: 'Launch prep tech' },
+  { id: 'launch-sequence', label: 'Launch sequence' },
+]
 
 /** Icon filenames in `public/` for launch-prep upgrade cards. */
 const LAUNCH_PREP_TECH_ICONS: Record<LaunchPrepTech, string> = {
@@ -125,6 +137,44 @@ function RedesignTechCostBanner({
   )
 }
 
+/** Stacked-coins glyph for the "total cost" cell — same stroke style as StepIcon. */
+function CoinStackIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <ellipse cx="10" cy="15" rx="7" ry="2.4" />
+      <ellipse cx="10" cy="11.2" rx="7" ry="2.4" />
+      <ellipse cx="10" cy="7.4" rx="7" ry="2.4" />
+    </svg>
+  )
+}
+
+/** Battery/gauge glyph for the "budget remaining" cell. */
+function BudgetGaugeIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="2" y="6" width="14" height="8" rx="1.5" />
+      <rect
+        x="16.5"
+        y="8.3"
+        width="2"
+        height="3.4"
+        rx="0.6"
+        fill="currentColor"
+        stroke="none"
+      />
+      <rect
+        x="4"
+        y="8"
+        width="8"
+        height="4"
+        fill="currentColor"
+        stroke="none"
+        opacity="0.55"
+      />
+    </svg>
+  )
+}
+
 export function RedesignWorkshop({
   initialProcess,
   roundLabel,
@@ -139,6 +189,8 @@ export function RedesignWorkshop({
   const [budgetError, setBudgetError] = useState<string | null>(null)
   /** Booster upgrade panel: open once on hover/focus, then stays until dismissed. */
   const [upgradePanelOpen, setUpgradePanelOpen] = useState(false)
+  /** Machine repair panel: same open-once-on-hover/focus, stays-until-dismissed pattern. */
+  const [repairPanelOpen, setRepairPanelOpen] = useState(false)
   /** Confirm lock-in dialog before starting launches. */
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   /** Launch-sequence tab: which station's criticality panel is expanded. */
@@ -270,6 +322,32 @@ export function RedesignWorkshop({
     if (autoMoveBooster) setEverAutoTransferOn(true)
   }, [autoMoveBooster])
 
+  /**
+   * `damaged` is only ever explicitly set to `false` by a repair (baseline
+   * either omits the field or sets it `true`), so this is an unambiguous
+   * ratchet signal — mirrors everMovedMachineIds above.
+   */
+  const [everRepairedMachineIds, setEverRepairedMachineIds] = useState<
+    Set<string>
+  >(() => new Set())
+  useEffect(() => {
+    const repairedNow = machinesSorted
+      .filter((m) => m.damaged === false)
+      .map((m) => m.id)
+    if (repairedNow.length === 0) return
+    setEverRepairedMachineIds((prev) => {
+      const next = new Set(prev)
+      let changed = false
+      for (const id of repairedNow) {
+        if (!next.has(id)) {
+          next.add(id)
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [machinesSorted])
+
   const [everSelectedTechIds, setEverSelectedTechIds] = useState<
     Set<LaunchPrepTech>
   >(() => new Set())
@@ -340,6 +418,7 @@ export function RedesignWorkshop({
       buildCostBreakdown({
         machineMoveCost: everMovedMachineIds.size * MACHINE_MOVE_COST,
         autoTransferCost: everAutoTransferOn ? AUTO_TRANSFER_COST : 0,
+        formPressRepairCost: everRepairedMachineIds.size * FORM_PRESS_REPAIR_COST,
         roadCost,
         launchPrepTechCost: [...everSelectedTechIds].reduce(
           (sum, id) => sum + LAUNCH_PREP_TECH_COST[id],
@@ -352,6 +431,7 @@ export function RedesignWorkshop({
     [
       everMovedMachineIds,
       everAutoTransferOn,
+      everRepairedMachineIds,
       roadCost,
       everSelectedTechIds,
       everRealignedGoIds,
@@ -363,6 +443,16 @@ export function RedesignWorkshop({
   /** Budget left before hitting REDESIGN_BUDGET — only new charges are gated. */
   const remainingBudget = computeRemainingBudget(costBreakdown)
   const budgetExhausted = remainingBudget <= 0
+  /** Total goes negative once sold road credits outweigh every other cost. */
+  const budgetSurplus = costBreakdown.total < 0
+  const manufactureCost =
+    costBreakdown.machineMoveCost +
+    costBreakdown.autoTransferCost +
+    costBreakdown.formPressRepairCost
+  const launchSequenceCost =
+    costBreakdown.goRealignCost +
+    costBreakdown.rangeRemovalCost +
+    costBreakdown.keyLubricationCost
 
   function blockOverBudget(cost: number, description: string): boolean {
     if (cost > remainingBudget) {
@@ -396,6 +486,18 @@ export function RedesignWorkshop({
 
   function handleParkChange(machineId: string, value: number) {
     setDraft((p) => applyMachineParkOffset(p, machineId, value))
+  }
+
+  function handleToggleMachineRepair(machineId: string) {
+    const machine = machinesSorted.find((m) => m.id === machineId)
+    if (!machine) return
+    const repairing = machine.damaged === true
+    if (repairing && !everRepairedMachineIds.has(machineId)) {
+      if (blockOverBudget(FORM_PRESS_REPAIR_COST, 'repair this machine')) return
+    } else {
+      setBudgetError(null)
+    }
+    setDraft((p) => applyMachineDamaged(p, machineId, !repairing))
   }
 
   function handleToggleAutoMove() {
@@ -484,66 +586,11 @@ export function RedesignWorkshop({
     setRoadError(null)
   }
 
-  /** Plain-text snapshot of every choice made so far, for "Save my current choices". */
-  function buildChoicesSummary(): string {
-    const movedNow = new Set(movedMachineIds(machinesSorted))
-    const lineOrder = machinesSorted.map((m) => m.name).join(', ')
-    const movedNames = machinesSorted
-      .filter((m) => movedNow.has(m.id))
-      .map((m) => m.name)
-    const techNames = launchPrepTechs.map(
-      (id) => LAUNCH_PREP_TECH_OPTIONS.find((o) => o.id === id)?.name ?? id,
-    )
-    const realignedNames = launchSeqRealignIds.map(
-      (id) => LAUNCH_SEQ_GO_STATIONS.find((s) => s.id === id)?.name ?? id,
-    )
-    const savedAt = new Date().toLocaleString()
-
-    const lines = [
-      'Orb-it Redesign Workshop — saved choices',
-      `${roundLabel}`,
-      `Saved: ${savedAt}`,
-      '',
-      'MANUFACTURE',
-      `Line order (left to right): ${lineOrder || 'unchanged'}`,
-      `Machines moved from factory position: ${movedNames.length > 0 ? movedNames.join(', ') : 'none'}`,
-      `Auto-transfer upgrade: ${autoMoveBooster ? 'On' : 'Off'}`,
-      '',
-      'HAUL ROAD',
-      `Net road cost: ${roadCost} pts (tiles painted beyond the original road, minus any baseline tiles sold)`,
-      '',
-      'LAUNCH PREP TECHNOLOGY',
-      `Selected: ${techNames.length > 0 ? techNames.join(', ') : 'none'}`,
-      '',
-      'LAUNCH SEQUENCE',
-      `Realigned GO calls: ${realignedNames.length > 0 ? realignedNames.join(', ') : 'none'}`,
-      `Removed from poll: ${
-        launchSeqRemovedIds.length > 0
-          ? launchSeqRemovedIds
-              .map(
-                (id) => LAUNCH_SEQ_GO_STATIONS.find((s) => s.id === id)?.name ?? id,
-              )
-              .join(', ')
-          : 'none'
-      }`,
-      `Key lubrication: ${keyLubrication ? 'Yes' : 'No'}`,
-      '',
-      'COST OF IMPROVEMENT',
-      `Manufacture: ${costBreakdown.machineMoveCost + costBreakdown.autoTransferCost} pts`,
-      `Haul road: ${costBreakdown.roadCost} pts`,
-      `Launch prep technology: ${costBreakdown.launchPrepTechCost} pts`,
-      `Launch sequence: ${costBreakdown.goRealignCost + costBreakdown.rangeRemovalCost + costBreakdown.keyLubricationCost} pts`,
-      `Total: ${costBreakdown.total} pts`,
-      '',
-      'BUDGET',
-      `Redesign budget: ${REDESIGN_BUDGET} pts`,
-      `Remaining: ${remainingBudget} pts`,
-    ]
-    return lines.join('\r\n')
-  }
-
   function handleSaveChoices() {
-    downloadTextFile('orbit26-redesign-choices.txt', buildChoicesSummary())
+    downloadTextFile(
+      'orbit26-redesign-choices.txt',
+      buildRedesignChoicesSummary(draft, roundLabel, costBreakdown),
+    )
   }
 
   /**
@@ -587,6 +634,7 @@ export function RedesignWorkshop({
     setBaselineRoadTiles(asIsTiles)
     setEverMovedMachineIds(new Set())
     setEverAutoTransferOn(false)
+    setEverRepairedMachineIds(new Set())
     setEverSelectedTechIds(new Set())
     setEverRealignedGoIds(new Set())
     setEverRemovedGoIds(new Set())
@@ -680,54 +728,106 @@ export function RedesignWorkshop({
           className={[
             'redesign-cost-banner',
             budgetExhausted ? 'redesign-cost-banner--exhausted' : '',
+            budgetSurplus ? 'redesign-cost-banner--surplus' : '',
           ]
             .filter(Boolean)
             .join(' ')}
           aria-live="polite"
         >
-          <div className="redesign-cost-banner__total">
-            <span className="redesign-cost-banner__label">
-              Total cost of improvement
-            </span>
-            <span className="redesign-cost-banner__value">
-              {costBreakdown.total}
-              <span className="redesign-cost-banner__unit">
-                {' '}
-                / {REDESIGN_BUDGET} pts
+          <div className="redesign-cost-table">
+            <div className="redesign-cost-cell redesign-cost-cell--primary">
+              <span className="redesign-cost-cell__icon" aria-hidden="true">
+                <CoinStackIcon />
               </span>
-            </span>
+              <div className="redesign-cost-cell__body">
+                <span className="redesign-cost-cell__label">
+                  Total cost of improvement
+                </span>
+                <span className="redesign-cost-cell__value redesign-cost-cell__value--total">
+                  {costBreakdown.total}
+                  <span className="redesign-cost-cell__unit">
+                    {' '}
+                    / {REDESIGN_BUDGET} pts
+                  </span>
+                </span>
+                {budgetSurplus && (
+                  <span className="redesign-cost-cell__note redesign-cost-cell__note--surplus">
+                    Surplus budget — sold road credits exceed every other cost
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="redesign-cost-divider" aria-hidden="true" />
+
+            <div className="redesign-cost-cell">
+              <span className="redesign-cost-cell__icon" aria-hidden="true">
+                <BudgetGaugeIcon />
+              </span>
+              <div className="redesign-cost-cell__body">
+                <span className="redesign-cost-cell__label">
+                  Budget remaining
+                </span>
+                <span className="redesign-cost-cell__value">
+                  {Math.max(remainingBudget, 0)}
+                  <span className="redesign-cost-cell__unit"> pts</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="redesign-cost-divider" aria-hidden="true" />
+
+            <div className="redesign-cost-cell redesign-cost-cell--compact">
+              <span className="redesign-cost-cell__icon" aria-hidden="true">
+                <StepIcon kind="manufacture" />
+              </span>
+              <div className="redesign-cost-cell__body">
+                <span className="redesign-cost-cell__label">Manufacture</span>
+                <span className="redesign-cost-cell__value redesign-cost-cell__value--compact">
+                  {manufactureCost}
+                </span>
+              </div>
+            </div>
+
+            <div className="redesign-cost-cell redesign-cost-cell--compact">
+              <span className="redesign-cost-cell__icon" aria-hidden="true">
+                <StepIcon kind="haul" />
+              </span>
+              <div className="redesign-cost-cell__body">
+                <span className="redesign-cost-cell__label">Haul road</span>
+                <span className="redesign-cost-cell__value redesign-cost-cell__value--compact">
+                  {costBreakdown.roadCost}
+                </span>
+              </div>
+            </div>
+
+            <div className="redesign-cost-cell redesign-cost-cell--compact">
+              <span className="redesign-cost-cell__icon" aria-hidden="true">
+                <StepIcon kind="launch-prep" />
+              </span>
+              <div className="redesign-cost-cell__body">
+                <span className="redesign-cost-cell__label">Launch prep</span>
+                <span className="redesign-cost-cell__value redesign-cost-cell__value--compact">
+                  {costBreakdown.launchPrepTechCost}
+                </span>
+              </div>
+            </div>
+
+            <div className="redesign-cost-cell redesign-cost-cell--compact">
+              <span className="redesign-cost-cell__icon" aria-hidden="true">
+                <StepIcon kind="launch-sequence" />
+              </span>
+              <div className="redesign-cost-cell__body">
+                <span className="redesign-cost-cell__label">
+                  Launch sequence
+                </span>
+                <span className="redesign-cost-cell__value redesign-cost-cell__value--compact">
+                  {launchSequenceCost}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="redesign-cost-banner__remaining">
-            <span className="redesign-cost-banner__label">
-              Budget remaining
-            </span>
-            <span className="redesign-cost-banner__value redesign-cost-banner__value--remaining">
-              {Math.max(remainingBudget, 0)}
-              <span className="redesign-cost-banner__unit"> pts</span>
-            </span>
-          </div>
-          <ul className="redesign-cost-banner__breakdown">
-            <li>
-              Manufacture{' '}
-              <strong>
-                {costBreakdown.machineMoveCost + costBreakdown.autoTransferCost}
-              </strong>
-            </li>
-            <li>
-              Haul road <strong>{costBreakdown.roadCost}</strong>
-            </li>
-            <li>
-              Launch prep <strong>{costBreakdown.launchPrepTechCost}</strong>
-            </li>
-            <li>
-              Launch sequence{' '}
-              <strong>
-                {costBreakdown.goRealignCost +
-                  costBreakdown.rangeRemovalCost +
-                  costBreakdown.keyLubricationCost}
-              </strong>
-            </li>
-          </ul>
+
           {budgetExhausted && (
             <p className="redesign-cost-banner__exhausted-note" role="alert">
               Budget exhausted — no further cost-increasing improvements can
@@ -756,51 +856,31 @@ export function RedesignWorkshop({
           for all three launches this round.
         </div>
 
-        <nav className="redesign-tabs" aria-label="Redesign steps">
-          <button
-            type="button"
-            className={
-              tab === 'manufacture'
-                ? 'redesign-tabs__btn redesign-tabs__btn--active'
-                : 'redesign-tabs__btn'
-            }
-            onClick={() => setTab('manufacture')}
-          >
-            1 · Manufacture line
-          </button>
-          <button
-            type="button"
-            className={
-              tab === 'haul'
-                ? 'redesign-tabs__btn redesign-tabs__btn--active'
-                : 'redesign-tabs__btn'
-            }
-            onClick={() => setTab('haul')}
-          >
-            2 · Haul road
-          </button>
-          <button
-            type="button"
-            className={
-              tab === 'launch-prep'
-                ? 'redesign-tabs__btn redesign-tabs__btn--active'
-                : 'redesign-tabs__btn'
-            }
-            onClick={() => setTab('launch-prep')}
-          >
-            3 · Launch prep tech
-          </button>
-          <button
-            type="button"
-            className={
-              tab === 'launch-sequence'
-                ? 'redesign-tabs__btn redesign-tabs__btn--active'
-                : 'redesign-tabs__btn'
-            }
-            onClick={() => setTab('launch-sequence')}
-          >
-            4 · Launch sequence
-          </button>
+        <nav className="redesign-stepper" aria-label="Redesign steps">
+          {REDESIGN_TABS.map((tabDef, index) => (
+            <div className="redesign-stepper__item" key={tabDef.id}>
+              {index > 0 && (
+                <span className="redesign-stepper__connector" aria-hidden="true" />
+              )}
+              <button
+                type="button"
+                className={
+                  tab === tabDef.id
+                    ? 'redesign-stepper__step redesign-stepper__step--active'
+                    : 'redesign-stepper__step'
+                }
+                onClick={() => setTab(tabDef.id)}
+              >
+                <span className="redesign-stepper__icon">
+                  <StepIcon kind={tabDef.id} />
+                </span>
+                <span className="redesign-stepper__label">
+                  <span className="redesign-stepper__index">{index + 1}</span>
+                  {tabDef.label}
+                </span>
+              </button>
+            </div>
+          ))}
         </nav>
 
         {tab === 'manufacture' && (
@@ -834,6 +914,14 @@ export function RedesignWorkshop({
                     slotIndex={slot}
                     onDrop={(machineId) => handleDropOnSlot(slot, machineId)}
                     onParkChange={(v) => handleParkChange(machine.id, v)}
+                    onToggleRepair={() => handleToggleMachineRepair(machine.id)}
+                    repairDisabled={
+                      !everRepairedMachineIds.has(machine.id) &&
+                      FORM_PRESS_REPAIR_COST > remainingBudget
+                    }
+                    repairPanelOpen={repairPanelOpen}
+                    onOpenRepairPanel={() => setRepairPanelOpen(true)}
+                    onCloseRepairPanel={() => setRepairPanelOpen(false)}
                   />
                 ))}
               </div>
@@ -1386,7 +1474,7 @@ export function RedesignWorkshop({
                 painted road produces. Try it — nothing here is scored or
                 saved.
               </p>
-              <IntegratePayloadScene
+              <HaulRoadScene
                 key={`redesign-haul-preview-${haulPreviewPathKey}`}
                 run={haulPreviewRun}
                 haulPath={haulPreviewPath}
@@ -1444,12 +1532,24 @@ function MachineSlot({
   slotIndex,
   onDrop,
   onParkChange,
+  onToggleRepair,
+  repairDisabled,
+  repairPanelOpen,
+  onOpenRepairPanel,
+  onCloseRepairPanel,
 }: {
   machine: ProcessMachine
   slotIndex: number
   onDrop: (machineId: string) => void
   onParkChange: (value: number) => void
+  onToggleRepair: () => void
+  repairDisabled: boolean
+  repairPanelOpen: boolean
+  onOpenRepairPanel: () => void
+  onCloseRepairPanel: () => void
 }) {
+  /** Only ever explicitly set (true or false) on a damage-capable machine. */
+  const repairable = machine.damaged !== undefined
   return (
     <div
       className="redesign-slot"
@@ -1466,13 +1566,20 @@ function MachineSlot({
       }}
     >
       <div
-        className="redesign-machine"
+        className={[
+          'redesign-machine',
+          repairable ? 'redesign-machine--repairable' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         draggable
         onDragStart={(e) => {
           e.dataTransfer.effectAllowed = 'move'
           e.dataTransfer.setData('text/plain', machine.id)
           e.dataTransfer.setData('application/x-machine-id', machine.id)
         }}
+        onMouseEnter={repairable ? onOpenRepairPanel : undefined}
+        onFocusCapture={repairable ? onOpenRepairPanel : undefined}
         style={{
           // Match play scene: parkOffset is rem above the belt.
           transform: `translateY(calc(-1 * ${machine.parkOffset}rem))`,
@@ -1480,13 +1587,16 @@ function MachineSlot({
       >
         <span className="redesign-machine__badge">{machine.sequence}</span>
         <span className="redesign-machine__name">{machine.name}</span>
+        {machine.damaged && (
+          <span className="redesign-machine__damaged-pill">DAMAGED</span>
+        )}
         <span className="redesign-machine__slot">Slot {slotIndex + 1}</span>
         <label className="redesign-machine__park">
           <span>Distance from line</span>
           <input
             type="range"
             min={0.4}
-            max={3.2}
+            max={4.6}
             step={0.05}
             value={machine.parkOffset}
             onChange={(e) => onParkChange(Number(e.target.value))}
@@ -1496,6 +1606,61 @@ function MachineSlot({
             {machine.parkOffset.toFixed(2)} rem
           </span>
         </label>
+
+        {repairable && (
+          <div
+            className={[
+              'redesign-machine__repair',
+              repairPanelOpen ? 'redesign-machine__repair--open' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            role="group"
+            aria-label={`${machine.name} repair`}
+          >
+            <button
+              type="button"
+              className="redesign-machine__repair-close"
+              onClick={(e) => {
+                e.stopPropagation()
+                onCloseRepairPanel()
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-label="Dismiss repair panel"
+            >
+              ×
+            </button>
+            <p
+              className={[
+                'redesign-machine__repair-title',
+                machine.damaged
+                  ? 'redesign-machine__repair-title--damaged'
+                  : 'redesign-machine__repair-title--fixed',
+              ].join(' ')}
+            >
+              {machine.damaged ? 'Damaged' : 'Repaired'}
+            </p>
+            <p className="redesign-machine__repair-copy">
+              {machine.damaged
+                ? `Flaky Activate — sometimes fails and must be retried at half speed. Repair it for ${FORM_PRESS_REPAIR_COST} pts, one time.`
+                : `Activate always succeeds at normal speed now. (${FORM_PRESS_REPAIR_COST} pts, already invested.)`}
+            </p>
+            <button
+              type="button"
+              className={machine.damaged ? 'btn btn--primary' : 'btn btn--ghost'}
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleRepair()
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              disabled={machine.damaged ? repairDisabled : false}
+            >
+              {machine.damaged
+                ? `Repair for ${FORM_PRESS_REPAIR_COST} pts${repairDisabled ? ' (over budget)' : ''}`
+                : 'Re-damage (undo repair)'}
+            </button>
+          </div>
+        )}
       </div>
       <div className="redesign-slot__stop" aria-hidden="true" />
     </div>

@@ -20,6 +20,15 @@ export interface ProcessMachine {
    * Displayed in the manufacture access-code banner for the current required station.
    */
   accessCode: string
+  /**
+   * As-is: this machine is physically damaged (baseline friction). Activating
+   * it has a MACHINE_DAMAGED_FAILURE_CHANCE chance of failing outright — the
+   * operator must click Activate again, and that retry then runs at
+   * MACHINE_HALF_SPEED_MULTIPLIER× its normal cycle time. To-be redesign can
+   * repair it (see FORM_PRESS_REPAIR_COST in redesignCost.ts), clearing this
+   * flag for that round.
+   */
+  damaged?: boolean
 }
 
 export type ProcessStepKind =
@@ -103,6 +112,8 @@ export interface RedesignCostBreakdown {
   machineMoveCost: number
   /** Manufacture: one-time cost of the booster auto-transfer upgrade. */
   autoTransferCost: number
+  /** Manufacture: one-time cost of repairing the as-is's damaged Form press arm. */
+  formPressRepairCost: number
   /** Haul road: billable tiles × per-tile cost. The only reducible category. */
   roadCost: number
   /** Launch prep: sum of every pad technology ever selected this session. */
@@ -229,6 +240,21 @@ export interface RunState {
   nextMachineIndex: number
   /** Machine currently playing its work animation, if any. */
   activeMachineId: string | null
+  /**
+   * True while `activeMachineId` is playing a damaged machine's failed-
+   * attempt animation (approach → glow red → retreat, never completes).
+   * Rolled once when Activate starts the cycle; read by ManufactureScene's
+   * animation timers and the caller's finish-work timeout alike.
+   */
+  activeMachineWillFail: boolean
+  /**
+   * A damaged machine's Activate click failed once (30% chance) — the next
+   * Activate click on this same machine id is guaranteed to succeed, but
+   * runs at half speed. Null when no failure is pending.
+   */
+  pendingRetryMachineId: string | null
+  /** True while `activeMachineId` is running its retry-after-failure cycle at half speed. */
+  activeMachineHalfSpeed: boolean
   /** Machine ids finished this step. */
   completedMachineIds: string[]
   /**
@@ -242,6 +268,14 @@ export interface RunState {
    */
   runEndedAt: number | null
   completedRuns: number
+  /**
+   * Wall-clock timestamp (`Date.now()`) when the session was last paused via
+   * the pause toggle; null while not currently paused. While set, the
+   * lead-time clock stops advancing and process-step interactions are locked.
+   */
+  pausedAt: number | null
+  /** Total ms spent paused so far this run, excluding any currently-open pause. */
+  pausedMs: number
 }
 
 /**
@@ -259,20 +293,32 @@ export const INITIAL_RUN_STATE: RunState = {
   currentStepIndex: -1,
   nextMachineIndex: 0,
   activeMachineId: null,
+  activeMachineWillFail: false,
+  pendingRetryMachineId: null,
+  activeMachineHalfSpeed: false,
   completedMachineIds: [],
   runStartedAt: null,
   runEndedAt: null,
   completedRuns: 0,
+  pausedAt: null,
+  pausedMs: 0,
 }
 
-/** Machine slides from parked offset toward the production line (ms). */
-export const MACHINE_APPROACH_MS = 750
+/**
+ * Machine slides from parked offset toward the production line (ms).
+ * 30% slower than the original 750ms baseline — parkOffset distance is a
+ * deliberate movement-waste teaching lever, so travel time needs to be slow
+ * enough that a machine parked further from the line visibly costs more.
+ */
+export const MACHINE_APPROACH_MS = 975
 
 /** Work animation length while the machine is on the booster (ms). */
 export const MACHINE_WORK_MS = 1100
 
-/** Machine returns from the line to its parked position (ms). */
-export const MACHINE_RETREAT_MS = 750
+/** Machine returns from the line to its parked position (ms). Kept equal to
+ * MACHINE_APPROACH_MS (same 30% slowdown) since both share the CSS
+ * `--machine-travel-ms` transition duration in ManufactureScene. */
+export const MACHINE_RETREAT_MS = 975
 
 /**
  * Full operate cycle: approach → work → retreat.
@@ -280,6 +326,25 @@ export const MACHINE_RETREAT_MS = 750
  */
 export const MACHINE_CYCLE_MS =
   MACHINE_APPROACH_MS + MACHINE_WORK_MS + MACHINE_RETREAT_MS
+
+/** Chance a damaged machine's Activate click fails outright (as-is friction). */
+export const MACHINE_DAMAGED_FAILURE_CHANCE = 0.6
+
+/** Cycle-time multiplier for a damaged machine's retry-after-failure run. */
+export const MACHINE_HALF_SPEED_MULTIPLIER = 2
+
+/**
+ * Failed-attempt animation for a damaged machine: approach the line (as if
+ * about to work), glow red in place, then retreat back to park — never
+ * reaches the booster and never completes. Gives the operator a clear
+ * "it tried, then broke" beat instead of the click silently doing nothing.
+ */
+export const MACHINE_FAIL_APPROACH_MS = 1000
+/** How long the machine glows red at the line before retreating (ms). */
+export const MACHINE_FAIL_GLOW_MS = 500
+export const MACHINE_FAIL_RETREAT_MS = 750
+export const MACHINE_FAIL_CYCLE_MS =
+  MACHINE_FAIL_APPROACH_MS + MACHINE_FAIL_GLOW_MS + MACHINE_FAIL_RETREAT_MS
 
 /** Snap / settle animation when the booster is dropped on a station stop (ms). */
 export const BOOSTER_TRAVEL_MS = 850

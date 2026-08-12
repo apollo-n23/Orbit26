@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
 import { Booster } from './Booster'
 import type { LaunchPrepTech, ProcessVersion, RunState } from '../types/process'
 import { LAUNCH_PREP_ACTIONS } from '../types/process'
@@ -17,6 +23,10 @@ interface LaunchPrepSceneProps {
   techs?: LaunchPrepTech[] | null
   /** Full process version — used to re-read launchPrepTechs when the step starts. */
   process?: ProcessVersion | null
+  /** Session timer paused — locks every sub-task control until resumed. */
+  paused?: boolean
+  /** Missed the sweet spot on the extend-boom slider or the swing-over-vehicle hold — a logged defect. */
+  onDefect?: () => void
 }
 
 const CRANE_STEPS = [
@@ -40,6 +50,14 @@ const FILL_RATE_PER_MS = 0.045 // % per ms while holding (~2.2s to fill)
 /** Faster fuel pumps upgrade — near-instant fill while holding. */
 const FAST_FILL_RATE_PER_MS = 1.8
 
+/** Extend-boom slider: release must land inside this band (0–100 scale). */
+const EXTEND_SWEET_MIN = 60
+const EXTEND_SWEET_MAX = 78
+/** Swing-over-vehicle hold: release must land inside this band (0–100 scale). */
+const SWING_SWEET_MIN = 55
+const SWING_SWEET_MAX = 72
+const SWING_FILL_RATE_PER_MS = 0.05 // % per ms while holding
+
 function resolveSceneTechs(
   process: ProcessVersion | null | undefined,
   techsProp: LaunchPrepTech[] | null | undefined,
@@ -59,6 +77,8 @@ export function LaunchPrepScene({
   onActionComplete,
   techs: techsProp = null,
   process = null,
+  paused = false,
+  onDefect,
 }: LaunchPrepSceneProps) {
   // Snapshot techs when launch-prep (re)starts so a mid-step parent re-render cannot drop them.
   const [techs, setTechs] = useState<LaunchPrepTech[]>(() =>
@@ -73,7 +93,7 @@ export function LaunchPrepScene({
   const fillRate = fastPumps ? FAST_FILL_RATE_PER_MS : FILL_RATE_PER_MS
   const actionIndex = run.nextMachineIndex
   const locked = run.status === 'complete' || run.status === 'step_complete'
-  const canInteract = run.status === 'running' && !locked
+  const canInteract = run.status === 'running' && !locked && !paused
 
   /** Prevents double-firing complete when pointer/slider events race. */
   const finishGuardRef = useRef(false)
@@ -85,6 +105,22 @@ export function LaunchPrepScene({
   // —— Sub-task 2: crane ——
   const [craneStep, setCraneStep] = useState(0)
   const [craneDone, setCraneDone] = useState(false)
+  // Extend boom: vertical drag slider — must release inside the sweet spot.
+  const [extendValue, setExtendValue] = useState(0)
+  const [extendFeedback, setExtendFeedback] = useState<'miss' | null>(null)
+  const extendValueRef = useRef(0)
+  const extendDraggingRef = useRef(false)
+  const extendTrackRef = useRef<HTMLDivElement | null>(null)
+  const extendFeedbackTimerRef = useRef<number | null>(null)
+  // Swing over vehicle: press-and-hold — must release inside the sweet spot.
+  const [swingFill, setSwingFill] = useState(0)
+  const [swingHolding, setSwingHolding] = useState(false)
+  const [swingFeedback, setSwingFeedback] = useState<'miss' | null>(null)
+  const swingFillRef = useRef(0)
+  const swingHoldingRef = useRef(false)
+  const swingRafRef = useRef<number | null>(null)
+  const swingLastRef = useRef(0)
+  const swingFeedbackTimerRef = useRef<number | null>(null)
 
   // —— Sub-task 3: fuel ——
   const [loxConnected, setLoxConnected] = useState(false)
@@ -117,6 +153,27 @@ export function LaunchPrepScene({
       setMateDone(false)
       setCraneStep(0)
       setCraneDone(false)
+      setExtendValue(0)
+      setExtendFeedback(null)
+      extendValueRef.current = 0
+      extendDraggingRef.current = false
+      if (extendFeedbackTimerRef.current != null) {
+        window.clearTimeout(extendFeedbackTimerRef.current)
+        extendFeedbackTimerRef.current = null
+      }
+      setSwingFill(0)
+      setSwingHolding(false)
+      setSwingFeedback(null)
+      swingFillRef.current = 0
+      swingHoldingRef.current = false
+      if (swingRafRef.current != null) {
+        cancelAnimationFrame(swingRafRef.current)
+        swingRafRef.current = null
+      }
+      if (swingFeedbackTimerRef.current != null) {
+        window.clearTimeout(swingFeedbackTimerRef.current)
+        swingFeedbackTimerRef.current = null
+      }
       setLoxConnected(false)
       setRpConnected(false)
       setLoxFill(0)
@@ -140,6 +197,13 @@ export function LaunchPrepScene({
   useEffect(
     () => () => {
       if (fillRafRef.current != null) cancelAnimationFrame(fillRafRef.current)
+      if (swingRafRef.current != null) cancelAnimationFrame(swingRafRef.current)
+      if (extendFeedbackTimerRef.current != null) {
+        window.clearTimeout(extendFeedbackTimerRef.current)
+      }
+      if (swingFeedbackTimerRef.current != null) {
+        window.clearTimeout(swingFeedbackTimerRef.current)
+      }
     },
     [],
   )
@@ -180,6 +244,110 @@ export function LaunchPrepScene({
     if (next >= CRANE_STEPS.length) {
       setCraneDone(true)
       completeCurrent()
+    }
+  }
+
+  // —— Extend boom: vertical drag slider, release inside the sweet spot ——
+  function extendPercentFromClientY(clientY: number): number {
+    const el = extendTrackRef.current
+    if (!el) return extendValueRef.current
+    const rect = el.getBoundingClientRect()
+    const ratio = (rect.bottom - clientY) / rect.height
+    return Math.max(0, Math.min(100, ratio * 100))
+  }
+
+  function clearExtendFeedbackLater() {
+    if (extendFeedbackTimerRef.current != null) {
+      window.clearTimeout(extendFeedbackTimerRef.current)
+    }
+    extendFeedbackTimerRef.current = window.setTimeout(() => {
+      setExtendFeedback(null)
+    }, 1600)
+  }
+
+  function handleExtendPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!canInteract || actionIndex !== 1 || craneDone || craneStep !== 0) return
+    e.currentTarget.setPointerCapture(e.pointerId)
+    extendDraggingRef.current = true
+    setExtendFeedback(null)
+    const v = extendPercentFromClientY(e.clientY)
+    extendValueRef.current = v
+    setExtendValue(v)
+  }
+
+  function handleExtendPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!extendDraggingRef.current) return
+    const v = extendPercentFromClientY(e.clientY)
+    extendValueRef.current = v
+    setExtendValue(v)
+  }
+
+  function handleExtendPointerUp(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!extendDraggingRef.current) return
+    extendDraggingRef.current = false
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+    const v = extendValueRef.current
+    extendValueRef.current = 0
+    setExtendValue(0)
+    if (v >= EXTEND_SWEET_MIN && v <= EXTEND_SWEET_MAX) {
+      handleCraneStep(0)
+    } else {
+      setExtendFeedback('miss')
+      clearExtendFeedbackLater()
+      onDefect?.()
+    }
+  }
+
+  // —— Swing over vehicle: press-and-hold, release inside the sweet spot ——
+  const tickSwing = useCallback(() => {
+    if (!swingHoldingRef.current) return
+    const now = performance.now()
+    const dt = Math.min(50, now - swingLastRef.current)
+    swingLastRef.current = now
+    const next = Math.min(100, swingFillRef.current + SWING_FILL_RATE_PER_MS * dt)
+    swingFillRef.current = next
+    setSwingFill(next)
+    swingRafRef.current = requestAnimationFrame(tickSwing)
+  }, [])
+
+  function clearSwingFeedbackLater() {
+    if (swingFeedbackTimerRef.current != null) {
+      window.clearTimeout(swingFeedbackTimerRef.current)
+    }
+    swingFeedbackTimerRef.current = window.setTimeout(() => {
+      setSwingFeedback(null)
+    }, 1600)
+  }
+
+  function startSwingHold() {
+    if (!canInteract || actionIndex !== 1 || craneDone || craneStep !== 2) return
+    swingHoldingRef.current = true
+    setSwingHolding(true)
+    setSwingFeedback(null)
+    swingLastRef.current = performance.now()
+    if (swingRafRef.current != null) cancelAnimationFrame(swingRafRef.current)
+    swingRafRef.current = requestAnimationFrame(tickSwing)
+  }
+
+  function stopSwingHold() {
+    if (!swingHoldingRef.current) return
+    swingHoldingRef.current = false
+    setSwingHolding(false)
+    if (swingRafRef.current != null) {
+      cancelAnimationFrame(swingRafRef.current)
+      swingRafRef.current = null
+    }
+    const fill = swingFillRef.current
+    swingFillRef.current = 0
+    setSwingFill(0)
+    if (fill >= SWING_SWEET_MIN && fill <= SWING_SWEET_MAX) {
+      handleCraneStep(2)
+    } else {
+      setSwingFeedback('miss')
+      clearSwingFeedbackLater()
+      onDefect?.()
     }
   }
 
@@ -288,6 +456,15 @@ export function LaunchPrepScene({
 
   // Crane visual phase from completed clicks (0–4).
   const craneVisual = craneDone || actionIndex > 1 ? 4 : craneStep
+
+  // Live cue for the swing hold: tells the operator when to let go.
+  const swingPhase: 'idle' | 'early' | 'sweet' | 'late' = !swingHolding
+    ? 'idle'
+    : swingFill < SWING_SWEET_MIN
+      ? 'early'
+      : swingFill <= SWING_SWEET_MAX
+        ? 'sweet'
+        : 'late'
 
   const checklist = LAUNCH_PREP_ACTIONS.map((action, i) => {
     const done =
@@ -545,27 +722,179 @@ export function LaunchPrepScene({
                   role="group"
                   aria-label="Crane sequence"
                 >
-                  {CRANE_STEPS.map((step, i) => {
-                    const isNext = i === craneStep
-                    const isDone = i < craneStep
-                    return (
-                      <button
-                        key={step.id}
-                        type="button"
+                  {/* 1 · Extend boom — drag the lift into the sweet spot and release */}
+                  <div
+                    className={[
+                      'lp-extend',
+                      craneStep === 0 ? 'lp-extend--next' : '',
+                      craneStep > 0 ? 'lp-extend--done' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    <span className="lp-extend__label">
+                      {craneStep > 0 ? `✓ ${CRANE_STEPS[0].label}` : CRANE_STEPS[0].label}
+                    </span>
+                    <div className="lp-extend-row">
+                      <div
+                        ref={extendTrackRef}
                         className={[
-                          'btn btn--ghost lp-crane-btn',
-                          isNext ? 'lp-crane-btn--next' : '',
-                          isDone ? 'lp-crane-btn--done' : '',
+                          'lp-extend-track',
+                          craneStep !== 0 ? 'lp-extend-track--disabled' : '',
                         ]
                           .filter(Boolean)
                           .join(' ')}
-                        disabled={!isNext}
-                        onClick={() => handleCraneStep(i)}
+                        onPointerDown={handleExtendPointerDown}
+                        onPointerMove={handleExtendPointerMove}
+                        onPointerUp={handleExtendPointerUp}
+                        onPointerCancel={handleExtendPointerUp}
+                        role="slider"
+                        aria-label="Extend boom lift"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={Math.round(extendValue)}
+                        aria-disabled={craneStep !== 0}
                       >
-                        {isDone ? `✓ ${step.label}` : step.label}
-                      </button>
-                    )
-                  })}
+                        <span
+                          className="lp-extend-track__sweet"
+                          style={{
+                            bottom: `${EXTEND_SWEET_MIN}%`,
+                            height: `${EXTEND_SWEET_MAX - EXTEND_SWEET_MIN}%`,
+                          }}
+                        />
+                        <span
+                          className="lp-extend-track__fill"
+                          style={{ height: `${extendValue}%` }}
+                        />
+                        <span
+                          className="lp-extend-track__handle"
+                          style={{ bottom: `${extendValue}%` }}
+                        />
+                      </div>
+                      <span className="lp-extend-feedback" aria-live="polite">
+                        {craneStep > 0
+                          ? 'Boom extended.'
+                          : extendFeedback === 'miss'
+                            ? 'Missed the sweet spot — try again.'
+                            : 'Drag up, release inside the band.'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 2 · Lift payload — unchanged simple click */}
+                  <button
+                    type="button"
+                    className={[
+                      'btn btn--ghost lp-crane-btn',
+                      craneStep === 1 ? 'lp-crane-btn--next' : '',
+                      craneStep > 1 ? 'lp-crane-btn--done' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    disabled={craneStep !== 1}
+                    onClick={() => handleCraneStep(1)}
+                  >
+                    {craneStep > 1 ? `✓ ${CRANE_STEPS[1].label}` : CRANE_STEPS[1].label}
+                  </button>
+
+                  {/* 3 · Swing over vehicle — hold, release inside the sweet spot */}
+                  <div
+                    className={[
+                      'lp-swing',
+                      craneStep === 2 ? 'lp-swing--next' : '',
+                      craneStep > 2 ? 'lp-swing--done' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    <button
+                      type="button"
+                      className={[
+                        'btn btn--primary lp-hold-btn lp-swing-btn',
+                        swingHolding ? 'lp-swing-btn--holding' : '',
+                        swingPhase === 'sweet' ? 'lp-swing-btn--sweet' : '',
+                        swingPhase === 'late' ? 'lp-swing-btn--late' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      disabled={craneStep !== 2}
+                      onPointerDown={startSwingHold}
+                      onPointerUp={stopSwingHold}
+                      onPointerLeave={stopSwingHold}
+                      onPointerCancel={stopSwingHold}
+                    >
+                      {craneStep > 2
+                        ? `✓ ${CRANE_STEPS[2].label}`
+                        : swingPhase === 'sweet'
+                          ? 'Release now!'
+                          : swingPhase === 'late'
+                            ? 'Too late — release!'
+                            : 'Hold to swing over vehicle'}
+                    </button>
+                    <div
+                      className={[
+                        'lp-swing-bar',
+                        swingPhase === 'sweet' ? 'lp-swing-bar--sweet' : '',
+                        swingPhase === 'late' ? 'lp-swing-bar--late' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      aria-hidden="true"
+                    >
+                      <span
+                        className="lp-swing-bar__sweet"
+                        style={{
+                          left: `${SWING_SWEET_MIN}%`,
+                          width: `${SWING_SWEET_MAX - SWING_SWEET_MIN}%`,
+                        }}
+                      />
+                      <span
+                        className="lp-swing-bar__fill"
+                        style={{ width: `${swingFill}%` }}
+                      />
+                      <span className="lp-swing-bar__readout">
+                        {Math.round(swingFill)}%
+                      </span>
+                    </div>
+                    <span
+                      className={[
+                        'lp-swing-feedback',
+                        swingPhase === 'sweet' ? 'lp-swing-feedback--sweet' : '',
+                        swingPhase === 'late' ? 'lp-swing-feedback--late' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      aria-live="polite"
+                    >
+                      {craneStep > 2
+                        ? 'Swung into position.'
+                        : swingPhase === 'sweet'
+                          ? 'In the band — let go now!'
+                          : swingPhase === 'early'
+                            ? 'Keep holding…'
+                            : swingPhase === 'late'
+                              ? 'Past the window — release and try again.'
+                              : swingFeedback === 'miss'
+                                ? 'Released outside the window — try again.'
+                                : 'Hold, release inside the band.'}
+                    </span>
+                  </div>
+
+                  {/* 4 · Lower & attach — unchanged simple click */}
+                  <button
+                    type="button"
+                    className={[
+                      'btn btn--ghost lp-crane-btn',
+                      craneStep === 3 ? 'lp-crane-btn--next' : '',
+                      craneStep > 3 ? 'lp-crane-btn--done' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    disabled={craneStep !== 3}
+                    onClick={() => handleCraneStep(3)}
+                  >
+                    {craneStep > 3 ? `✓ ${CRANE_STEPS[3].label}` : CRANE_STEPS[3].label}
+                  </button>
                 </div>
               </>
             )}
@@ -598,7 +927,7 @@ export function LaunchPrepScene({
                 <div className="lp-gauge" aria-label={`LOX ${Math.round(loxFill)}%`}>
                   <div
                     className="lp-gauge__fill lp-gauge__fill--lox"
-                    style={{ height: `${loxFill}%` }}
+                    style={{ transform: `scaleY(${loxFill / 100})` }}
                   />
                   <span className="lp-gauge__readout">{Math.round(loxFill)}%</span>
                 </div>
@@ -631,7 +960,7 @@ export function LaunchPrepScene({
                 <div className="lp-gauge" aria-label={`RP-1 ${Math.round(rpFill)}%`}>
                   <div
                     className="lp-gauge__fill lp-gauge__fill--rp"
-                    style={{ height: `${rpFill}%` }}
+                    style={{ transform: `scaleY(${rpFill / 100})` }}
                   />
                   <span className="lp-gauge__readout">{Math.round(rpFill)}%</span>
                 </div>

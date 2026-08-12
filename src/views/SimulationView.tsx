@@ -1,12 +1,14 @@
 import { useEffect, useMemo } from 'react'
 import { ManufactureScene } from '../components/ManufactureScene'
-import { IntegratePayloadScene } from '../components/IntegratePayloadScene'
+import { HaulRoadScene } from '../components/HaulRoadScene'
 import { LaunchPrepScene } from '../components/LaunchPrepScene'
 import { LaunchSequenceScene } from '../components/LaunchSequenceScene'
 import type { ProcessVersion, RunState } from '../types/process'
 import {
   LAUNCH_PREP_ACTIONS,
   MACHINE_CYCLE_MS,
+  MACHINE_FAIL_CYCLE_MS,
+  MACHINE_HALF_SPEED_MULTIPLIER,
   MAX_RUNS_PER_SESSION,
 } from '../types/process'
 import {
@@ -28,16 +30,94 @@ interface SimulationViewProps {
   /** Launches required this round (default MAX_RUNS_PER_SESSION). */
   maxRuns?: number
   roundTitle?: string
+  onStartSession: () => void
   onRunProcess: () => void
   onMachineClick: (machineId: string) => void
   onMachineWorkFinished: () => void
+  /** A damaged machine's failed-attempt animation finished — not a completion. */
+  onMachineFailed: () => void
   onProceedToNextStep: () => void
   onReachedPad: () => void
   onHaulMountToPad: () => void
   /** Booster exploded off the haul road (process step 2) — a logged defect. */
   onHaulExplode?: () => void
+  /** Missed the extend-boom or swing-over-vehicle sweet spot (process step 3) — a logged defect. */
+  onLaunchPrepDefect?: () => void
   onLaunchPrepActionComplete: () => void
   onLaunchSequenceActionComplete: () => void
+  /** Download the same redesign-choices snapshot as the workshop's "Save my current choices" — only offered once a redesign has been confirmed for this round. */
+  onSaveChoices?: () => void
+  /** Session timer paused via the pause toggle — locks every process step's interactions. */
+  paused?: boolean
+  /** Toggle the pause state (shown once a session is active). */
+  onTogglePause?: () => void
+  /** Fires when the operator attempts to interact with a process step while paused. */
+  onBlockedInteraction?: () => void
+  /** Transient reminder shown after a blocked interaction attempt. */
+  pauseNotice?: string | null
+}
+
+function ClockIcon() {
+  return (
+    <svg
+      className="btn__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  )
+}
+
+function PauseIcon() {
+  return (
+    <svg
+      className="btn__icon"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <rect x="6" y="5" width="4" height="14" rx="1" />
+      <rect x="14" y="5" width="4" height="14" rx="1" />
+    </svg>
+  )
+}
+
+function ResumeIcon() {
+  return (
+    <svg
+      className="btn__icon"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M7 5v14l12-7z" />
+    </svg>
+  )
+}
+
+function GoIcon() {
+  return (
+    <svg
+      className="btn__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12h14" />
+      <path d="M13 6l6 6-6 6" />
+    </svg>
+  )
 }
 
 export function SimulationView({
@@ -46,19 +126,28 @@ export function SimulationView({
   sessionActive,
   maxRuns = MAX_RUNS_PER_SESSION,
   roundTitle,
+  onStartSession,
   onRunProcess,
   onMachineClick,
   onMachineWorkFinished,
+  onMachineFailed,
   onProceedToNextStep,
   onReachedPad,
   onHaulMountToPad,
   onHaulExplode,
+  onLaunchPrepDefect,
   onLaunchPrepActionComplete,
   onLaunchSequenceActionComplete,
+  onSaveChoices,
+  paused = false,
+  onTogglePause,
+  onBlockedInteraction,
+  pauseNotice,
 }: SimulationViewProps) {
   const runsRemaining = maxRuns - run.completedRuns
   const canRun =
     sessionActive &&
+    !paused &&
     (run.status === 'idle' || run.status === 'complete') &&
     runsRemaining > 0
 
@@ -133,17 +222,41 @@ export function SimulationView({
   useEffect(() => {
     if (run.status !== 'machine_working') return
 
+    // Damaged machine's failed-attempt animation (approach → glow red →
+    // retreat) — never completes, must match ManufactureScene's own timers.
+    if (run.activeMachineWillFail) {
+      const failId = window.setTimeout(() => {
+        onMachineFailed()
+      }, MACHINE_FAIL_CYCLE_MS)
+      return () => window.clearTimeout(failId)
+    }
+
     // Full cycle: machine approaches line → works → retreats, then unlock next.
+    // A damaged machine's retry-after-failure run plays at half speed —
+    // must match ManufactureScene's own doubled animation timers exactly.
+    const cycleMs = run.activeMachineHalfSpeed
+      ? MACHINE_CYCLE_MS * MACHINE_HALF_SPEED_MULTIPLIER
+      : MACHINE_CYCLE_MS
     const id = window.setTimeout(() => {
       onMachineWorkFinished()
-    }, MACHINE_CYCLE_MS)
+    }, cycleMs)
 
     return () => window.clearTimeout(id)
-  }, [run.status, run.activeMachineId, onMachineWorkFinished])
+  }, [
+    run.status,
+    run.activeMachineId,
+    run.activeMachineHalfSpeed,
+    run.activeMachineWillFail,
+    onMachineWorkFinished,
+    onMachineFailed,
+  ])
 
   function statusMessage(): string {
     if (!sessionActive) {
       return 'Start a session to begin manufacturing.'
+    }
+    if (paused) {
+      return 'Session paused — resume it to keep working the process.'
     }
     if (run.status === 'idle') {
       return 'Click Run Process to place a booster on the production line.'
@@ -161,7 +274,7 @@ export function SimulationView({
       }
       if (run.status === 'step_complete') {
         return hasNextStep(process, run)
-          ? 'Manufacture complete. Proceed to Integrate payload.'
+          ? 'Manufacture complete. Proceed to Haul road.'
           : 'Manufacture complete.'
       }
     }
@@ -252,11 +365,51 @@ export function SimulationView({
           <button
             type="button"
             className="btn btn--primary"
+            onClick={onStartSession}
+            disabled={sessionActive || run.completedRuns >= maxRuns}
+            title={
+              sessionActive
+                ? 'Session already active'
+                : 'When you click this, the timer will begin.'
+            }
+          >
+            <ClockIcon />
+            {sessionActive ? 'Session Active' : 'Start Session'}
+          </button>
+          {sessionActive && onTogglePause && (
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={onTogglePause}
+              title={
+                paused
+                  ? 'Resume the session timer and unlock the process.'
+                  : 'Pause the session timer and lock the process until resumed.'
+              }
+            >
+              {paused ? <ResumeIcon /> : <PauseIcon />}
+              {paused ? 'Resume session' : 'Pause session'}
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn btn--primary"
             onClick={onRunProcess}
             disabled={!canRun}
           >
+            <GoIcon />
             Run Process
           </button>
+          {onSaveChoices && (
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={onSaveChoices}
+              title="Download a text snapshot of this round's confirmed redesign choices."
+            >
+              Save my current choices
+            </button>
+          )}
         </div>
       </header>
 
@@ -272,65 +425,97 @@ export function SimulationView({
               {statusMessage()}
             </div>
 
-            {showManufacture && (
-              <ManufactureScene
-                machines={machines}
-                run={run}
-                onMachineClick={onMachineClick}
-                showProceed={showManufactureProceed}
-                onProceed={onProceedToNextStep}
-                autoMoveBooster={autoMoveBooster}
-              />
-            )}
-
-            {showHaul && (
-              <IntegratePayloadScene
-                key={`haul-path-${process.id}-${haulPathKey.slice(0, 64)}`}
-                run={run}
-                haulPath={haulPath}
-                onReachedPad={onReachedPad}
-                onMountToPad={onHaulMountToPad}
-                onExplode={onHaulExplode}
-              />
-            )}
-
-            {showLaunchPrep && (
-              <LaunchPrepScene
-                key={`launch-prep-${process.id}-${launchPrepTechs.join(',') || 'none'}-${run.completedRuns}`}
-                run={run}
-                process={process}
-                techs={launchPrepTechs}
-                onActionComplete={onLaunchPrepActionComplete}
-              />
-            )}
-
-            {showLaunchPrepProceed && (
-              <div className="sim-proceed">
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  onClick={onProceedToNextStep}
-                >
-                  Proceed to Launch sequence
-                </button>
-              </div>
-            )}
-
-            {showLaunchSequence && (
-              <LaunchSequenceScene
-                key={`launch-seq-${process.id}-${launchSeqConfig.goStations.map((s) => s.id).join('-')}-${[...launchSeqConfig.realignedGoIds].join('-')}`}
-                run={run}
-                process={process}
-                config={launchSeqConfig}
-                onActionComplete={onLaunchSequenceActionComplete}
-              />
-            )}
-
-            {!showAnyScene && (
-              <p className="placeholder-copy">
-                Click Run Process to load a booster onto the manufacture line.
+            {pauseNotice && (
+              <p className="sim-pause-notice" role="alert">
+                {pauseNotice}
               </p>
             )}
+
+            <div className="sim-scene-wrap">
+              {showManufacture && (
+                <ManufactureScene
+                  machines={machines}
+                  run={run}
+                  onMachineClick={onMachineClick}
+                  showProceed={showManufactureProceed}
+                  onProceed={onProceedToNextStep}
+                  autoMoveBooster={autoMoveBooster}
+                  paused={paused}
+                />
+              )}
+
+              {showHaul && (
+                <HaulRoadScene
+                  key={`haul-path-${process.id}-${haulPathKey.slice(0, 64)}`}
+                  run={run}
+                  haulPath={haulPath}
+                  onReachedPad={onReachedPad}
+                  onMountToPad={onHaulMountToPad}
+                  onExplode={onHaulExplode}
+                  paused={paused}
+                  onBlockedInteraction={onBlockedInteraction}
+                />
+              )}
+
+              {showLaunchPrep && (
+                <LaunchPrepScene
+                  key={`launch-prep-${process.id}-${launchPrepTechs.join(',') || 'none'}-${run.completedRuns}`}
+                  run={run}
+                  process={process}
+                  techs={launchPrepTechs}
+                  onActionComplete={onLaunchPrepActionComplete}
+                  onDefect={onLaunchPrepDefect}
+                  paused={paused}
+                />
+              )}
+
+              {showLaunchPrepProceed && (
+                <div className="sim-proceed">
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    onClick={onProceedToNextStep}
+                  >
+                    Proceed to Launch sequence
+                  </button>
+                </div>
+              )}
+
+              {showLaunchSequence && (
+                <LaunchSequenceScene
+                  key={`launch-seq-${process.id}-${launchSeqConfig.goStations.map((s) => s.id).join('-')}-${[...launchSeqConfig.realignedGoIds].join('-')}`}
+                  run={run}
+                  process={process}
+                  config={launchSeqConfig}
+                  onActionComplete={onLaunchSequenceActionComplete}
+                  paused={paused}
+                />
+              )}
+
+              {!showAnyScene && (
+                <p className="placeholder-copy">
+                  Click Run Process to load a booster onto the manufacture line.
+                </p>
+              )}
+
+              {paused && showAnyScene && (
+                <button
+                  type="button"
+                  className="sim-paused-overlay"
+                  onClick={onBlockedInteraction}
+                  aria-label="Session paused — resume it to continue"
+                >
+                  <PauseIcon />
+                  <span className="sim-paused-overlay__title">
+                    Session paused
+                  </span>
+                  <span className="sim-paused-overlay__hint">
+                    Resume the session with the Resume session button above to
+                    keep working the process.
+                  </span>
+                </button>
+              )}
+            </div>
           </>
         )}
       </div>

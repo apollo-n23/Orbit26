@@ -14,6 +14,8 @@ interface OrbitCompleteSceneProps {
   /** Shareable absolute URL for To-be (tutor link). */
   round2ShareUrl: string
   onGoToRound2?: () => void
+  /** Leaves this summary for the same round's own Data tab (leadTimeLog is untouched). */
+  onViewResults: () => void
   /** As-is average (ms) — for To-be completion compare. */
   round1AverageMs?: number | null
   /** As-is per-rocket times (ms) — for side-by-side bars. */
@@ -25,6 +27,7 @@ export function OrbitCompleteScene({
   leadTimes,
   round2ShareUrl,
   onGoToRound2,
+  onViewResults,
   round1AverageMs = null,
   round1LaunchesMs = null,
 }: OrbitCompleteSceneProps) {
@@ -113,9 +116,9 @@ export function OrbitCompleteScene({
           </ul>
         )}
 
-        {round.id === 1 && (
-          <div className="orbit-complete__next">
-            {onGoToRound2 && (
+        <div className="orbit-complete__next">
+          <div className="orbit-complete__actions">
+            {round.id === 1 && onGoToRound2 && (
               <button
                 type="button"
                 className="btn btn--primary"
@@ -124,14 +127,24 @@ export function OrbitCompleteScene({
                 Continue to To-be
               </button>
             )}
+            <button
+              type="button"
+              className={round.id === 1 ? 'btn btn--ghost' : 'btn btn--primary'}
+              onClick={onViewResults}
+            >
+              View detailed results
+            </button>
+          </div>
+
+          {round.id === 1 && (
             <p className="orbit-complete__share">
               Tutor share link for To-be:
               <a href={hashForRound(2)} className="orbit-complete__link">
                 {round2ShareUrl}
               </a>
             </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </section>
   )

@@ -375,9 +375,11 @@ export function CustomerPortalView({
 
   return (
     <div className="app-shell">
-      <header className="top-bar top-bar--round-done">
-        <SiteBrand subtitle="Customer Portal · Voice of Customer" />
-      </header>
+      <SiteBrand
+        subtitle="Customer Portal · Voice of Customer"
+        activeStage={activeStage}
+        onNavigate={onNavigateStage}
+      />
       <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
       <main className="app-main">
         <section className="view-panel" aria-labelledby="customer-portal-heading">

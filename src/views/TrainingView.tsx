@@ -22,9 +22,11 @@ export function TrainingView({
 }: TrainingViewProps) {
   return (
     <div className="app-shell">
-      <header className="top-bar top-bar--round-done">
-        <SiteBrand subtitle="Train" />
-      </header>
+      <SiteBrand
+        subtitle="Train"
+        activeStage={activeStage}
+        onNavigate={onNavigateStage}
+      />
       <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
       <main className="app-main">
         <section className="view-panel" aria-labelledby="training-heading">

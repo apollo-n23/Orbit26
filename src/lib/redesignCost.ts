@@ -14,13 +14,15 @@ import { BASELINE_PROCESS } from '../data/baselineProcess'
  * change, but not hardware. Road tiles keep their existing per-tile cost
  * (roadGrid.ts) and are the only category that can go back down.
  */
-export const MACHINE_MOVE_COST = 15
+export const MACHINE_MOVE_COST = 10
 export const AUTO_TRANSFER_COST = 40
 export const GO_REALIGN_COST = 10
 /** Per removable GO station ever deleted from the poll (ratchet). */
 export const RANGE_REMOVAL_COST = 35
 /** Key lubrication: a cheap, simple mechanical fix with an outsized payoff. */
 export const KEY_LUBRICATION_COST = 15
+/** Repairing the as-is's damaged Form press arm — cheap, removes a flaky-machine risk. */
+export const FORM_PRESS_REPAIR_COST = 10
 
 export const LAUNCH_PREP_TECH_COST: Record<LaunchPrepTech, number> = {
   'faster-pumps': 20,
@@ -35,7 +37,7 @@ export const LAUNCH_PREP_TECH_COST: Record<LaunchPrepTech, number> = {
  * be made — only selling road tiles (which reduces the total) frees up
  * room again.
  */
-export const REDESIGN_BUDGET = 90
+export const REDESIGN_BUDGET = 100
 
 /** Budget left before hitting REDESIGN_BUDGET, given the current breakdown. */
 export function remainingBudget(breakdown: RedesignCostBreakdown): number {
@@ -64,6 +66,7 @@ export function movedMachineIds(machines: ProcessMachine[]): string[] {
 export function buildCostBreakdown(parts: {
   machineMoveCost: number
   autoTransferCost: number
+  formPressRepairCost: number
   roadCost: number
   launchPrepTechCost: number
   goRealignCost: number
@@ -75,6 +78,7 @@ export function buildCostBreakdown(parts: {
     total:
       parts.machineMoveCost +
       parts.autoTransferCost +
+      parts.formPressRepairCost +
       parts.roadCost +
       parts.launchPrepTechCost +
       parts.goRealignCost +
@@ -86,6 +90,7 @@ export function buildCostBreakdown(parts: {
 export const EMPTY_COST_BREAKDOWN: RedesignCostBreakdown = buildCostBreakdown({
   machineMoveCost: 0,
   autoTransferCost: 0,
+  formPressRepairCost: 0,
   roadCost: 0,
   launchPrepTechCost: 0,
   goRealignCost: 0,

@@ -42,9 +42,11 @@ export function RegulationView({
 
   return (
     <div className="app-shell">
-      <header className="top-bar top-bar--round-done">
-        <SiteBrand subtitle="Space Launch Regulation" />
-      </header>
+      <SiteBrand
+        subtitle="Space Launch Regulation"
+        activeStage={activeStage}
+        onNavigate={onNavigateStage}
+      />
       <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
       <main className="app-main">
         <section

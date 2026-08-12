@@ -85,6 +85,20 @@ export function applyMachineParkOffset(
   return updateManufactureMachines(process, nextMachines)
 }
 
+/** Repair (or re-damage) a specific manufacture machine — To-be redesign. */
+export function applyMachineDamaged(
+  process: ProcessVersion,
+  machineId: string,
+  damaged: boolean,
+): ProcessVersion {
+  const mfg = getManufactureStep(process)
+  if (!mfg?.machines) return process
+  const nextMachines = mfg.machines.map((m) =>
+    m.id === machineId ? { ...m, damaged } : m,
+  )
+  return updateManufactureMachines(process, nextMachines)
+}
+
 function updateManufactureMachines(
   process: ProcessVersion,
   machines: ProcessMachine[],

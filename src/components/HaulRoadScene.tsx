@@ -18,7 +18,7 @@ import {
 } from '../lib/pathGeometry'
 import type { RunState } from '../types/process'
 
-interface IntegratePayloadSceneProps {
+interface HaulRoadSceneProps {
   run: RunState
   /** Optional redesigned haul centerline; defaults to HAUL_PATH. */
   haulPath?: Point[]
@@ -27,6 +27,10 @@ interface IntegratePayloadSceneProps {
   onMountToPad: () => void
   /** Booster left the safe road and exploded — fires once the reset animation finishes. */
   onExplode?: () => void
+  /** Session timer paused — locks all movement/mount controls until resumed. */
+  paused?: boolean
+  /** Fires when the operator attempts to move/mount while paused (keyboard bypasses any overlay). */
+  onBlockedInteraction?: () => void
 }
 
 interface HaulPose {
@@ -34,13 +38,6 @@ interface HaulPose {
   y: number
   rotation: number
 }
-
-const ORIENTATIONS = [
-  { label: '0°', value: 0 },
-  { label: '90°', value: 90 },
-  { label: '180°', value: 180 },
-  { label: '−90°', value: -90 },
-] as const
 
 /** Scene units per second while an arrow key is held. */
 const MOVE_SPEED = 160
@@ -97,18 +94,24 @@ function startPose(): HaulPose {
   }
 }
 
-export function IntegratePayloadScene({
+export function HaulRoadScene({
   run,
   haulPath,
   onReachedPad,
   onMountToPad,
   onExplode,
-}: IntegratePayloadSceneProps) {
+  paused = false,
+  onBlockedInteraction,
+}: HaulRoadSceneProps) {
   const sceneRef = useRef<HTMLDivElement>(null)
+  const pausedRef = useRef(paused)
+  pausedRef.current = paused
   const [pose, setPose] = useState<HaulPose>(startPose)
   const [dragging, setDragging] = useState(false)
   const [exploding, setExploding] = useState(false)
   const [seated, setSeated] = useState(false)
+  /** Explosions this turn at this step — reset per haul epoch, alongside pose. */
+  const [rudCount, setRudCount] = useState(0)
   const dragOffset = useRef<Point>({ x: 0, y: 0 })
   const reachedPadRef = useRef(false)
   const poseRef = useRef<HaulPose>(startPose())
@@ -130,7 +133,7 @@ export function IntegratePayloadScene({
     run.status === 'awaiting_reorient' ||
     run.status === 'complete' ||
     run.status === 'step_complete'
-  const canMove = run.status === 'running' && !seated && !exploding
+  const canMove = run.status === 'running' && !seated && !exploding && !paused
   canMoveRef.current = canMove
   const showMountToPad = run.status === 'awaiting_reorient' && !seated
 
@@ -160,6 +163,7 @@ export function IntegratePayloadScene({
     applyPose(startPose())
     setSeated(false)
     setDragging(false)
+    setRudCount(0)
     keysRef.current.clear()
     reachedPadRef.current = false
 
@@ -186,6 +190,7 @@ export function IntegratePayloadScene({
     explodingRef.current = true
     setExploding(true)
     setDragging(false)
+    setRudCount((n) => n + 1)
     keysRef.current.clear()
 
     clearExplodeTimer()
@@ -257,6 +262,10 @@ export function IntegratePayloadScene({
       if (!ARROW_CODES.has(code)) return
       e.preventDefault()
       e.stopPropagation()
+      if (pausedRef.current) {
+        onBlockedInteraction?.()
+        return
+      }
       if (explodingRef.current || !canMoveRef.current) return
       keysRef.current.add(code)
     }
@@ -315,6 +324,10 @@ export function IntegratePayloadScene({
   }, [run.status, seated, tryMoveTo])
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (paused) {
+      onBlockedInteraction?.()
+      return
+    }
     if (!canMove) return
     e.preventDefault()
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -373,6 +386,10 @@ export function IntegratePayloadScene({
   }
 
   function handleMountToPad() {
+    if (pausedRef.current) {
+      onBlockedInteraction?.()
+      return
+    }
     setSeated(true)
     applyPose({
       x: PAD_SEATED.x,
@@ -391,45 +408,16 @@ export function IntegratePayloadScene({
     <div className="haul-scene">
       <div className="haul-scene__toolbar">
         <div className="haul-orient" aria-label="Booster orientation">
-          <span className="haul-orient__label">Re-orient booster</span>
-          <div className="haul-orient__buttons">
-            <button
-              type="button"
-              className="btn btn--ghost"
-              disabled={!canMove}
-              onClick={() => rotateBy(-90)}
-              title="Rotate counter-clockwise 90°"
-            >
-              ↺ 90°
-            </button>
-            <button
-              type="button"
-              className="btn btn--ghost"
-              disabled={!canMove}
-              onClick={() => rotateBy(90)}
-              title="Rotate clockwise 90°"
-            >
-              ↻ 90°
-            </button>
-            {ORIENTATIONS.map((o) => (
-              <button
-                key={o.label}
-                type="button"
-                className={[
-                  'btn btn--ghost',
-                  clampRotation(pose.rotation) === clampRotation(o.value)
-                    ? 'btn--ghost-active'
-                    : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                disabled={!canMove}
-                onClick={() => setOrientation(o.value)}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
+          <span className="haul-orient__label">Re-orient crawler</span>
+          <button
+            type="button"
+            className="btn btn--primary haul-orient__rotate-btn"
+            disabled={!canMove}
+            onClick={() => rotateBy(90)}
+            title="Rotate crawler 90°"
+          >
+            ↻ Rotate Crawler
+          </button>
         </div>
 
         <div className="haul-dpad" aria-label="Move booster">
@@ -492,6 +480,7 @@ export function IntegratePayloadScene({
           <button
             type="button"
             className="btn btn--primary btn--mount-pad"
+            disabled={paused}
             onClick={handleMountToPad}
             aria-label="Mount to launch pad"
           >
@@ -514,6 +503,36 @@ export function IntegratePayloadScene({
         aria-label="Haul map — arrow keys move the booster along the road"
         onPointerDown={() => sceneRef.current?.focus({ preventScroll: true })}
       >
+        <div className="haul-rud-counter" role="status" aria-live="polite">
+          <svg
+            className="haul-rud-counter__flame"
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+          >
+            <defs>
+              <linearGradient
+                id="haul-rud-flame-grad"
+                x1="0"
+                y1="1"
+                x2="0"
+                y2="0"
+              >
+                <stop offset="0%" stopColor="#ff5a1f" />
+                <stop offset="55%" stopColor="#ffa733" />
+                <stop offset="100%" stopColor="#ffe27a" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M10 1 Q13 5 12 8 Q15 7 14 4 Q17 8 17 12 A7 7 0 1 1 3 12 Q3 8 6 4 Q5 7 8 8 Q7 5 10 1 Z"
+              fill="url(#haul-rud-flame-grad)"
+            />
+          </svg>
+          <span className="haul-rud-counter__label">
+            Rapid Unplanned Disassembly
+          </span>
+          <span className="haul-rud-counter__count">{rudCount}</span>
+        </div>
+
         <svg
           className="haul-map__svg"
           viewBox={`0 0 ${SCENE_WIDTH} ${SCENE_HEIGHT}`}
@@ -849,6 +868,60 @@ export function IntegratePayloadScene({
             </text>
           </g>
 
+          {/*
+            Ambient life on the left side of the map, in the open ground
+            strip below the Offices/Assembly buildings (y >= 306) — clear of
+            both building footprints (bottom edge y=305), the haul road
+            corridor (nearest segments at x=95-220/y=240 and x=220/y=240-380,
+            both well east of x=122), and each other (separate y-bands).
+            Pure CSS transform animation, aria-hidden, no handlers — purely
+            decorative, never read by isBoosterSafe/isPointSafe or any other
+            gameplay logic.
+          */}
+          <g className="haul-npc-traffic" aria-hidden="true">
+            <rect
+              className="haul-npc-vehicle"
+              x="20"
+              y="322"
+              width="12"
+              height="7"
+              rx="1.5"
+              fill="#4a4f56"
+              stroke="#25292f"
+              strokeWidth="1"
+            />
+          </g>
+
+          <g className="haul-npc-people" aria-hidden="true">
+            <circle
+              className="haul-npc-person haul-npc-person--1"
+              cx="18"
+              cy="311"
+              r="2.3"
+              fill="#cbd5df"
+              stroke="#5a6672"
+              strokeWidth="1"
+            />
+            <circle
+              className="haul-npc-person haul-npc-person--2"
+              cx="30"
+              cy="312"
+              r="2.2"
+              fill="#d8c9a3"
+              stroke="#6b5d42"
+              strokeWidth="1"
+            />
+            <circle
+              className="haul-npc-person haul-npc-person--3"
+              cx="40"
+              cy="310"
+              r="2.3"
+              fill="#c9a8c0"
+              stroke="#6a4f63"
+              strokeWidth="1"
+            />
+          </g>
+
           <g className="haul-pad">
             <rect
               x={LAUNCH_PAD.x}
@@ -863,6 +936,24 @@ export function IntegratePayloadScene({
               }
               stroke={locked || seated ? '#5ba3e0' : '#8a929c'}
               strokeWidth="2"
+            />
+            {/*
+              Pad markings behind the logo: a solid yellow ring around a
+              solid white disc, like a helipad target — gives the logo a
+              clean, legible backdrop against the pad's dark/blue fill and
+              reads more clearly as a landing pad.
+            */}
+            <circle
+              cx={PAD_SEATED.x}
+              cy={PAD_SEATED.y}
+              r="40"
+              fill="#ffc627"
+            />
+            <circle
+              cx={PAD_SEATED.x}
+              cy={PAD_SEATED.y}
+              r="32"
+              fill="#ffffff"
             />
             <image
               href={`${import.meta.env.BASE_URL}OrbitLogo.png`}
@@ -892,6 +983,70 @@ export function IntegratePayloadScene({
             >
               Launch Pad
             </text>
+          </g>
+
+          {/*
+            Fixed launch tower beside the pad, on the side toward the sea
+            (right/east). Flat shapes only (no real isometric engine) but
+            shaded — a lighter "top" face and a darker "side" face on the
+            foundation block, plus a shadowed right-hand rail on the mast —
+            enough offset/shading to read as rudimentary 3D rather than a
+            flat silhouette. y is set so the foundation block's base (local
+            y=116) lines up with the pad-seated circle/logo's vertical
+            centre (PAD_SEATED.y) — since the tower is meant to read as a 3D
+            object anyway, its mast riding up over the pad's top edge into
+            the sea/sky backdrop above is intentional, not a bug.
+          */}
+          <g
+            className="haul-launch-tower"
+            aria-hidden="true"
+            transform={`translate(${LAUNCH_PAD.x + LAUNCH_PAD.width - 15}, ${PAD_SEATED.y - 116})`}
+          >
+            <ellipse cx="12" cy="119" rx="20" ry="6" fill="rgba(4, 12, 3, 0.35)" />
+
+            {/*
+              Soft halo behind the mast so its rails read clearly against the
+              pad's own dark fill where the two overlap.
+            */}
+            <rect x="-2" y="-16" width="26" height="118" fill="rgba(180, 190, 200, 0.14)" />
+
+            {/* Foundation block — front / top / side faces */}
+            <polygon points="0,100 22,100 28,94 6,94" fill="#7d858e" />
+            <rect x="0" y="100" width="22" height="16" fill="#454c55" stroke="#9aa1a8" />
+            <polygon points="22,100 22,116 28,110 28,94" fill="#2e3339" />
+
+            {/* Mast rails — right rail shadowed for a hint of depth */}
+            <rect x="4" y="0" width="3.5" height="100" fill="#a7aeb6" stroke="#5a6168" strokeWidth="0.5" />
+            <rect x="18" y="0" width="3.5" height="100" fill="#5a6168" stroke="#31363c" strokeWidth="0.5" />
+
+            {/* Lattice rungs + alternating cross-braces */}
+            {[10, 30, 50, 70, 90].map((y, i) => (
+              <g key={y}>
+                <line x1="5.5" y1={y} x2="19.5" y2={y} stroke="#c7ccd2" strokeWidth="1.6" />
+                {i % 2 === 0 ? (
+                  <line x1="5.5" y1={y} x2="19.5" y2={y + 20} stroke="#8a919a" strokeWidth="1.4" />
+                ) : (
+                  <line x1="19.5" y1={y} x2="5.5" y2={y + 20} stroke="#8a919a" strokeWidth="1.4" />
+                )}
+              </g>
+            ))}
+
+            {/* Umbilical arm reaching back toward the pad/rocket */}
+            <line x1="4" y1="45" x2="-16" y2="45" stroke="#a7aeb6" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="-16" y1="45" x2="-16" y2="52" stroke="#a7aeb6" strokeWidth="2.5" strokeLinecap="round" />
+            <rect x="-17.5" y="43" width="3" height="4" fill="#e63935" />
+
+            {/* Lightning rod + blinking obstruction beacon up top */}
+            <line x1="11" y1="-12" x2="11" y2="0" stroke="#c7ccd2" strokeWidth="1.5" />
+            <circle cx="11" cy="-13" r="2" fill="#f0f2f4" stroke="#6b7280" />
+            <circle
+              className="haul-launch-tower__beacon-glow"
+              cx="11"
+              cy="20"
+              r="6"
+              fill="rgba(255, 60, 60, 0.35)"
+            />
+            <circle className="haul-launch-tower__beacon" cx="11" cy="20" r="2.4" fill="#ff4d4d" />
           </g>
 
           {/* Restricted-airspace placard — decorative only, never interactive. */}
@@ -981,9 +1136,12 @@ export function IntegratePayloadScene({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
+          {!exploding && <div className="haul-crawler" aria-hidden="true" />}
           {!exploding && (
             <Booster
               className="booster--haul"
+              showNose={false}
+              multiNozzleEngine
               ready={seated}
               label={
                 seated

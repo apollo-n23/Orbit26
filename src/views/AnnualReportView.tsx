@@ -159,9 +159,11 @@ export function AnnualReportView({
 }: AnnualReportViewProps) {
   return (
     <div className="app-shell">
-      <header className="top-bar top-bar--round-done">
-        <SiteBrand subtitle="Annual Report" />
-      </header>
+      <SiteBrand
+        subtitle="Annual Report"
+        activeStage={activeStage}
+        onNavigate={onNavigateStage}
+      />
       <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
       <main className="app-main">
         <section

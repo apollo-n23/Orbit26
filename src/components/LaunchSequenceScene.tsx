@@ -16,6 +16,8 @@ interface LaunchSequenceSceneProps {
   /** Optional pre-resolved config; when omitted, resolved from `process`. */
   config?: ResolvedLaunchSeqConfig
   onActionComplete: () => void
+  /** Session timer paused — locks GO calls and the launch key until resumed. */
+  paused?: boolean
 }
 
 const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
@@ -43,6 +45,7 @@ export function LaunchSequenceScene({
   process,
   config: configProp,
   onActionComplete,
+  paused = false,
 }: LaunchSequenceSceneProps) {
   const config = useMemo(
     () => configProp ?? resolveLaunchSeqConfig(process),
@@ -54,7 +57,7 @@ export function LaunchSequenceScene({
 
   const actionIndex = run.nextMachineIndex
   const locked = run.status === 'complete' || run.status === 'step_complete'
-  const canInteract = run.status === 'running' && !locked
+  const canInteract = run.status === 'running' && !locked && !paused
 
   const finishGuardRef = useRef(false)
   const keyRafRef = useRef<number | null>(null)
@@ -70,6 +73,10 @@ export function LaunchSequenceScene({
   const [keyDone, setKeyDone] = useState(false)
   const [launching, setLaunching] = useState(false)
   const [launched, setLaunched] = useState(false)
+  /** Elapsed ms into the liftoff cutaway — drives the telemetry readout below. */
+  const [telemetryMs, setTelemetryMs] = useState(0)
+  const telemetryStartRef = useRef<number | null>(null)
+  const telemetryRafRef = useRef<number | null>(null)
 
   // Reset local interaction state when this step (re)starts.
   useEffect(() => {
@@ -79,6 +86,7 @@ export function LaunchSequenceScene({
       setKeyDone(false)
       setLaunching(false)
       setLaunched(false)
+      setTelemetryMs(0)
       if (keyRafRef.current != null) {
         cancelAnimationFrame(keyRafRef.current)
         keyRafRef.current = null
@@ -87,6 +95,11 @@ export function LaunchSequenceScene({
         window.clearTimeout(liftoffTimerRef.current)
         liftoffTimerRef.current = null
       }
+      if (telemetryRafRef.current != null) {
+        cancelAnimationFrame(telemetryRafRef.current)
+        telemetryRafRef.current = null
+      }
+      telemetryStartRef.current = null
     }
   }, [run.status, run.currentStepIndex, run.completedRuns])
 
@@ -198,6 +211,53 @@ export function LaunchSequenceScene({
     allGosDone && !launched && (actionIndex === keyIndex || keyDone || launching)
   const showLaunching = launching || (actionIndex === liftoffIndex && !launched)
   const showLaunched = launched || locked
+
+  // Drive the telemetry readout's changing numbers off the liftoff cutaway's
+  // own elapsed time — starts counting the moment the vehicle leaves the
+  // pad, freezes at LIFTOFF_MS once launched, resets with the epoch effect
+  // above whenever this step (re)starts.
+  useEffect(() => {
+    if (!showLaunching) {
+      if (!showLaunched) setTelemetryMs(0)
+      return
+    }
+    telemetryStartRef.current = performance.now()
+    const tick = () => {
+      const start = telemetryStartRef.current ?? performance.now()
+      const elapsed = Math.min(LIFTOFF_MS, performance.now() - start)
+      setTelemetryMs(elapsed)
+      if (elapsed < LIFTOFF_MS) {
+        telemetryRafRef.current = requestAnimationFrame(tick)
+      } else {
+        telemetryRafRef.current = null
+      }
+    }
+    telemetryRafRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (telemetryRafRef.current != null) {
+        cancelAnimationFrame(telemetryRafRef.current)
+        telemetryRafRef.current = null
+      }
+    }
+  }, [showLaunching, showLaunched])
+
+  /** 0 on the pad, ramping to 1 by the end of the liftoff cutaway. */
+  const liftoffFraction = Math.min(1, telemetryMs / LIFTOFF_MS)
+  const inFlight = showLaunching || showLaunched
+  const telemetryVelocityMps = inFlight
+    ? Math.round(liftoffFraction * liftoffFraction * 340)
+    : 0
+  const telemetryAltitudeM = inFlight
+    ? Math.round(liftoffFraction * liftoffFraction * 850)
+    : 0
+  const telemetryFuelPct = inFlight
+    ? Math.round(100 - liftoffFraction * 8)
+    : 100
+  const telemetrySecToMaxQ = inFlight
+    ? Math.max(54, Math.round(58 - liftoffFraction * 4))
+    : 58
+  const telemetryClockWhole = String(Math.floor(telemetryMs / 1000)).padStart(2, '0')
+  const telemetryClockTenths = Math.floor((telemetryMs % 1000) / 100)
 
   const goRows = goStations.map((station, i) => {
     const done =
@@ -314,8 +374,9 @@ export function LaunchSequenceScene({
                 <div className="mc-screen__label">TELEMETRY</div>
                 <div className="mc-telemetry">
                   <span>
-                    T
-                    {showLaunched || showLaunching ? '+00:00' : '−HOLD'}
+                    {inFlight
+                      ? `T+${telemetryClockWhole}.${telemetryClockTenths}`
+                      : 'T−HOLD'}
                   </span>
                   <span>
                     {showLaunched
@@ -326,10 +387,10 @@ export function LaunchSequenceScene({
                           ? 'ARMED'
                           : 'POLL'}
                   </span>
-                  <span>
-                    ALT · {showLaunched ? 'CLR' : showLaunching ? 'RISE' : 'PAD'}
-                  </span>
-                  <span>VEH · NOM</span>
+                  <span>VEL · {telemetryVelocityMps} M/S</span>
+                  <span>ALT · {telemetryAltitudeM} M</span>
+                  <span>FUEL · {telemetryFuelPct}%</span>
+                  <span>MAX-Q · T−{telemetrySecToMaxQ}S</span>
                 </div>
               </div>
               <div className="mc-screen mc-screen--status">

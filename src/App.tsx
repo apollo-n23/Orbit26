@@ -1,5 +1,5 @@
-﻿import { useCallback, useEffect, useState } from 'react'
-import { RoundSession } from './components/RoundSession'
+﻿import { useCallback, useEffect, useRef, useState } from 'react'
+import { RoundSession, type RoundSessionHandle } from './components/RoundSession'
 import { GembaWalkthrough } from './views/GembaWalkthrough'
 import { CustomerPortalView } from './views/CustomerPortalView'
 import { RegulationView } from './views/RegulationView'
@@ -14,7 +14,13 @@ import {
   type AppStage,
   type RoundId,
 } from './types/round'
-import type { LeadTimeEntry, RedesignCostBreakdown } from './types/process'
+import type {
+  LeadTimeEntry,
+  ProcessVersion,
+  RedesignCostBreakdown,
+} from './types/process'
+import { averageLeadTimeMs, launchDurationsMs } from './lib/roundMetrics'
+import { parseSaveFileText, type UploadSaveResult } from './lib/saveFile'
 import './App.css'
 
 /**
@@ -41,6 +47,19 @@ function App() {
   // To-be confirmed redesign cost breakdown (null until Confirm), lifted
   // the same way so either stage's Data tab can show it live.
   const [toBeCost, setToBeCost] = useState<RedesignCostBreakdown | null>(null)
+  // Live process (redesign choices) from each round, lifted the same way so
+  // either stage's Data tab can build a save file with BOTH rounds' state.
+  const [asIsProcess, setAsIsProcess] = useState<ProcessVersion>(
+    () => getRoundConfig(1).process,
+  )
+  const [toBeProcess, setToBeProcess] = useState<ProcessVersion>(
+    () => getRoundConfig(2).process,
+  )
+  // Imperative handles so an upload on EITHER round's Data tab can restore
+  // BOTH rounds' state — both RoundSessions stay mounted for the app's
+  // lifetime, so this always reaches the live session, not a stale clone.
+  const asIsSessionRef = useRef<RoundSessionHandle>(null)
+  const toBeSessionRef = useRef<RoundSessionHandle>(null)
 
   useEffect(() => {
     // Normalise empty hash to home so the URL is shareable.
@@ -89,6 +108,56 @@ function App() {
     [],
   )
 
+  const handleProcessChange = useCallback(
+    (roundId: RoundId, process: ProcessVersion) => {
+      if (roundId === 1) {
+        setAsIsProcess(process)
+      } else {
+        setToBeProcess(process)
+      }
+    },
+    [],
+  )
+
+  // "Upload data" on either round's Data tab: restores BOTH rounds from a
+  // single previously-downloaded save file (see lib/saveFile.ts) via the
+  // imperative handles below — this is the only place that can reach both
+  // RoundSessions at once, since each Data tab only owns its own round.
+  const handleUploadSaveFileText = useCallback(
+    (fileText: string): UploadSaveResult => {
+      const save = parseSaveFileText(fileText)
+      if (!save) {
+        return {
+          ok: false,
+          message:
+            'This file is not a valid Orb-it save file — download one from the Data tab first.',
+        }
+      }
+      const round1Data = save.rounds.find((r) => r.roundId === 1)
+      const round2Data = save.rounds.find((r) => r.roundId === 2)
+      if (round1Data) {
+        asIsSessionRef.current?.restoreState({
+          process: round1Data.process,
+          leadTimeLog: round1Data.leadTimeLog,
+        })
+      }
+      if (round2Data) {
+        toBeSessionRef.current?.restoreState({
+          process: round2Data.process,
+          leadTimeLog: round2Data.leadTimeLog,
+          round1AverageMs: round1Data
+            ? averageLeadTimeMs(round1Data.leadTimeLog)
+            : null,
+          round1LaunchesMs: round1Data
+            ? launchDurationsMs(round1Data.leadTimeLog)
+            : null,
+        })
+      }
+      return { ok: true, message: 'Save file loaded — both rounds restored.' }
+    },
+    [],
+  )
+
   const asIs = getRoundConfig(1)
   const toBe = getRoundConfig(2)
 
@@ -131,6 +200,7 @@ function App() {
         />
       )}
       <RoundSession
+        ref={asIsSessionRef}
         round={asIs}
         activeStage={stage}
         onNavigateStage={navigateToStage}
@@ -144,8 +214,12 @@ function App() {
         }}
         onCostBreakdownChange={handleCostBreakdownChange}
         otherRoundCostBreakdown={toBeCost}
+        onProcessChange={handleProcessChange}
+        otherRoundProcess={toBeProcess}
+        onUploadSaveFileText={handleUploadSaveFileText}
       />
       <RoundSession
+        ref={toBeSessionRef}
         round={toBe}
         activeStage={stage}
         onNavigateStage={navigateToStage}
@@ -161,6 +235,9 @@ function App() {
           entries: asIsEntries,
         }}
         onCostBreakdownChange={handleCostBreakdownChange}
+        onProcessChange={handleProcessChange}
+        otherRoundProcess={asIsProcess}
+        onUploadSaveFileText={handleUploadSaveFileText}
       />
     </>
   )

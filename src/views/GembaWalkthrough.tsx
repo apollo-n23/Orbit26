@@ -1,15 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ManufactureScene } from '../components/ManufactureScene'
-import { IntegratePayloadScene } from '../components/IntegratePayloadScene'
+import { HaulRoadScene } from '../components/HaulRoadScene'
 import { LaunchPrepScene } from '../components/LaunchPrepScene'
 import { LaunchSequenceScene } from '../components/LaunchSequenceScene'
+import { GembaContextPanel } from '../components/GembaContextPanel'
 import { SiteBrand } from '../components/SiteBrand'
 import { StageNav } from '../components/StageNav'
+import { StepIcon } from '../components/StepIcon'
 import { getRoundConfig } from '../data/rounds'
 import type { AppStage } from '../types/round'
 import type { RunState } from '../types/process'
-import { INITIAL_RUN_STATE, MACHINE_CYCLE_MS } from '../types/process'
 import {
+  INITIAL_RUN_STATE,
+  MACHINE_CYCLE_MS,
+  MACHINE_FAIL_CYCLE_MS,
+  MACHINE_HALF_SPEED_MULTIPLIER,
+} from '../types/process'
+import {
+  failMachineWork,
   finishLaunchPrepAction,
   finishLaunchSequenceAction,
   finishMachineWork,
@@ -24,6 +32,8 @@ import {
   resolveLaunchPrepTechs,
   resolveLaunchSeqConfig,
 } from '../lib/processEdit'
+
+const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
 
 /**
  * As-is process, read-only. Never mutated here — Gemba only ever walks it,
@@ -88,11 +98,32 @@ export function GembaWalkthrough({
 
   useEffect(() => {
     if (run.status !== 'machine_working') return
+
+    // Damaged machine's failed-attempt animation (approach → glow red →
+    // retreat) — never completes, must match ManufactureScene's own timers.
+    if (run.activeMachineWillFail) {
+      const failId = window.setTimeout(() => {
+        setRun((prev) => failMachineWork(prev))
+      }, MACHINE_FAIL_CYCLE_MS)
+      return () => window.clearTimeout(failId)
+    }
+
+    // A damaged machine's retry-after-failure run plays at half speed — must
+    // match ManufactureScene's own doubled animation timers exactly.
+    const cycleMs = run.activeMachineHalfSpeed
+      ? MACHINE_CYCLE_MS * MACHINE_HALF_SPEED_MULTIPLIER
+      : MACHINE_CYCLE_MS
     const id = window.setTimeout(() => {
       setRun((prev) => finishMachineWork(process, prev))
-    }, MACHINE_CYCLE_MS)
+    }, cycleMs)
     return () => window.clearTimeout(id)
-  }, [run.status, run.activeMachineId, process])
+  }, [
+    run.status,
+    run.activeMachineId,
+    run.activeMachineHalfSpeed,
+    run.activeMachineWillFail,
+    process,
+  ])
 
   const handleMachineClick = (machineId: string) => {
     setRun((prev) => startMachineWork(process, prev, machineId))
@@ -145,7 +176,7 @@ export function GembaWalkthrough({
     }
     if (step.kind === 'haul') {
       if (run.status === 'running') {
-        return 'Use arrow keys (or the on-screen controls) to move the booster along the road to the Launch Pad.'
+        return 'Use arrow keys (or click-and-drag) to move the booster along the road to the Launch Pad. Be careful not to let the booster stray too far off the road or it will explode!'
       }
       if (run.status === 'awaiting_reorient') {
         return 'Booster is on the pad — click Mount to launch pad to seat it.'
@@ -172,44 +203,66 @@ export function GembaWalkthrough({
 
   return (
     <div className="app-shell">
-      <header className="top-bar top-bar--round-done">
-        <SiteBrand subtitle="Gemba walk · As-is" />
-      </header>
+      <SiteBrand
+        subtitle="Gemba walk · As-is"
+        activeStage={activeStage}
+        onNavigate={onNavigateStage}
+      />
       <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
+      {step && <GembaContextPanel stepId={step.id} stepKind={step.kind} />}
       <main className="app-main">
         <section className="view-panel" aria-labelledby="gemba-heading">
-          <header className="view-panel__header sim-header">
-            <div>
+          <header className="view-panel__header gemba-banner">
+            <span className="gemba-banner__logo-badge" aria-hidden="true">
+              <img
+                src={ORBIT_LOGO_SRC}
+                alt=""
+                className="gemba-banner__logo"
+                width={64}
+                height={64}
+                decoding="async"
+              />
+            </span>
+            <div className="gemba-banner__body">
               <h2 id="gemba-heading">Gemba walk</h2>
               <p className="view-panel__lede">
                 Walk the as-is process one step at a time to observe and
                 document it — jump to any step directly, in any order.
               </p>
+              <p className="gemba-banner__note" role="status">
+                <strong>Go to the Gemba:</strong> this is the as-is process
+                exactly as built — nothing here can be redesigned. Nothing is
+                timed, scored, or logged; it never touches As-is play, the
+                redesign workshop, To-be, or the Data tab.
+              </p>
             </div>
           </header>
 
           <div className="view-panel__body redesign-body">
-            <div className="redesign-warning" role="status">
-              <strong>Go to the Gemba:</strong> this is the as-is process
-              exactly as built — nothing here can be redesigned. Nothing is
-              timed, scored, or logged; it never touches As-is play, the
-              redesign workshop, To-be, or the Data tab.
-            </div>
-
-            <nav className="redesign-tabs" aria-label="Gemba steps">
+            <nav className="gemba-stepper" aria-label="Gemba steps">
               {process.steps.map((s, index) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  className={
-                    stepIndex === index
-                      ? 'redesign-tabs__btn redesign-tabs__btn--active'
-                      : 'redesign-tabs__btn'
-                  }
-                  onClick={() => selectStep(index)}
-                >
-                  {index + 1} · {s.name}
-                </button>
+                <div className="gemba-stepper__item" key={s.id}>
+                  {index > 0 && (
+                    <span className="gemba-stepper__connector" aria-hidden="true" />
+                  )}
+                  <button
+                    type="button"
+                    className={
+                      stepIndex === index
+                        ? 'gemba-stepper__step gemba-stepper__step--active'
+                        : 'gemba-stepper__step'
+                    }
+                    onClick={() => selectStep(index)}
+                  >
+                    <span className="gemba-stepper__icon">
+                      <StepIcon kind={s.kind} />
+                    </span>
+                    <span className="gemba-stepper__label">
+                      <span className="gemba-stepper__index">{index + 1}</span>
+                      {s.name}
+                    </span>
+                  </button>
+                </div>
               ))}
             </nav>
 
@@ -237,7 +290,7 @@ export function GembaWalkthrough({
             )}
 
             {showHaul && (
-              <IntegratePayloadScene
+              <HaulRoadScene
                 key={`gemba-haul-${visitNonce}`}
                 run={run}
                 haulPath={haulPath}

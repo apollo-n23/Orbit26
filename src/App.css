@@ -10,9 +10,9 @@
 /* â”€â”€ Top bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .top-bar {
-  display: grid;
-  grid-template-columns: minmax(12rem, 1fr) auto minmax(10rem, 1fr);
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-4);
   min-height: var(--top-bar-height);
   padding: var(--space-3) var(--space-5);
@@ -26,6 +26,86 @@
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
+  flex: 0 1 auto;
+}
+
+/* Site-wide Home / Regulation / Customer Portal buttons — moved here from
+   the old stage-nav bar so they sit in the uppermost banner, beside the
+   Lead Time / Launches / Defects metrics (when a round is playing). */
+.top-bar__nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.top-bar__home-btn,
+.top-bar__regulation-btn,
+.top-bar__customer-btn {
+  flex-shrink: 0;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.top-bar__home-btn {
+  border: 1px solid var(--color-orbital);
+  background: var(--color-orbital-dim);
+  color: var(--color-orbital-strong);
+}
+
+.top-bar__home-btn:hover {
+  background: color-mix(in srgb, var(--color-orbital) 30%, var(--color-orbital-dim));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital) 55%, transparent);
+}
+
+.top-bar__home-btn--active {
+  background: var(--color-orbital);
+  color: #eaf6ff;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital) 75%, transparent);
+}
+
+.top-bar__regulation-btn {
+  border: 1px solid var(--color-regulation-accent);
+  background: var(--color-regulation-accent-dim);
+  color: color-mix(in srgb, var(--color-brand-green) 55%, white);
+}
+
+.top-bar__regulation-btn:hover {
+  background: color-mix(in srgb, var(--color-regulation-accent) 28%, var(--color-regulation-accent-dim));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-regulation-accent) 55%, transparent);
+}
+
+.top-bar__regulation-btn--active {
+  background: var(--color-regulation-accent-strong);
+  color: #e8f0e4;
+  border-color: var(--color-brand-green);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand-green) 50%, transparent);
+}
+
+.top-bar__customer-btn {
+  border: 1px solid var(--color-customer-accent);
+  background: var(--color-customer-accent-dim);
+  color: var(--color-customer-accent);
+}
+
+.top-bar__customer-btn:hover {
+  background: color-mix(in srgb, var(--color-customer-accent) 30%, var(--color-customer-accent-dim));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-customer-accent) 55%, transparent);
+}
+
+.top-bar__customer-btn--active {
+  background: var(--color-customer-accent-strong);
+  color: #fdeaf3;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-customer-accent-strong) 75%, transparent);
 }
 
 .top-bar__logo {
@@ -72,59 +152,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.top-bar--round-done {
-  grid-template-columns: 1fr;
-}
-
-.top-bar__metrics {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-2);
-}
-
-.metric {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 6.5rem;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
-}
-
-.metric__label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-text-dim);
-}
-
-.metric__value {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-1);
-  margin-top: 0.1rem;
-}
-
-.metric__number {
-  font-family: var(--font-mono);
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.metric__unit {
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-}
-
-.top-bar__actions {
-  display: flex;
-  justify-content: flex-end;
 }
 
 /* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -194,12 +221,19 @@
   animation: machine-pulse 1.4s ease-in-out infinite;
 }
 
-/* â”€â”€ Stage navigation (As-is / Redesign / To-be) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.btn__icon {
+  width: 1.05em;
+  height: 1.05em;
+  flex-shrink: 0;
+}
+
+/* â”€â”€ Simulation Navigator (Gemba / As-is / Redesign / To-be) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .stage-nav {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-4);
   min-height: 3.25rem;
   margin: var(--space-4) var(--space-5);
   padding: var(--space-2) var(--space-4);
@@ -211,6 +245,17 @@
     0 4px 18px color-mix(in srgb, var(--color-nav-accent) 25%, transparent);
 }
 
+/* Ring-fences the group as its own named menu, distinct from the site-wide
+   Home / Regulation / Customer Portal buttons (now in the top banner). */
+.stage-nav__label {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-nav-accent);
+}
+
 .stage-nav__group {
   flex: 1;
   display: flex;
@@ -218,64 +263,6 @@
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
-}
-
-/* Leftmost â€” the intranet hub everything else is reached from. */
-.stage-nav__home-btn {
-  flex-shrink: 0;
-  padding: 0.65rem 1.25rem;
-  border: 1px solid var(--color-orbital);
-  border-radius: var(--radius-md);
-  background: var(--color-orbital-dim);
-  color: var(--color-orbital-strong);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  transition:
-    color 120ms ease,
-    background 120ms ease,
-    box-shadow 120ms ease;
-}
-
-.stage-nav__home-btn:hover {
-  background: color-mix(in srgb, var(--color-orbital) 30%, var(--color-orbital-dim));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital) 55%, transparent);
-}
-
-.stage-nav__home-btn--active {
-  background: var(--color-orbital);
-  color: #eaf6ff;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital) 75%, transparent);
-}
-
-/* Off to the side, deliberately not part of the centered stage group. */
-.stage-nav__customer-btn {
-  flex-shrink: 0;
-  padding: 0.65rem 1.25rem;
-  border: 1px solid var(--color-customer-accent);
-  border-radius: var(--radius-md);
-  background: var(--color-customer-accent-dim);
-  color: var(--color-customer-accent);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  transition:
-    color 120ms ease,
-    background 120ms ease,
-    box-shadow 120ms ease;
-}
-
-.stage-nav__customer-btn:hover {
-  background: color-mix(in srgb, var(--color-customer-accent) 30%, var(--color-customer-accent-dim));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-customer-accent) 55%, transparent);
-}
-
-.stage-nav__customer-btn--active {
-  background: var(--color-customer-accent-strong);
-  color: #fdeaf3;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-customer-accent-strong) 75%, transparent);
 }
 
 .stage-nav__item {
@@ -299,6 +286,65 @@
   color: var(--color-nav-accent);
   border-color: color-mix(in srgb, var(--color-nav-accent) 55%, transparent);
   background: var(--color-nav-accent-dim);
+}
+
+/* Live Lead Time / Launches / Defects — right side of the same Simulation
+   Navigator banner, in its orange theme rather than the old dark metric
+   tiles, only rendered while a round is actually playing. */
+.stage-nav__metrics {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.stage-nav__metric {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 6rem;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-nav-accent) 35%, transparent);
+  border-radius: var(--radius-md);
+  background: var(--color-nav-accent-dim);
+}
+
+.stage-nav__metric-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  flex-shrink: 0;
+  color: var(--color-nav-accent);
+}
+
+.stage-nav__metric-text {
+  min-width: 0;
+}
+
+.stage-nav__metric-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.stage-nav__metric-value {
+  margin: 0.05rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Defects metric once any have been logged this round. */
+.stage-nav__metric--alert {
+  border-color: #c45c5c;
+  background: rgba(196, 92, 92, 0.16);
+}
+
+.stage-nav__metric--alert .stage-nav__metric-icon,
+.stage-nav__metric--alert .stage-nav__metric-value {
+  color: #e88a8a;
 }
 
 /* â”€â”€ View navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -806,10 +852,6 @@
   min-height: 0;
 }
 
-.top-bar--round-done {
-  grid-template-columns: 1fr;
-}
-
 .orbit-complete {
   position: relative;
   flex: 1;
@@ -1015,6 +1057,14 @@
   gap: var(--space-3);
 }
 
+.orbit-complete__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
 .orbit-complete__share {
   font-size: 0.75rem;
   color: var(--color-text-dim);
@@ -1101,33 +1151,103 @@
   justify-content: flex-end;
 }
 
-.redesign-tabs {
+/*
+ * Redesign step nav: icon-led stepper mirroring Gemba's .gemba-stepper (same
+ * connector/icon/label pattern) — kept as its own class family since the
+ * two navs sit in different contexts, even though they render identically.
+ */
+.redesign-stepper {
   display: flex;
+  align-items: flex-start;
+  justify-content: center;
   flex-wrap: wrap;
+}
+
+.redesign-stepper__item {
+  display: flex;
+  align-items: center;
+}
+
+.redesign-stepper__connector {
+  width: 2rem;
+  height: 2px;
+  flex-shrink: 0;
+  margin: 0 var(--space-1);
+  margin-top: 1.4rem;
+  background: var(--color-border);
+}
+
+.redesign-stepper__step {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: var(--space-2);
-}
-
-.redesign-tabs__btn {
-  padding: 0.45rem 0.85rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
+  width: 8.5rem;
+  padding: var(--space-2);
+  background: transparent;
+  border: none;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
-  font-weight: 600;
+  text-align: center;
 }
 
-.redesign-tabs__btn--active {
-  border-color: var(--color-orbital);
-  color: var(--color-orbital-strong);
-  background: var(--color-orbital-dim);
-}
-
-.redesign-tabs__soon {
-  font-size: 0.75rem;
+.redesign-stepper__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.85rem;
+  height: 2.85rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
   color: var(--color-text-dim);
-  margin-left: var(--space-2);
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.redesign-stepper__icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.redesign-stepper__label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.redesign-stepper__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-border);
+  color: var(--color-text);
+  font-size: 0.65rem;
+}
+
+.redesign-stepper__step--active .redesign-stepper__icon {
+  border-color: var(--color-orbital);
+  background: var(--color-orbital-dim);
+  color: var(--color-orbital-strong);
+}
+
+.redesign-stepper__step--active .redesign-stepper__label {
+  color: var(--color-text);
+}
+
+.redesign-stepper__step--active .redesign-stepper__index {
+  background: var(--color-orbital);
+  color: #fff;
 }
 
 .redesign-hint {
@@ -1318,17 +1438,22 @@
   opacity: 0.55;
 }
 
+/* Enlarged (was 1.4rem) so the operate-sequence number reads clearly at a glance. */
 .redesign-machine__badge {
-  width: 1.4rem;
-  height: 1.4rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   border-radius: 50%;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 1.1rem;
   font-weight: 700;
   background: var(--color-orbital);
   color: #fff;
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .redesign-machine__name {
@@ -1372,6 +1497,103 @@
   text-align: center;
 }
 
+.redesign-machine--repairable {
+  position: relative;
+}
+
+/* Mirrors the As-is manufacture card's red pill (ManufactureScene.tsx). */
+.redesign-machine__damaged-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: #c0392b;
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Hover/focus-revealed repair panel — same pattern as .redesign-booster-upgrade__panel. */
+.redesign-machine__repair {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%) translateY(0.35rem);
+  width: min(15rem, 70vw);
+  padding: 1.35rem var(--space-3) var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface) 96%, #000);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease,
+    visibility 140ms ease;
+  text-align: center;
+  z-index: 6;
+  cursor: default;
+}
+
+/* Persist once opened (state class) so users can reach the button, same as
+   .redesign-booster-upgrade--open — mouse leaving the card no longer closes it. */
+.redesign-machine--repairable:hover .redesign-machine__repair,
+.redesign-machine--repairable:focus-within .redesign-machine__repair,
+.redesign-machine__repair--open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.redesign-machine__repair-close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-border-strong) 55%, transparent);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.redesign-machine__repair-close:hover {
+  background: color-mix(in srgb, var(--color-border-strong) 90%, transparent);
+  color: var(--color-text);
+}
+
+.redesign-machine__repair-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.redesign-machine__repair-title--damaged {
+  color: #ff8a75;
+}
+
+.redesign-machine__repair-title--fixed {
+  color: #5ecf96;
+}
+
+.redesign-machine__repair-copy {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  margin-bottom: var(--space-2);
+}
+
 .redesign-road-cost {
   margin: var(--space-2) 0 0;
   font-size: 0.95rem;
@@ -1403,9 +1625,8 @@
 
 .redesign-cost-banner {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3) var(--space-5);
+  flex-direction: column;
+  gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border: 1px solid color-mix(in srgb, var(--color-amber) 50%, var(--color-border));
   border-radius: var(--radius-md);
@@ -1417,48 +1638,135 @@
   background: color-mix(in srgb, rgba(196, 92, 92, 0.16) 70%, var(--color-surface-raised));
 }
 
-.redesign-cost-banner__total,
-.redesign-cost-banner__remaining {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
+.redesign-cost-banner--surplus {
+  border-color: color-mix(in srgb, var(--color-brand-green) 50%, var(--color-border));
 }
 
-.redesign-cost-banner__label {
-  font-size: 0.72rem;
+/* Horizontal, tabular strip of stat cells — kept on one row (scrolls rather
+   than wraps on narrow widths) so it still reads as one banner, not a
+   stack of separate boxes. */
+.redesign-cost-table {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.redesign-cost-divider {
+  align-self: stretch;
+  width: 1px;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--color-border-strong) 70%, transparent);
+}
+
+.redesign-cost-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.redesign-cost-cell__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text-dim);
+}
+
+.redesign-cost-cell__icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.redesign-cost-cell--primary .redesign-cost-cell__icon {
+  width: 3.1rem;
+  height: 3.1rem;
+  border-color: color-mix(in srgb, var(--color-amber) 55%, var(--color-border));
+  color: var(--color-amber);
+}
+
+.redesign-cost-cell--primary .redesign-cost-cell__icon svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.redesign-cost-cell__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.redesign-cost-cell__label {
+  font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
-.redesign-cost-banner__value {
+.redesign-cost-cell__value {
   font-family: var(--font-mono);
-  font-size: 1.7rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.redesign-cost-cell__value--total {
+  font-size: 2rem;
   font-weight: 800;
   color: var(--color-amber);
-  letter-spacing: 0.01em;
 }
 
-.redesign-cost-banner__unit {
-  font-size: 0.85rem;
+.redesign-cost-cell__value--compact {
+  font-size: 1.05rem;
+}
+
+.redesign-cost-cell__unit {
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-text-dim);
-  margin-left: 0.15rem;
+  margin-left: 0.1rem;
 }
 
-.redesign-cost-banner__value--remaining {
-  font-size: 1.35rem;
-  color: var(--color-text);
+.redesign-cost-cell__note {
+  font-size: 0.65rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.redesign-cost-banner--exhausted .redesign-cost-banner__value,
-.redesign-cost-banner--exhausted .redesign-cost-banner__value--remaining {
+.redesign-cost-cell__note--surplus {
+  color: var(--color-brand-green);
+}
+
+.redesign-cost-banner--exhausted .redesign-cost-cell__value--total {
   color: #e88a8a;
 }
 
+.redesign-cost-banner--surplus .redesign-cost-cell__value--total {
+  color: var(--color-brand-green);
+}
+
+.redesign-cost-banner--surplus .redesign-cost-cell--primary .redesign-cost-cell__icon {
+  border-color: color-mix(in srgb, var(--color-brand-green) 55%, var(--color-border));
+  color: var(--color-brand-green);
+}
+
 .redesign-cost-banner__exhausted-note {
-  flex-basis: 100%;
   margin: 0;
   padding: var(--space-2) var(--space-3);
   border-left: 2px solid #c45c5c;
@@ -1469,30 +1777,7 @@
   color: #e88a8a;
 }
 
-.redesign-cost-banner__breakdown {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: 0.78rem;
-  color: var(--color-text-muted);
-}
-
-.redesign-cost-banner__breakdown li {
-  display: flex;
-  gap: 0.3rem;
-  align-items: baseline;
-}
-
-.redesign-cost-banner__breakdown strong {
-  font-family: var(--font-mono);
-  color: var(--color-text);
-}
-
 .redesign-cost-banner__hint {
-  flex-basis: 100%;
   margin: 0;
   font-size: 0.72rem;
   color: var(--color-text-dim);
@@ -2268,6 +2553,27 @@
   flex-shrink: 0;
 }
 
+/* Upload data: transient result of reading back a downloaded save file. */
+.data-upload-status {
+  margin: 0 0 var(--space-3);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.data-upload-status--ok {
+  color: var(--color-brand-green);
+  border-left: 2px solid var(--color-brand-green);
+  background: color-mix(in srgb, var(--color-brand-green) 12%, transparent);
+}
+
+.data-upload-status--error {
+  color: #e88a8a;
+  border-left: 2px solid #c45c5c;
+  background: color-mix(in srgb, rgba(196, 92, 92, 0.16) 60%, transparent);
+}
+
 .sim-body {
   display: flex;
   flex-direction: column;
@@ -2276,13 +2582,74 @@
 }
 
 .sim-status {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-  padding: var(--space-2) var(--space-3);
-  border-left: 2px solid var(--color-orbital);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--color-text);
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--color-orbital);
   background: var(--color-orbital-dim);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital) 25%, transparent);
   flex-shrink: 0;
+}
+
+/* Pause session: transient reminder shown after a blocked interaction attempt. */
+.sim-pause-notice {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-amber);
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid var(--color-amber);
+  background: var(--color-amber-dim);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  flex-shrink: 0;
+}
+
+/* Wraps whichever process-step scene is showing so the paused overlay can be
+   absolutely positioned on top of it, covering that scene only. */
+.sim-scene-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+}
+
+.sim-paused-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  backdrop-filter: blur(2px);
+  color: var(--color-text);
+  text-align: center;
+  cursor: pointer;
+}
+
+.sim-paused-overlay .btn__icon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-amber);
+}
+
+.sim-paused-overlay__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.sim-paused-overlay__hint {
+  max-width: 26rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
 }
 
 /* Gemba: status line + Reset step, side by side */
@@ -2297,6 +2664,257 @@
   flex: 1;
 }
 
+/* Gemba banner: logo badge + title/lede + the former standalone "Go to the
+   Gemba" callout, now folded into one header block instead of a separate
+   boxed warning beneath it. */
+.gemba-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.gemba-banner__logo-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.75rem;
+  height: 3.75rem;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.gemba-banner__logo {
+  display: block;
+  width: 2.75rem;
+  height: 2.75rem;
+  object-fit: contain;
+}
+
+.gemba-banner__body {
+  min-width: 0;
+}
+
+.gemba-banner__note {
+  margin-top: var(--space-2);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.gemba-banner__note strong {
+  color: var(--color-amber);
+}
+
+/* Gemba step stepper: icon-led, centered, with connecting lines between
+   nodes so it reads as a linear progression rather than a row of plain
+   left-aligned tabs (scoped to Gemba only — As-is/Redesign keep
+   .redesign-tabs). */
+.gemba-stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.gemba-stepper__item {
+  display: flex;
+  align-items: center;
+}
+
+.gemba-stepper__connector {
+  width: 2rem;
+  height: 2px;
+  flex-shrink: 0;
+  margin: 0 var(--space-1);
+  margin-top: 1.4rem;
+  background: var(--color-border);
+}
+
+.gemba-stepper__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 8.5rem;
+  padding: var(--space-2);
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.gemba-stepper__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.85rem;
+  height: 2.85rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text-dim);
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.gemba-stepper__icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gemba-stepper__label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.gemba-stepper__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-border);
+  color: var(--color-text);
+  font-size: 0.65rem;
+}
+
+.gemba-stepper__step--active .gemba-stepper__icon {
+  border-color: var(--color-orbital);
+  background: var(--color-orbital-dim);
+  color: var(--color-orbital-strong);
+}
+
+.gemba-stepper__step--active .gemba-stepper__label {
+  color: var(--color-text);
+}
+
+.gemba-stepper__step--active .gemba-stepper__index {
+  background: var(--color-orbital);
+  color: #fff;
+}
+
+/* Gemba context panel: a vertical tab pinned to the right edge of the
+   viewport (position: fixed, so it tracks the viewport, not scroll
+   position within the panel). Expands into a narrative side panel to its
+   left; the tab itself never moves. Gemba-only — no equivalent elsewhere. */
+.gemba-context {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: stretch;
+}
+
+.gemba-context__tab {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4) var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-right: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-orbital-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.35);
+}
+
+.gemba-context__tab:hover {
+  background: var(--color-orbital-dim);
+}
+
+.gemba-context--open .gemba-context__tab {
+  color: var(--color-text);
+  border-color: var(--color-orbital);
+}
+
+.gemba-context__panel {
+  width: min(20rem, 80vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-right: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.45);
+}
+
+.gemba-context__panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.gemba-context__panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.gemba-context__close {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gemba-context__close:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.gemba-context__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--space-3);
+}
+
+.gemba-context__panel p {
+  margin: 0 0 var(--space-3);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.gemba-context__panel p:last-child {
+  margin-bottom: 0;
+}
+
 /* â”€â”€ Manufacture scene â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .manufacture-scene {
@@ -2306,7 +2924,7 @@
   flex-direction: column;
   justify-content: center;
   gap: var(--space-4);
-  min-height: 24rem;
+  min-height: 28rem;
   padding: var(--space-5);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -2361,22 +2979,36 @@
   opacity: 1;
 }
 
-/* Floor: parked machines above, belt + booster below */
+/*
+ * Floor: parked machines (+ terminal sidebar) above, belt + booster below.
+ * Gap between the station row and the belt matches ManufactureScene's
+ * LINE_APPROACH_Y_REM raise (5.25rem -> 7.75rem) so a machine's "at-line"
+ * transform still lands correctly on the belt below.
+ */
 .manufacture-floor {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 2.5rem;
   width: 100%;
 }
 
+/* Station cards + the access-code terminal, side by side above the belt. */
+.manufacture-stations-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
 .station-row {
+  flex: 1;
+  min-width: 0;
   display: grid;
   gap: var(--space-3);
   align-items: end;
-  /* Room for farthest parkOffset (~2.9rem) above the default park row */
-  min-height: 14rem;
+  /* Room for farthest baseline parkOffset (~4.4rem) above the default park row */
+  min-height: 17.5rem;
   padding: 0 2%;
 }
 
@@ -2386,7 +3018,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  min-height: 13.5rem;
+  min-height: 17rem;
 }
 
 /* Vertical drop path from parked machine toward the belt */
@@ -2402,6 +3034,39 @@
     transparent
   );
   opacity: 0.55;
+}
+
+/* Wraps the belt + the guidance text below it so the drag-hint SVG can span
+   both and point from one to the other without measuring the DOM. */
+.manufacture-drag-guide-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.manufacture-drag-guide {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.manufacture-drag-guide__line {
+  stroke: var(--color-amber);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1 9;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-amber) 75%, transparent));
+  animation: manufacture-drag-guide-flow 0.9s linear infinite;
+}
+
+@keyframes manufacture-drag-guide-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
 }
 
 .production-line {
@@ -2511,6 +3176,20 @@
 
 .production-line__carrier--arrived .booster {
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+}
+
+.production-line__carrier--needs-attention .booster {
+  animation: carrier-needs-attention-glow 1.4s ease-in-out infinite;
+}
+
+@keyframes carrier-needs-attention-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-amber) 45%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px color-mix(in srgb, var(--color-amber) 85%, transparent));
+  }
 }
 
 .production-line__carrier--wrong {
@@ -2833,58 +3512,80 @@
   padding: 0.15rem 0.5rem;
 }
 
-/* Access-code banner — current station code for the operator */
+/* Access-code terminal — sits beside the station row (see .manufacture-stations-row) */
 
-.manufacture-code-banner {
-  position: relative;
-  z-index: 3;
+.manufacture-terminal {
+  flex: 0 0 10.5rem;
+  width: 10.5rem;
+}
+
+/*
+ * "Computer terminal" bezel: dark plastic frame around an inset screen.
+ * `.manufacture-terminal__screen` is deliberately plain today — drop a
+ * background-image (e.g. a CRT/terminal photo) onto it later and the
+ * kicker/body/code text will still read on top via its own text-shadow.
+ */
+.manufacture-terminal__screen {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
-  margin: 0 var(--space-4);
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid color-mix(in srgb, var(--color-amber) 65%, var(--color-border));
+  gap: var(--space-2);
+  min-height: 8rem;
+  padding: var(--space-3);
+  text-align: center;
+  border: 1px solid #4a5462;
   border-radius: var(--radius-md);
   background:
     linear-gradient(
-      90deg,
+      180deg,
       color-mix(in srgb, var(--color-surface) 92%, #000),
       color-mix(in srgb, var(--color-surface-raised) 96%, #000)
     );
   box-shadow:
+    inset 0 0 0 3px #1a1e24,
+    inset 0 2px 10px rgba(0, 0, 0, 0.6),
     0 6px 20px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(0, 0, 0, 0.35),
-    0 0 24px color-mix(in srgb, var(--color-amber) 18%, transparent);
+    0 0 24px color-mix(in srgb, var(--color-amber) 14%, transparent);
 }
 
-.manufacture-code-banner__kicker {
-  font-size: 0.65rem;
+.manufacture-terminal__kicker {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-amber);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--color-amber) 55%, transparent);
 }
 
-.manufacture-code-banner__body {
-  font-size: 0.85rem;
+.manufacture-terminal__body {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
   color: var(--color-text);
   font-weight: 600;
+  line-height: 1.3;
 }
 
-.manufacture-code-banner__code {
+.manufacture-terminal__code {
   font-family: var(--font-mono);
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: 0.28em;
   color: var(--color-text);
-  padding: 0.15rem 0.65rem 0.15rem 0.85rem;
+  padding: 0.15rem 0.5rem 0.15rem 0.7rem;
   border-radius: var(--radius-sm);
   border: 1px solid color-mix(in srgb, var(--color-amber) 55%, var(--color-border));
   background: #0a0d12;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.manufacture-terminal__standby {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 /* Machines — parkOffset varies per station; approach slides down to the belt */
@@ -2939,6 +3640,45 @@
     0 0 0 1px color-mix(in srgb, var(--color-orbital) 25%, transparent);
 }
 
+/* Damaged machine's Activate click failed once — flashes red until retried. */
+.factory-machine--retry {
+  border-color: color-mix(in srgb, #e63935 60%, var(--color-border-strong));
+  animation: factory-machine-retry-flash 1s ease-in-out infinite;
+}
+
+@keyframes factory-machine-retry-flash {
+  0%,
+  100% {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.55),
+      0 0 0 1px color-mix(in srgb, #e63935 35%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.55),
+      0 0 16px color-mix(in srgb, #e63935 55%, transparent);
+  }
+}
+
+.factory-machine__hint--retry {
+  color: #ff6a5e;
+}
+
+/* As-is: physically damaged machine — repairable for FORM_PRESS_REPAIR_COST in To-be redesign. */
+.factory-machine__damaged-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: #c0392b;
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
 .factory-machine--required {
   border-color: var(--color-orbital);
   box-shadow:
@@ -2977,6 +3717,28 @@
   animation: none;
   transform: translateY(var(--line-approach-y));
   z-index: 4;
+}
+
+/*
+ * Damaged machine's failed attempt: it reached the line (positioned via
+ * .factory-machine--at-line, which this always accompanies) but pulses red
+ * instead of the normal amber "working" glow, then retreats without
+ * completing. Placed after --working/--at-line so its animation wins the
+ * shorthand conflict on this shared element.
+ */
+.factory-machine--fail-glow {
+  border-color: #e63935;
+  box-shadow: 0 0 18px rgba(230, 57, 53, 0.55);
+  animation: factory-machine-fail-pulse 0.4s ease-in-out infinite alternate;
+}
+
+@keyframes factory-machine-fail-pulse {
+  from {
+    box-shadow: 0 0 12px rgba(230, 57, 53, 0.4);
+  }
+  to {
+    box-shadow: 0 0 22px rgba(230, 57, 53, 0.75);
+  }
 }
 
 .factory-machine--done {
@@ -3362,11 +4124,39 @@
   flex-shrink: 0;
 }
 
+/*
+ * Haul road hasn't fitted the payload/fairing yet (that happens at launch
+ * prep) — same bare mating face as Assembly, just sized to this scene's
+ * percentage-based box instead of Assembly's fixed rem dimensions. Swapping
+ * the wide nose for this slim face means .booster__body's flex: 1 below
+ * absorbs the freed width automatically, so the booster's total on-screen
+ * length is unchanged from when it had a nose.
+ */
+.booster--haul .booster__payload-mount {
+  width: 6%;
+  height: 84%;
+  flex-shrink: 0;
+}
+
 .booster--haul .booster__body {
   flex: 1;
   width: auto;
   height: 100%;
   min-width: 0;
+}
+
+/*
+ * Assembly's absolute no-nose band positions are tuned for its small fixed-
+ * rem body — wrong for haul's fluid, now-elongated body. Fall back to the
+ * default centered flex/gap layout (used for haul's has-nose bands today),
+ * which self-adjusts to any body width.
+ */
+.booster--haul.booster--no-nose .booster__body {
+  gap: 1.25rem;
+}
+
+.booster--haul.booster--no-nose .booster__band {
+  position: static;
 }
 
 .booster--haul .booster__engine {
@@ -3390,7 +4180,7 @@
   font-size: 0.62rem;
 }
 
-/* â”€â”€ Integrate payload (haul) scene â€” outdoor grassy haul â”€â”€ */
+/* â”€â”€ Haul road scene â€” outdoor grassy haul â”€â”€ */
 
 .haul-scene {
   position: relative;
@@ -3425,10 +4215,10 @@
   color: var(--color-text-dim);
 }
 
-.haul-orient__buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
+.haul-orient__rotate-btn {
+  padding: var(--space-3) var(--space-5);
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .haul-dpad {
@@ -3481,6 +4271,68 @@
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-orbital) 50%, transparent);
 }
 
+/* Floating "RUD" counter — explosions so far this turn at this step. */
+.haul-rud-counter {
+  position: absolute;
+  z-index: 7;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 11rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, #ff5a4d 55%, var(--color-border));
+  background: rgba(10, 6, 6, 0.82);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.haul-rud-counter__label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #ffb3a8;
+}
+
+.haul-rud-counter__count {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/*
+ * Warm orange/yellow flame — a deliberate step away from the counter's own
+ * red border/label so it reads as a distinct, eye-catching accent rather
+ * than blending in, with a slow subtle glow to draw the eye without being
+ * distracting.
+ */
+.haul-rud-counter__flame {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  animation: haul-rud-flame-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes haul-rud-flame-glow {
+  0%,
+  100% {
+    filter:
+      drop-shadow(0 0 2px rgba(255, 167, 51, 0.45))
+      drop-shadow(0 0 1px rgba(255, 90, 31, 0.5));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 7px rgba(255, 167, 51, 0.85))
+      drop-shadow(0 0 3px rgba(255, 90, 31, 0.7));
+  }
+}
+
 .haul-map--exploding {
   animation: haul-explode-flash 0.55s ease;
 }
@@ -3507,6 +4359,104 @@
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+.haul-launch-tower__beacon,
+.haul-launch-tower__beacon-glow {
+  animation: haul-tower-beacon-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes haul-tower-beacon-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* Ambient left-side NPC traffic/pedestrians — purely decorative (see the
+   comment above these groups in HaulRoadScene.tsx for the safe-zone math). */
+.haul-npc-vehicle {
+  animation: haul-npc-drive 17s ease-in-out infinite;
+}
+
+@keyframes haul-npc-drive {
+  0%,
+  8% {
+    transform: translateX(0);
+  }
+  42%,
+  50% {
+    transform: translateX(88px);
+  }
+  92%,
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.haul-npc-person--1 {
+  animation: haul-npc-walk-1 13s ease-in-out infinite;
+}
+
+.haul-npc-person--2 {
+  animation: haul-npc-walk-2 16s ease-in-out infinite;
+  animation-delay: -4s;
+}
+
+.haul-npc-person--3 {
+  animation: haul-npc-walk-3 19s ease-in-out infinite;
+  animation-delay: -9s;
+}
+
+@keyframes haul-npc-walk-1 {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(3px, 1px);
+  }
+  50% {
+    transform: translate(-2px, -1px);
+  }
+  75% {
+    transform: translate(1px, 1.5px);
+  }
+}
+
+@keyframes haul-npc-walk-2 {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  30% {
+    transform: translate(-3px, 0.5px);
+  }
+  60% {
+    transform: translate(2.5px, -1px);
+  }
+  85% {
+    transform: translate(-1px, 1px);
+  }
+}
+
+@keyframes haul-npc-walk-3 {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(2px, -1.2px);
+  }
+  55% {
+    transform: translate(-2.5px, 0.8px);
+  }
+  80% {
+    transform: translate(1.5px, 1px);
+  }
 }
 
 .haul-booster {
@@ -3542,6 +4492,55 @@
 
 .haul-booster .booster {
   pointer-events: none;
+}
+
+/*
+ * Crawler-transporter: a wide, flat black platform the booster rides on
+ * (like the real Apollo/Shuttle/SLS crawler-transporters) — bigger than the
+ * booster's own footprint, so it's centered behind it and overflows on all
+ * sides. Purely visual: it shares .haul-booster's position/rotation, and
+ * .haul-booster's own box (used for collision/safe-zone math) is untouched.
+ */
+.haul-crawler {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 50%;
+  width: 116%;
+  height: 175%;
+  transform: translate(-50%, -50%);
+  border-radius: 3px;
+  background: linear-gradient(180deg, #262626 0%, #0c0c0c 50%, #262626 100%);
+  border: 1px solid #000;
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Wheel/track rows along the crawler's two long edges (repeating dark discs). */
+.haul-crawler::before,
+.haul-crawler::after {
+  content: '';
+  position: absolute;
+  left: 3%;
+  right: 3%;
+  height: 20%;
+  background-image: radial-gradient(
+    circle,
+    #050505 45%,
+    #333 62%,
+    transparent 68%
+  );
+  background-size: 12% 100%;
+  background-repeat: repeat-x;
+}
+
+.haul-crawler::before {
+  top: 4%;
+}
+
+.haul-crawler::after {
+  bottom: 4%;
 }
 
 /* Off-road explosion burst */
@@ -3692,16 +4691,25 @@
   }
 
   .manufacture-scene {
-    min-height: 24rem;
+    min-height: 28rem;
     padding: var(--space-3);
   }
 
   .station-row {
-    min-height: 12rem;
+    min-height: 15.5rem;
   }
 
   .station-bay {
-    min-height: 11.5rem;
+    min-height: 15rem;
+  }
+
+  .manufacture-stations-row {
+    flex-wrap: wrap;
+  }
+
+  .manufacture-terminal {
+    flex: 1 1 100%;
+    width: 100%;
   }
 
   .haul-map {
@@ -4487,6 +5495,229 @@
   color: var(--color-orbital-strong) !important;
 }
 
+/* Extend boom: small vertical drag slider with a highlighted release band. */
+.lp-extend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.lp-extend--next {
+  border-color: var(--color-orbital);
+  box-shadow: 0 0 0 1px var(--color-orbital-dim);
+}
+
+.lp-extend--done {
+  opacity: 0.75;
+}
+
+.lp-extend__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.lp-extend-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.lp-extend-track {
+  position: relative;
+  width: 2.25rem;
+  height: 6.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: #0c1016;
+  cursor: grab;
+  touch-action: none;
+  flex-shrink: 0;
+}
+
+.lp-extend-track--disabled {
+  cursor: default;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.lp-extend-track__sweet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: color-mix(in srgb, var(--color-orbital) 30%, transparent);
+  border-top: 1px dashed var(--color-orbital-strong);
+  border-bottom: 1px dashed var(--color-orbital-strong);
+}
+
+.lp-extend-track__fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #7ec8f0 0%, var(--color-orbital) 100%);
+  opacity: 0.6;
+  transition: height 0.03s linear;
+}
+
+.lp-extend-track__handle {
+  position: absolute;
+  left: 50%;
+  width: 1.7rem;
+  height: 0.6rem;
+  transform: translate(-50%, 50%);
+  border-radius: var(--radius-sm);
+  background: var(--color-amber);
+  box-shadow: 0 0 8px rgba(255, 198, 39, 0.5);
+  transition: bottom 0.03s linear;
+}
+
+.lp-extend-feedback {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  max-width: 12rem;
+}
+
+/* Swing over vehicle: press-and-hold with a fill bar and release band. */
+.lp-swing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  min-width: 14rem;
+}
+
+.lp-swing--next {
+  border-color: var(--color-orbital);
+  box-shadow: 0 0 0 1px var(--color-orbital-dim);
+}
+
+.lp-swing--done {
+  opacity: 0.75;
+}
+
+.lp-swing-btn--holding {
+  box-shadow: 0 0 0 2px var(--color-amber-dim);
+}
+
+/* Sweet-spot reached while holding — bright green "let go now" cue. */
+.lp-swing-btn--sweet {
+  background: var(--color-brand-green) !important;
+  border-color: var(--color-brand-green) !important;
+  color: #0c1016 !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand-green) 45%, transparent);
+  animation: lp-swing-pulse-btn 0.5s ease-in-out infinite;
+}
+
+/* Held past the sweet spot — red "you missed it" cue. */
+.lp-swing-btn--late {
+  background: #c0392b !important;
+  border-color: #c0392b !important;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.45);
+}
+
+.lp-swing-bar {
+  position: relative;
+  width: 100%;
+  height: 1.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: #0c1016;
+  overflow: hidden;
+  transition: border-color 0.1s linear, box-shadow 0.1s linear;
+}
+
+.lp-swing-bar--sweet {
+  border-color: var(--color-brand-green);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-brand-green) 55%, transparent);
+  animation: lp-swing-pulse-bar 0.5s ease-in-out infinite;
+}
+
+.lp-swing-bar--late {
+  border-color: #c0392b;
+  box-shadow: 0 0 12px rgba(192, 57, 43, 0.5);
+}
+
+.lp-swing-bar__sweet {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--color-brand-green) 32%, transparent);
+  border-left: 1px dashed var(--color-brand-green);
+  border-right: 1px dashed var(--color-brand-green);
+}
+
+.lp-swing-bar__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #e8c040 0%, var(--color-amber) 100%);
+  transition: width 0.03s linear;
+}
+
+.lp-swing-bar--sweet .lp-swing-bar__fill {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-brand-green) 60%, var(--color-amber)) 0%, var(--color-brand-green) 100%);
+}
+
+.lp-swing-bar--late .lp-swing-bar__fill {
+  background: linear-gradient(90deg, var(--color-amber) 0%, #c0392b 100%);
+}
+
+.lp-swing-bar__readout {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+@keyframes lp-swing-pulse-bar {
+  0%, 100% {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--color-brand-green) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 22px color-mix(in srgb, var(--color-brand-green) 85%, transparent);
+  }
+}
+
+@keyframes lp-swing-pulse-btn {
+  0%, 100% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand-green) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-brand-green) 70%, transparent);
+  }
+}
+
+.lp-swing-feedback {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.lp-swing-feedback--sweet {
+  color: var(--color-brand-green);
+}
+
+.lp-swing-feedback--late {
+  color: #e0574a;
+}
+
 .lp-fuel-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4512,10 +5743,14 @@
 
 .lp-gauge__fill {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  transition: height 0.05s linear;
+  inset: 0;
+  /* Scale from a full-height box rather than animating `height` — a layout
+     + paint property that can visually lag behind state during a sustained
+     hold. `transform` is compositor-only, so it always paints every frame
+     regardless of main-thread scheduling. */
+  transform-origin: bottom;
+  transition: transform 0.05s linear;
+  will-change: transform;
 }
 
 .lp-gauge__fill--lox {
@@ -6581,19 +7816,18 @@
   }
 }
 
-/* Narrow layouts: stack brand / metrics / actions */
+/* Narrow layouts: stack brand / nav / metrics rather than overflowing. */
 @media (max-width: 900px) {
   .top-bar {
-    grid-template-columns: 1fr;
     gap: var(--space-3);
   }
 
-  .top-bar__metrics {
-    flex-wrap: wrap;
+  .top-bar__nav {
+    margin-left: 0;
   }
 
-  .top-bar__actions {
-    justify-content: flex-start;
+  .stage-nav__metrics {
+    flex-wrap: wrap;
   }
 }
 
@@ -7209,44 +8443,6 @@
   display: block;
 }
 
-/* Off-to-the-side pair: Regulation + Customer Portal. */
-.stage-nav__side {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-/* Formal government navy/green - distinct from customer magenta and orange stage group. */
-.stage-nav__regulation-btn {
-  flex-shrink: 0;
-  padding: 0.65rem 1.25rem;
-  border: 1px solid var(--color-regulation-accent);
-  border-radius: var(--radius-md);
-  background: var(--color-regulation-accent-dim);
-  color: color-mix(in srgb, var(--color-brand-green) 55%, white);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  transition:
-    color 120ms ease,
-    background 120ms ease,
-    box-shadow 120ms ease;
-}
-
-.stage-nav__regulation-btn:hover {
-  background: color-mix(in srgb, var(--color-regulation-accent) 28%, var(--color-regulation-accent-dim));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-regulation-accent) 55%, transparent);
-}
-
-.stage-nav__regulation-btn--active {
-  background: var(--color-regulation-accent-strong);
-  color: #e8f0e4;
-  border-color: var(--color-brand-green);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand-green) 50%, transparent);
-}
-
 /* ── Regulation site (fictional NSLA government library) ── */
 
 .regulation-panel .view-panel__body {
@@ -7740,5 +8936,281 @@
 
   .regulation-content {
     max-height: none;
+  }
+}
+
+/* ==========================================================================
+   Create Invoices — standalone 5S teaching module (no redesign budget link)
+   ========================================================================== */
+
+.invoice-progress {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-dim);
+}
+
+.invoice-launch-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* "Shine" 5S lever: clearer separation/spacing between records. */
+.invoice-launch-list--shine {
+  gap: var(--space-4);
+}
+
+.invoice-launch-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
+.invoice-launch-list--shine .invoice-launch-card {
+  border-color: color-mix(in srgb, var(--color-brand-green) 30%, var(--color-border));
+  background: color-mix(in srgb, var(--color-brand-green) 5%, var(--color-surface-raised));
+}
+
+.invoice-launch-card__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.invoice-launch-card__mission {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.invoice-launch-card__meta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.invoice-launch-card__note {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--color-text-dim);
+}
+
+.invoice-launch-card__action {
+  flex-shrink: 0;
+}
+
+.invoice-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.invoice-status-pill--sent {
+  color: var(--color-brand-green);
+  background: color-mix(in srgb, var(--color-brand-green) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand-green) 45%, var(--color-border));
+}
+
+.invoice-draft {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) minmax(16rem, 1.2fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.invoice-draft__source,
+.invoice-draft__form,
+.invoice-draft__review {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
+.invoice-draft__source-title,
+.invoice-draft__form-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.invoice-draft__source-fields {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.invoice-draft__source-fields div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 0.82rem;
+}
+
+.invoice-draft__source-fields dt {
+  color: var(--color-text-dim);
+}
+
+.invoice-draft__source-fields dd {
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: right;
+}
+
+.invoice-draft__source-note {
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--color-text-dim);
+}
+
+.invoice-draft__form,
+.invoice-draft__review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.invoice-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.invoice-field__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.invoice-field__input {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: #0c1016;
+  color: var(--color-text);
+  font-size: 0.85rem;
+}
+
+.invoice-field__input:focus-visible {
+  outline: 2px solid var(--color-orbital);
+  outline-offset: 1px;
+}
+
+.invoice-form-error {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e0574a;
+}
+
+.invoice-draft__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.invoice-redesign {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.invoice-redesign__note {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-brand-green) 45%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-brand-green) 12%, var(--color-surface));
+  color: var(--color-text);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.invoice-redesign__note strong {
+  color: var(--color-brand-green);
+}
+
+.invoice-lever-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--space-3);
+}
+
+.invoice-lever-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background 140ms ease;
+}
+
+.invoice-lever-card:hover {
+  border-color: var(--color-brand-green);
+  background: color-mix(in srgb, var(--color-brand-green) 8%, var(--color-surface-raised));
+}
+
+.invoice-lever-card--selected {
+  border-color: var(--color-brand-green);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand-green) 50%, transparent);
+  background: color-mix(in srgb, var(--color-brand-green) 16%, var(--color-surface-raised));
+}
+
+.invoice-lever-card__term {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.invoice-lever-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.invoice-lever-card__desc {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.invoice-lever-card__status {
+  margin-top: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.invoice-lever-card--selected .invoice-lever-card__status {
+  color: var(--color-brand-green);
+}
+
+@media (max-width: 720px) {
+  .invoice-draft {
+    grid-template-columns: 1fr;
   }
 }

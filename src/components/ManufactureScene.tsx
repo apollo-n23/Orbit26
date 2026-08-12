@@ -11,6 +11,10 @@ import type { ProcessMachine, RunState } from '../types/process'
 import {
   BOOSTER_TRAVEL_MS,
   MACHINE_APPROACH_MS,
+  MACHINE_FAIL_APPROACH_MS,
+  MACHINE_FAIL_GLOW_MS,
+  MACHINE_FAIL_RETREAT_MS,
+  MACHINE_HALF_SPEED_MULTIPLIER,
   MACHINE_WORK_MS,
 } from '../types/process'
 import { Booster } from './Booster'
@@ -29,19 +33,43 @@ interface ManufactureSceneProps {
    * next required station automatically (no drag).
    */
   autoMoveBooster?: boolean
+  /** Session timer paused — locks drag/Activate/code entry until resumed. */
+  paused?: boolean
 }
 
 type MachinePhase = 'idle' | 'approaching' | 'working' | 'retreating'
 type DropFeedback = 'wrong' | 'miss' | null
 
-/** Entrance of the belt (left of first stop), as % of production-line width. */
-const ENTRANCE_LEFT_PCT = -6
+/**
+ * Entrance of the belt (left of first stop), as % of production-line width.
+ * Kept positive so the booster starts fully on-screen (a negative value here
+ * previously spawned it partly clipped by manufacture-scene's overflow:hidden).
+ */
+const ENTRANCE_LEFT_PCT = 4
 /** How close (line %) a drop must be to snap onto a station stop. */
 const SNAP_THRESHOLD_PCT = 9
-/** Vertical target when a machine is on the line (rem). */
-const LINE_APPROACH_Y_REM = 5.25
+/**
+ * Vertical target when a machine is on the line (rem) — the shared baseline
+ * gap every machine travels on top of its own parkOffset. Raised from the
+ * original 5.25rem so the belt reads as meaningfully further from the
+ * machines (movement-waste teaching lever); `.manufacture-floor`'s gap
+ * between `.station-row` and the belt is raised by the same amount so the
+ * machine's travel still lands correctly on the belt.
+ */
+const LINE_APPROACH_Y_REM = 7.75
 /** Fallback park distance if data omits parkOffset. */
 const DEFAULT_PARK_OFFSET = 1.5
+
+/**
+ * Guide line endpoints, as % position within `.manufacture-drag-guide-wrap`
+ * (which spans the production line + the feedback text below it). The wrap's
+ * height is stable (fixed rem-based layout), so these are tuned to land at
+ * the belt's vertical center and the feedback box's top edge without having
+ * to measure the DOM.
+ */
+const GUIDE_LINE_TARGET_X = 50
+const GUIDE_LINE_FEEDBACK_Y = 82
+const GUIDE_LINE_BOOSTER_Y = 36
 
 function MachineVisual({ kind }: { kind: ProcessMachine['kind'] }) {
   if (kind === 'welder') {
@@ -103,10 +131,11 @@ export function ManufactureScene({
   showProceed = false,
   onProceed,
   autoMoveBooster = false,
+  paused = false,
 }: ManufactureSceneProps) {
   const required = machines[run.nextMachineIndex]
   const stepDone = run.status === 'step_complete'
-  const canInteract = run.status === 'running' && required != null
+  const canInteract = run.status === 'running' && required != null && !paused
 
   const activeMachine = run.activeMachineId
     ? machines.find((m) => m.id === run.activeMachineId)
@@ -156,7 +185,7 @@ export function ManufactureScene({
     snappedLinePos === required.linePosition
 
   /** Operator may drag only between machine cycles (not during approach/work/retreat). */
-  const canDrag = run.status === 'running' && !autoMoveBooster
+  const canDrag = run.status === 'running' && !autoMoveBooster && !paused
 
   const showDropHint =
     canDrag && !boosterArrived && required != null && !dragging
@@ -184,11 +213,15 @@ export function ManufactureScene({
     }
 
     // Fresh manufacture step: place booster at the entrance for the operator to drag
-    // (or at the first required stop when auto-move is enabled).
+    // (or at the first required stop when auto-move is enabled). Skipped when
+    // returning from a damaged machine's failed attempt (pendingRetryMachineId
+    // set) — the booster/code the operator already lined up must survive so
+    // the guaranteed-success retry click doesn't need to redo any of it.
     if (
       run.status === 'running' &&
       run.nextMachineIndex === 0 &&
-      run.completedMachineIds.length === 0
+      run.completedMachineIds.length === 0 &&
+      run.pendingRetryMachineId == null
     ) {
       setCodeDrafts({})
       setDropFeedback(null)
@@ -207,6 +240,7 @@ export function ManufactureScene({
     run.currentStepIndex,
     run.nextMachineIndex,
     run.completedMachineIds.length,
+    run.pendingRetryMachineId,
     autoMoveBooster,
     required?.linePosition,
     stopLeftByLinePos,
@@ -243,21 +277,46 @@ export function ManufactureScene({
       return
     }
 
+    // Damaged machine's failed attempt: approach the line (as if about to
+    // work), glow red in place, then retreat — never reaches "done".
+    if (run.activeMachineWillFail) {
+      setMachinePhase('approaching')
+      const glowTimer = window.setTimeout(() => {
+        setMachinePhase('working')
+      }, MACHINE_FAIL_APPROACH_MS)
+      const retreatTimer = window.setTimeout(() => {
+        setMachinePhase('retreating')
+      }, MACHINE_FAIL_APPROACH_MS + MACHINE_FAIL_GLOW_MS)
+      return () => {
+        window.clearTimeout(glowTimer)
+        window.clearTimeout(retreatTimer)
+      }
+    }
+
     // Duration matches MACHINE_APPROACH_MS so MACHINE_CYCLE_MS in SimulationView
     // stays aligned with finishMachineWork. Distance still varies via parkOffset.
+    // A damaged machine's retry-after-failure run plays at half speed.
+    const speedMultiplier = run.activeMachineHalfSpeed
+      ? MACHINE_HALF_SPEED_MULTIPLIER
+      : 1
     setMachinePhase('approaching')
     const workTimer = window.setTimeout(() => {
       setMachinePhase('working')
-    }, MACHINE_APPROACH_MS)
+    }, MACHINE_APPROACH_MS * speedMultiplier)
     const retreatTimer = window.setTimeout(() => {
       setMachinePhase('retreating')
-    }, MACHINE_APPROACH_MS + MACHINE_WORK_MS)
+    }, (MACHINE_APPROACH_MS + MACHINE_WORK_MS) * speedMultiplier)
 
     return () => {
       window.clearTimeout(workTimer)
       window.clearTimeout(retreatTimer)
     }
-  }, [run.status, run.activeMachineId])
+  }, [
+    run.status,
+    run.activeMachineId,
+    run.activeMachineHalfSpeed,
+    run.activeMachineWillFail,
+  ])
 
   const clearFeedbackLater = useCallback(() => {
     if (feedbackTimerRef.current != null) {
@@ -380,14 +439,26 @@ export function ManufactureScene({
     const isRetreating = isActive && machinePhase === 'retreating'
     const isLocked =
       !isCurrentRequired && !isActive && !isDone
+    const isPendingRetry = run.pendingRetryMachineId === machine.id
+    const isFailing = isActive && run.activeMachineWillFail
+    const isFailGlow = isFailing && isWorkingPhase
+    const travelMs = isFailing
+      ? MACHINE_FAIL_RETREAT_MS
+      : isActive && run.activeMachineHalfSpeed
+        ? MACHINE_APPROACH_MS * MACHINE_HALF_SPEED_MULTIPLIER
+        : MACHINE_APPROACH_MS
 
     const offset = parkOffsetOf(machine)
     const draft = codeDrafts[machine.id] ?? ''
     const codeInputEnabled =
-      isCurrentRequired && run.status === 'running' && !isDone
+      isCurrentRequired && run.status === 'running' && !isDone && !paused
 
     let hint: string | null = null
-    if (canActivate) hint = 'Code accepted — activate'
+    if (isPendingRetry) hint = 'Activation failed — click Activate again'
+    else if (isFailing && machinePhase === 'approaching') hint = 'Activating…'
+    else if (isFailGlow) hint = 'Malfunction!'
+    else if (isFailing && isRetreating) hint = 'Retracting…'
+    else if (canActivate) hint = 'Code accepted — activate'
     else if (isCurrentRequired && boosterArrived && !codeOk)
       hint = 'Enter access code'
     else if (isWaitingBooster) hint = 'Drag booster here'
@@ -419,11 +490,13 @@ export function ManufactureScene({
             isCurrentRequired && boosterArrived && !codeOk
               ? 'factory-machine--code-entry'
               : '',
-            isWorkingPhase ? 'factory-machine--working' : '',
+            isWorkingPhase && !isFailing ? 'factory-machine--working' : '',
+            isFailGlow ? 'factory-machine--fail-glow' : '',
             isAtLine ? 'factory-machine--at-line' : '',
             isRetreating ? 'factory-machine--retreating' : '',
             isDone ? 'factory-machine--done' : '',
             isLocked ? 'factory-machine--locked' : '',
+            isPendingRetry ? 'factory-machine--retry' : '',
           ]
             .filter(Boolean)
             .join(' ')}
@@ -431,7 +504,7 @@ export function ManufactureScene({
             {
               ['--park-offset']: `${offset}rem`,
               ['--line-approach-y']: `${LINE_APPROACH_Y_REM}rem`,
-              ['--machine-travel-ms']: `${MACHINE_APPROACH_MS}ms`,
+              ['--machine-travel-ms']: `${travelMs}ms`,
             } as CSSProperties
           }
         >
@@ -440,6 +513,14 @@ export function ManufactureScene({
           </span>
           <MachineVisual kind={machine.kind} />
           <span className="factory-machine__label">{machine.name}</span>
+          {machine.damaged && (
+            <span
+              className="factory-machine__damaged-pill"
+              title="Every so often, this machine fails and need to be triggered again. It's a known issue, and it causes defects."
+            >
+              DAMAGED
+            </span>
+          )}
 
           {!isDone && !isActive && (
             <label className="factory-machine__code">
@@ -490,6 +571,7 @@ export function ManufactureScene({
               className={[
                 'factory-machine__hint',
                 isDone ? 'factory-machine__hint--done' : '',
+                isPendingRetry ? 'factory-machine__hint--retry' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -508,6 +590,8 @@ export function ManufactureScene({
     feedbackCopy = `Wrong station — next is sequence ${required.sequence} (${required.name}).`
   } else if (dropFeedback === 'miss') {
     feedbackCopy = 'Drop on a station stop on the belt.'
+  } else if (required && run.pendingRetryMachineId === required.id) {
+    feedbackCopy = `${required.name} malfunctioned — click Activate again. It will run at half speed.`
   } else if (showDropHint && required) {
     feedbackCopy = `Drag the booster to station ${required.sequence} (${required.name}), then enter its access code.`
   } else if (
@@ -549,136 +633,179 @@ export function ManufactureScene({
       </div>
       <div className="manufacture-scene__sky" aria-hidden="true" />
 
-      {required && !stepDone && (
-        <div
-          className="manufacture-code-banner"
-          role="status"
-          aria-live="polite"
-        >
-          <span className="manufacture-code-banner__kicker">
-            Station access code
-          </span>
-          <span className="manufacture-code-banner__body">
-            Station {required.sequence} · {required.name}
-          </span>
-          <span className="manufacture-code-banner__code" aria-label="Access code">
-            {required.accessCode}
-          </span>
-        </div>
-      )}
-
       <div className="manufacture-floor">
-        <div
-          className="station-row"
-          style={{
-            gridTemplateColumns: `repeat(${stationCount}, minmax(0, 1fr))`,
-          }}
-        >
-          {stations.map(renderMachine)}
-        </div>
-
-        <div className="production-line" ref={lineRef}>
-          <div className="production-line__belt" aria-hidden="true">
-            <span className="production-line__groove" />
-            <span className="production-line__groove" />
-            <span className="production-line__groove" />
-            {stations.map((machine) => {
-              const isTargetStop =
-                (activeMachine?.id === machine.id ||
-                  required?.id === machine.id) &&
-                !stepDone
-              const isNextDropTarget =
-                canInteract &&
-                required?.id === machine.id &&
-                !boosterArrived
-              return (
-                <span
-                  key={`stop-${machine.id}`}
-                  className={[
-                    'production-line__stop',
-                    isTargetStop ? 'production-line__stop--active' : '',
-                    isNextDropTarget
-                      ? 'production-line__stop--drop-target'
-                      : '',
-                    run.completedMachineIds.includes(machine.id)
-                      ? 'production-line__stop--done'
-                      : '',
-                    snappedLinePos === machine.linePosition
-                      ? 'production-line__stop--occupied'
-                      : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  style={{
-                    left: `${linePosPercent(machine.linePosition, stationCount)}%`,
-                  }}
-                />
-              )
-            })}
-          </div>
-
+        <div className="manufacture-stations-row">
           <div
-            className={[
-              'production-line__carrier',
-              boosterArrived ? 'production-line__carrier--arrived' : '',
-              canDrag ? 'production-line__carrier--draggable' : '',
-              dragging ? 'production-line__carrier--dragging' : '',
-              dropFeedback === 'wrong'
-                ? 'production-line__carrier--wrong'
-                : '',
-              dropFeedback === 'miss' ? 'production-line__carrier--miss' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
+            className="station-row"
             style={{
-              left: `${boosterLeftPct}%`,
-              transitionDuration: dragging ? '0ms' : `${BOOSTER_TRAVEL_MS}ms`,
+              gridTemplateColumns: `repeat(${stationCount}, minmax(0, 1fr))`,
             }}
-            onPointerDown={handleCarrierPointerDown}
-            onPointerMove={handleCarrierPointerMove}
-            onPointerUp={handleCarrierPointerUp}
-            onPointerCancel={handleCarrierPointerUp}
-            role="slider"
-            aria-label={
-              canDrag
-                ? 'Booster on the production line — drag to the next station stop'
-                : stepDone
-                  ? 'Booster manufacture complete'
-                  : 'Booster on the production line'
-            }
-            aria-valuemin={0}
-            aria-valuemax={stationCount - 1}
-            aria-valuenow={snappedLinePos ?? -1}
-            aria-disabled={!canDrag}
           >
-            <Booster
-              showNose={false}
-              worked={machinePhase === 'working'}
-              ready={stepDone}
-              label={
-                stepDone
-                  ? 'Booster manufacture complete'
-                  : 'Booster on the production line'
-              }
-            />
+            {stations.map(renderMachine)}
           </div>
-        </div>
 
-        {feedbackCopy && (
-          <p
-            className={[
-              'manufacture-scene__feedback',
-              dropFeedback === 'wrong' || dropFeedback === 'miss'
-                ? 'manufacture-scene__feedback--alert'
-                : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
+          {/*
+            Access-code terminal — sits beside the station cards (not floating
+            over the top of the scene) so parked machines have the full floor
+            height above the belt to work with. Always rendered (even with no
+            active code) so the station row's width never jumps when the code
+            appears/disappears. `.manufacture-terminal__screen` is a plain dark
+            panel today — a future pass can drop a computer-terminal background
+            image onto it without touching this markup.
+          */}
+          <div
+            className="manufacture-terminal"
+            role="status"
             aria-live="polite"
           >
-            {feedbackCopy}
-          </p>
-        )}
+            <div className="manufacture-terminal__screen">
+              {required && !stepDone ? (
+                <>
+                  <span className="manufacture-terminal__kicker">
+                    Station access code
+                  </span>
+                  <span className="manufacture-terminal__body">
+                    Station {required.sequence} · {required.name}
+                  </span>
+                  <span
+                    className="manufacture-terminal__code"
+                    aria-label="Access code"
+                  >
+                    {required.accessCode}
+                  </span>
+                </>
+              ) : (
+                <span className="manufacture-terminal__standby">
+                  Standby
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="manufacture-drag-guide-wrap">
+          <div className="production-line" ref={lineRef}>
+            <div className="production-line__belt" aria-hidden="true">
+              <span className="production-line__groove" />
+              <span className="production-line__groove" />
+              <span className="production-line__groove" />
+              {stations.map((machine) => {
+                const isTargetStop =
+                  (activeMachine?.id === machine.id ||
+                    required?.id === machine.id) &&
+                  !stepDone
+                const isNextDropTarget =
+                  canInteract &&
+                  required?.id === machine.id &&
+                  !boosterArrived
+                return (
+                  <span
+                    key={`stop-${machine.id}`}
+                    className={[
+                      'production-line__stop',
+                      isTargetStop ? 'production-line__stop--active' : '',
+                      isNextDropTarget
+                        ? 'production-line__stop--drop-target'
+                        : '',
+                      run.completedMachineIds.includes(machine.id)
+                        ? 'production-line__stop--done'
+                        : '',
+                      snappedLinePos === machine.linePosition
+                        ? 'production-line__stop--occupied'
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    style={{
+                      left: `${linePosPercent(machine.linePosition, stationCount)}%`,
+                    }}
+                  />
+                )
+              })}
+            </div>
+
+            <div
+              className={[
+                'production-line__carrier',
+                boosterArrived ? 'production-line__carrier--arrived' : '',
+                canDrag ? 'production-line__carrier--draggable' : '',
+                dragging ? 'production-line__carrier--dragging' : '',
+                dropFeedback === 'wrong'
+                  ? 'production-line__carrier--wrong'
+                  : '',
+                dropFeedback === 'miss' ? 'production-line__carrier--miss' : '',
+                showDropHint ? 'production-line__carrier--needs-attention' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              style={{
+                left: `${boosterLeftPct}%`,
+                transitionDuration: dragging ? '0ms' : `${BOOSTER_TRAVEL_MS}ms`,
+              }}
+              onPointerDown={handleCarrierPointerDown}
+              onPointerMove={handleCarrierPointerMove}
+              onPointerUp={handleCarrierPointerUp}
+              onPointerCancel={handleCarrierPointerUp}
+              role="slider"
+              aria-label={
+                canDrag
+                  ? 'Booster on the production line — drag to the next station stop'
+                  : stepDone
+                    ? 'Booster manufacture complete'
+                    : 'Booster on the production line'
+              }
+              aria-valuemin={0}
+              aria-valuemax={stationCount - 1}
+              aria-valuenow={snappedLinePos ?? -1}
+              aria-disabled={!canDrag}
+            >
+              <Booster
+                showNose={false}
+                worked={machinePhase === 'working' && !run.activeMachineWillFail}
+                ready={stepDone}
+                label={
+                  stepDone
+                    ? 'Booster manufacture complete'
+                    : 'Booster on the production line'
+                }
+              />
+            </div>
+          </div>
+
+          {feedbackCopy && (
+            <p
+              className={[
+                'manufacture-scene__feedback',
+                dropFeedback === 'wrong' || dropFeedback === 'miss'
+                  ? 'manufacture-scene__feedback--alert'
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              aria-live="polite"
+            >
+              {feedbackCopy}
+            </p>
+          )}
+
+          {showDropHint && required && (
+            <svg
+              className="manufacture-drag-guide"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <line
+                className="manufacture-drag-guide__line"
+                x1={GUIDE_LINE_TARGET_X}
+                y1={GUIDE_LINE_FEEDBACK_Y}
+                x2={boosterLeftPct}
+                y2={GUIDE_LINE_BOOSTER_Y}
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          )}
+        </div>
       </div>
 
       {showProceed && onProceed && (

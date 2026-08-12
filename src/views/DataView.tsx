@@ -1,16 +1,64 @@
-import type { LeadTimeEntry, RedesignCostBreakdown } from '../types/process'
+import { useRef, useState } from 'react'
+import type { LeadTimeEntry, ProcessVersion, RedesignCostBreakdown } from '../types/process'
 import { formatLeadTime } from '../lib/simulation'
 import { averageLeadTimeMs, launchDurationsMs } from '../lib/roundMetrics'
 import { REDESIGN_BUDGET } from '../lib/redesignCost'
 import { formatHeightAchieved } from '../lib/flightMetrics'
 import { buildDataCsv, downloadCsv } from '../lib/csvExport'
+import {
+  buildSaveFileText,
+  type SaveFileV1,
+  type UploadSaveResult,
+} from '../lib/saveFile'
 import { RoundLeadTimeCompare } from '../components/RoundLeadTimeCompare'
 
-/** One round's live lead-time log, labeled for display on the Data tab. */
+/** Downward arrow into a tray — pairs with "Save Session Data" (download). */
+function SaveIcon() {
+  return (
+    <svg
+      className="btn__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 4v9" />
+      <path d="M8 9l4 4 4-4" />
+      <path d="M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
+    </svg>
+  )
+}
+
+/** Upward arrow out of a tray — pairs with "Upload Session Data" (restore). */
+function UploadIcon() {
+  return (
+    <svg
+      className="btn__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 13V4" />
+      <path d="M8 8l4-4 4 4" />
+      <path d="M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
+    </svg>
+  )
+}
+
+/** One round's live lead-time log + process, labeled for display on the Data tab. */
 export interface RoundLeadTimeSection {
   roundId: 1 | 2
   roundLabel: string
   entries: LeadTimeEntry[]
+  /** This round's current process (redesign choices) — carried into the save file. */
+  process: ProcessVersion
 }
 
 interface DataViewProps {
@@ -19,6 +67,11 @@ interface DataViewProps {
   rocketsGoal?: number
   /** To-be confirmed redesign cost breakdown, or null before Confirm. */
   round2CostBreakdown?: RedesignCostBreakdown | null
+  /**
+   * Reads back a previously downloaded save file's text and restores both
+   * rounds' state from it. Undefined if this Data tab can't restore state.
+   */
+  onUploadData?: (fileText: string) => UploadSaveResult
 }
 
 function formatCost(cost: number | undefined): string {
@@ -33,6 +86,10 @@ function RedesignCostSummary({ cost }: { cost: RedesignCostBreakdown }) {
     {
       label: 'Manufacture — auto-transfer upgrade',
       value: cost.autoTransferCost,
+    },
+    {
+      label: 'Manufacture — Form press arm repair',
+      value: cost.formPressRepairCost,
     },
     { label: 'Haul road — tiles', value: cost.roadCost },
     { label: 'Launch prep — technology', value: cost.launchPrepTechCost },
@@ -96,6 +153,7 @@ function RoundLeadBoard({
   const { roundLabel, entries } = section
   const bestMs =
     entries.length > 0 ? Math.min(...entries.map((e) => e.durationMs)) : null
+  const avgMs = averageLeadTimeMs(entries)
   const ordered = [...entries].sort((a, b) => b.runNumber - a.runNumber)
   const roundComplete = entries.length >= rocketsGoal
   const hasAnyCost = entries.some((e) => e.costBreakdown != null)
@@ -126,9 +184,9 @@ function RoundLeadBoard({
               </span>
             </div>
             <div className="lead-board__stat lead-board__stat--best">
-              <span className="lead-board__stat-label">Best lead time</span>
+              <span className="lead-board__stat-label">Average lead time</span>
               <span className="lead-board__stat-value">
-                {formatLeadTime(bestMs != null ? bestMs / 1000 : null)}
+                {formatLeadTime(avgMs != null ? avgMs / 1000 : null)}
               </span>
             </div>
             {hasAnyCost && (
@@ -220,7 +278,14 @@ export function DataView({
   rounds,
   rocketsGoal = 3,
   round2CostBreakdown = null,
+  onUploadData,
 }: DataViewProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadStatus, setUploadStatus] = useState<UploadSaveResult | null>(
+    null,
+  )
+  const uploadStatusTimerRef = useRef<number | null>(null)
+
   const round1 = rounds.find((r) => r.roundId === 1)
   const round2 = rounds.find((r) => r.roundId === 2)
 
@@ -241,7 +306,54 @@ export function DataView({
     const csv = buildDataCsv(
       rounds.map((r) => ({ roundLabel: r.roundLabel, entries: r.entries })),
     )
-    downloadCsv('orbit26-lead-time-data.csv', csv)
+    const save: SaveFileV1 = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      rounds: rounds.map((r) => ({
+        roundId: r.roundId,
+        process: r.process,
+        leadTimeLog: r.entries,
+      })),
+    }
+    downloadCsv('orbit26-lead-time-data.csv', buildSaveFileText(csv, save))
+  }
+
+  function handleUploadClick() {
+    fileInputRef.current?.click()
+  }
+
+  function showUploadStatus(result: UploadSaveResult) {
+    if (uploadStatusTimerRef.current != null) {
+      window.clearTimeout(uploadStatusTimerRef.current)
+    }
+    setUploadStatus(result)
+    uploadStatusTimerRef.current = window.setTimeout(() => {
+      setUploadStatus(null)
+      uploadStatusTimerRef.current = null
+    }, 6000)
+  }
+
+  function handleFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    // Reset so re-selecting the same file still fires this handler.
+    event.target.value = ''
+    if (!file) return
+    if (!onUploadData) {
+      showUploadStatus({
+        ok: false,
+        message: 'Uploading data is not available here.',
+      })
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const text = typeof reader.result === 'string' ? reader.result : ''
+      showUploadStatus(onUploadData(text))
+    }
+    reader.onerror = () => {
+      showUploadStatus({ ok: false, message: 'Could not read that file.' })
+    }
+    reader.readAsText(file)
   }
 
   return (
@@ -261,11 +373,42 @@ export function DataView({
             className="btn btn--ghost"
             onClick={handleDownloadCsv}
             disabled={!hasAnyEntries}
+            title="Download this session's lead-time data as a CSV — also doubles as a save file you can restore later with Upload Session Data."
           >
-            Download CSV
+            <SaveIcon />
+            Save Session Data
           </button>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleUploadClick}
+            title="Restore both rounds' lead-time data and redesign choices from a file previously downloaded with Save Session Data."
+          >
+            <UploadIcon />
+            Upload Session Data
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv,text/plain"
+            onChange={handleFileSelected}
+            style={{ display: 'none' }}
+          />
         </div>
       </header>
+
+      {uploadStatus && (
+        <p
+          className={
+            uploadStatus.ok
+              ? 'data-upload-status data-upload-status--ok'
+              : 'data-upload-status data-upload-status--error'
+          }
+          role="status"
+        >
+          {uploadStatus.message}
+        </p>
+      )}
 
       <div className="view-panel__body data-body">
         {showFullCompare && (

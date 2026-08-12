@@ -10,7 +10,7 @@ export interface Rect {
   height: number
 }
 
-/** Scene size used by the integrate-payload map (SVG user units). */
+/** Scene size used by the haul-road map (SVG user units). */
 export const SCENE_WIDTH = 800
 export const SCENE_HEIGHT = 480
 

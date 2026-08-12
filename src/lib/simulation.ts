@@ -7,7 +7,7 @@ import type {
   RunState,
   SessionMetrics,
 } from '../types/process'
-import { LAUNCH_PREP_ACTIONS } from '../types/process'
+import { LAUNCH_PREP_ACTIONS, MACHINE_DAMAGED_FAILURE_CHANCE } from '../types/process'
 import { resolveLaunchSeqConfig } from './processEdit'
 
 export function getActiveStep(
@@ -42,14 +42,42 @@ export function beginRun(prev: RunState): RunState {
     completedMachineIds: [],
     runStartedAt: Date.now(),
     runEndedAt: null,
+    pausedAt: null,
+    pausedMs: 0,
   }
 }
 
-/** Wall-clock elapsed ms for the current/last unit run. */
+/** True while the session timer is paused (process interactions locked). */
+export function isPaused(run: RunState): boolean {
+  return run.pausedAt != null
+}
+
+/** Pause the wall-clock timer. No-op if already paused. */
+export function pauseRun(prev: RunState): RunState {
+  if (prev.pausedAt != null) return prev
+  return { ...prev, pausedAt: Date.now() }
+}
+
+/** Resume the wall-clock timer, folding the just-finished pause into pausedMs. No-op if not paused. */
+export function resumeRun(prev: RunState): RunState {
+  if (prev.pausedAt == null) return prev
+  return {
+    ...prev,
+    pausedAt: null,
+    pausedMs: prev.pausedMs + Math.max(0, Date.now() - prev.pausedAt),
+  }
+}
+
+/**
+ * Wall-clock elapsed ms for the current/last unit run, excluding any time
+ * spent paused (both time already folded into pausedMs and any pause
+ * currently open) — pausing the session stops the lead-time clock.
+ */
 export function wallClockMs(run: RunState, now = Date.now()): number | null {
   if (run.runStartedAt == null) return null
   const end = run.runEndedAt ?? now
-  return Math.max(0, end - run.runStartedAt)
+  const openPauseMs = run.pausedAt != null ? Math.max(0, end - run.pausedAt) : 0
+  return Math.max(0, end - run.runStartedAt - run.pausedMs - openPauseMs)
 }
 
 /**
@@ -71,6 +99,14 @@ export function completeUnitRun(
 
 /**
  * Operator clicked a machine. Only the next required machine is accepted.
+ *
+ * Damaged machines (as-is friction, repairable in To-be redesign) have a
+ * MACHINE_DAMAGED_FAILURE_CHANCE chance of failing the click outright. The
+ * roll happens here, up front, but the machine still plays out its
+ * failed-attempt animation (approach → glow red → retreat — see
+ * `failMachineWork`) rather than the click being a silent no-op. Once that
+ * finishes, the operator must click Activate again, which is guaranteed to
+ * succeed at half speed (`activeMachineHalfSpeed`).
  */
 export function startMachineWork(
   process: ProcessVersion,
@@ -86,10 +122,43 @@ export function startMachineWork(
   const required = machines[prev.nextMachineIndex]
   if (!required || required.id !== machineId) return prev
 
+  const isRetry = prev.pendingRetryMachineId === machineId
+  const willFail =
+    !isRetry &&
+    required.damaged === true &&
+    Math.random() < MACHINE_DAMAGED_FAILURE_CHANCE
+
   return {
     ...prev,
     status: 'machine_working',
     activeMachineId: machineId,
+    activeMachineWillFail: willFail,
+    activeMachineHalfSpeed: isRetry,
+    pendingRetryMachineId: null,
+  }
+}
+
+/**
+ * Called when a damaged machine's failed-attempt animation finishes
+ * (approach → glow red → retreat). Never completes the machine — puts it
+ * back to `running` with a pending retry, which `startMachineWork` will
+ * then guarantee succeeds at half speed.
+ */
+export function failMachineWork(prev: RunState): RunState {
+  if (
+    prev.status !== 'machine_working' ||
+    !prev.activeMachineId ||
+    !prev.activeMachineWillFail
+  ) {
+    return prev
+  }
+  return {
+    ...prev,
+    status: 'running',
+    pendingRetryMachineId: prev.activeMachineId,
+    activeMachineId: null,
+    activeMachineWillFail: false,
+    activeMachineHalfSpeed: false,
   }
 }
 
@@ -102,7 +171,13 @@ export function finishMachineWork(
   process: ProcessVersion,
   prev: RunState,
 ): RunState {
-  if (prev.status !== 'machine_working' || !prev.activeMachineId) return prev
+  if (
+    prev.status !== 'machine_working' ||
+    !prev.activeMachineId ||
+    prev.activeMachineWillFail
+  ) {
+    return prev
+  }
 
   const step = getActiveStep(process, prev)
   const machines = getStepMachines(step)
@@ -118,6 +193,7 @@ export function finishMachineWork(
       ...prev,
       status: 'step_complete',
       activeMachineId: null,
+      activeMachineHalfSpeed: false,
       nextMachineIndex,
       completedMachineIds,
     }
@@ -127,6 +203,7 @@ export function finishMachineWork(
     ...prev,
     status: 'running',
     activeMachineId: null,
+    activeMachineHalfSpeed: false,
     nextMachineIndex,
     completedMachineIds,
   }
@@ -378,6 +455,7 @@ export function isRunTimerActive(run: RunState): boolean {
     run.runStartedAt != null &&
     run.runEndedAt == null &&
     run.status !== 'idle' &&
-    run.status !== 'complete'
+    run.status !== 'complete' &&
+    run.pausedAt == null
   )
 }

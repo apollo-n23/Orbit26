@@ -4,10 +4,18 @@ interface BoosterProps {
   worked?: boolean
   label?: string
   /**
-   * When false, omit the nosecone — assembly (step 1) has not fitted one yet.
-   * Haul / launch prep keep the default (true).
+   * When false, omit the nosecone — assembly (step 1) has not fitted one yet,
+   * and haul road (step 2) hasn't either, since payload integration happens
+   * later at launch prep. Launch prep keeps the default (true).
    */
   showNose?: boolean
+  /**
+   * Engine nozzle style. Defaults to mirroring `showNose` (single expanding
+   * bell when there's no nose, matching Assembly's still-being-built
+   * booster) — Haul road overrides this to keep the completed booster's
+   * multi-nozzle engine even though its nose isn't fitted yet.
+   */
+  multiNozzleEngine?: boolean
 }
 
 const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
@@ -19,8 +27,10 @@ export function Booster({
   worked = false,
   label,
   showNose = true,
+  multiNozzleEngine = showNose,
 }: BoosterProps) {
   const isAssembly = !showNose
+  const singleBellEngine = !multiNozzleEngine
 
   return (
     <div
@@ -62,7 +72,7 @@ export function Booster({
         />
       </div>
 
-      {isAssembly ? (
+      {singleBellEngine ? (
         /* Single expanding bell nozzle (assembly / redesign preview). */
         <div className="booster__engine booster__engine--bell" aria-hidden="true">
           <span className="booster__nozzle-throat" />

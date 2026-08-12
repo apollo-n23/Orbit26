@@ -48,9 +48,11 @@ const TILES: IntranetTile[] = [
 export function HomeView({ activeStage, onNavigateStage }: HomeViewProps) {
   return (
     <div className="app-shell">
-      <header className="top-bar top-bar--round-done">
-        <SiteBrand subtitle="Orb-it Intranet" />
-      </header>
+      <SiteBrand
+        subtitle="Orb-it Intranet"
+        activeStage={activeStage}
+        onNavigate={onNavigateStage}
+      />
       <StageNav activeStage={activeStage} onNavigate={onNavigateStage} />
       <main className="app-main">
         <p className="home-scenario">
