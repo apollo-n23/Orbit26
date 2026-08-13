@@ -18,7 +18,9 @@ True alpha. Right-side outlet valves face the booster so hose geometry can attac
 | Arrangement | Side by side: LOX left, RP-1 right (not stacked) |
 | Desktop size | ~4.03×4.81 rem per tank (65% of a prior large farm size; was ~4× the original CSS shapes before that trim) |
 | Farm position | `.lp-umbilicals` `left: ~13.7%` (farm moved ~30% closer to the pad vs an earlier far-left placement); right edge at mated booster ~42% |
-| Hose behaviour | Each `.lp-umbilical` starts at that tank’s valve; **short stub** when disconnected; **width grows** to the vehicle port when connected; flow pulse / full unchanged |
+| Hose angle | LOX and RP-1 both `rotate(-4deg)` — **parallel** runs (RP-1 must not use the opposite tilt or the free end misses the hull) |
+| Hose tracks | LOX higher (`top` ~36% / port ~30%); RP-1 lower (`top` ~52% / port ~46%) |
+| Hose behaviour | Short stub when disconnected; when connected, each hose is pinned `left` at the tank valve and `right` at the vehicle port so it always meets the booster; flow pulse / full unchanged |
 
 ## Live DOM mapping
 

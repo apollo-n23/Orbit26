@@ -5422,34 +5422,42 @@
   max-width: 1.6rem;
 }
 
-/* LOX valve mid-right of left tank */
+/*
+ * Parallel hose runs (same slight upward tilt). LOX higher on the hull,
+ * RP-1 lower — both aim at ports on the right edge of this container.
+ */
 .lp-umbilical--lox {
   left: 3.09rem;
-  top: 38%;
+  top: 36%;
   background: linear-gradient(90deg, var(--color-orbital-strong), #7ab8e8);
   transform: rotate(-4deg);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital-strong) 35%, transparent);
 }
 
-/* RP-1 valve mid-right of right tank */
 .lp-umbilical--rp {
   left: 7.35rem;
-  top: 48%;
+  /* Lower parallel track; same angle as LOX so the free end meets the hull */
+  top: 52%;
   background: linear-gradient(90deg, #c49218, var(--color-brand-gold));
-  transform: rotate(5deg);
+  transform: rotate(-4deg);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-amber) 35%, transparent);
 }
 
-/* Connected: line reaches vehicle port on booster hull (right edge) */
+/*
+ * Connected: pin left at the tank valve and right at the vehicle port so
+ * each hose always spans to the booster regardless of container width.
+ */
 .lp-umbilicals--lox .lp-umbilical--lox {
   opacity: 0.95;
-  width: calc(100% - 3.09rem - 0.45rem);
+  right: 0.55rem;
+  width: auto;
   max-width: none;
 }
 
 .lp-umbilicals--rp .lp-umbilical--rp {
   opacity: 0.95;
-  width: calc(100% - 7.35rem - 0.45rem);
+  right: 0.55rem;
+  width: auto;
   max-width: none;
 }
 
@@ -5468,13 +5476,14 @@
     border-color 0.3s ease;
 }
 
+/* Port tops sit slightly above each hose start (matches −4° rise over the run) */
 .lp-umbilical__port--lox {
-  top: 34%;
+  top: 30%;
   background: #3a6a90;
 }
 
 .lp-umbilical__port--rp {
-  top: 52%;
+  top: 46%;
   background: #8a6410;
 }
 
@@ -7671,12 +7680,10 @@
     left: 4.84rem;
   }
 
-  .lp-umbilicals--lox .lp-umbilical--lox {
-    width: calc(100% - 2.05rem - 0.4rem);
-  }
-
+  .lp-umbilicals--lox .lp-umbilical--lox,
   .lp-umbilicals--rp .lp-umbilical--rp {
-    width: calc(100% - 4.84rem - 0.4rem);
+    right: 0.45rem;
+    width: auto;
   }
 
   .lp-fuel-grid {
@@ -7709,12 +7716,10 @@
     left: 4rem;
   }
 
-  .lp-umbilicals--lox .lp-umbilical--lox {
-    width: calc(100% - 1.69rem - 0.35rem);
-  }
-
+  .lp-umbilicals--lox .lp-umbilical--lox,
   .lp-umbilicals--rp .lp-umbilical--rp {
-    width: calc(100% - 4rem - 0.35rem);
+    right: 0.4rem;
+    width: auto;
   }
 
   .lp-tank__label {
