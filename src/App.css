@@ -4945,7 +4945,8 @@
 .launch-prep-pad {
   position: relative;
   flex: 1;
-  min-height: 14rem;
+  /* Room for the large side-by-side LOX / RP-1 farm sprites */
+  min-height: 16.5rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -4990,91 +4991,91 @@
   border: 1px solid #4a5560;
 }
 
-/* Tower */
+/* Tower — PNG sprites (mast / strongback / base); strongback mates via --mate */
 .lp-tower {
   position: absolute;
   left: 42%;
   bottom: 22%;
-  width: 3.2rem;
+  width: 3.6rem;
   height: 72%;
   z-index: 2;
   transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .lp-tower__mast {
   position: absolute;
   left: 50%;
   top: 0;
-  bottom: 8%;
-  width: 0.55rem;
+  bottom: 10%;
+  width: 1.35rem;
   transform: translateX(-50%);
-  background: linear-gradient(90deg, #4a5564, var(--color-brand-grey) 45%, #3a4554);
-  border-radius: 2px 2px 0 0;
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.35);
+  /* No solid fill — PNG has true alpha */
+  background: none;
+  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.4));
 }
 
-.lp-tower__cross {
-  position: absolute;
-  left: 50%;
-  width: 2.4rem;
-  height: 3px;
-  transform: translateX(-50%);
-  background: var(--color-brand-grey);
-  border-radius: 1px;
+.lp-tower__mast-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  pointer-events: none;
+  user-select: none;
 }
-
-.lp-tower__cross:nth-child(1) { top: 12%; }
-.lp-tower__cross:nth-child(2) { top: 32%; }
-.lp-tower__cross:nth-child(3) { top: 52%; }
-.lp-tower__cross:nth-child(4) { top: 72%; }
 
 .lp-tower__strongback {
   position: absolute;
-  left: calc(50% + 0.15rem);
-  top: 6%;
-  width: 1.1rem;
-  height: 78%;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--color-orbital) 67%, transparent),
-    var(--color-brand-navy)
-  );
-  border-radius: 2px;
+  /* Pivot on the mast face; clamps in the art face right toward the booster */
+  left: calc(50% + 0.05rem);
+  top: 8%;
+  width: 1.7rem;
+  height: 76%;
+  background: none;
   transform-origin: left center;
-  /* Opens when not mated: --mate 0 = open, 1 = closed against vehicle */
+  /* Opens when not mated: --mate 0 = open (~-28°), 1 = vertical against vehicle */
   transform: rotate(calc((1 - var(--mate, 1)) * -28deg));
   transition: transform 0.05s linear;
-  box-shadow: 2px 0 8px rgba(0, 129, 201, 0.25);
+  filter: drop-shadow(2px 0 8px rgba(0, 129, 201, 0.28));
+  opacity: calc(0.55 + var(--mate, 1) * 0.45);
 }
 
 .lp-tower--mated .lp-tower__strongback {
   --mate: 1;
   transform: rotate(0deg);
+  opacity: 1;
 }
 
-.lp-tower__clamp {
-  position: absolute;
-  right: -0.45rem;
-  top: 18%;
-  width: 0.55rem;
-  height: 0.35rem;
-  background: var(--color-amber);
-  border-radius: 1px;
-  opacity: calc(0.35 + var(--mate, 1) * 0.65);
+.lp-tower__strongback-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+  pointer-events: none;
+  user-select: none;
 }
-
-.lp-tower__clamp--mid { top: 48%; }
-.lp-tower__clamp--low { top: 72%; }
 
 .lp-tower__base {
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: 2.8rem;
-  height: 0.7rem;
+  width: 3.2rem;
+  height: 1rem;
   transform: translateX(-50%);
-  background: #4a5564;
-  border-radius: 2px;
+  background: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+
+.lp-tower__base-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* Booster on pad / mated */
@@ -5099,11 +5100,19 @@
   transform: translateX(-30%);
 }
 
+/*
+ * Launch-prep booster: same AssemblyBooster.png as manufacture/haul.
+ * Sprite is horizontal (payload-mount left, engines right); pad needs it
+ * upright — rotate 90° so engines are down and the payload face is up.
+ * Layout box stays the old CSS-art footprint so mate (--mate), .lp-payload,
+ * umbilicals, and crane/drone stack alignment keep working unchanged.
+ */
 .booster--launch-prep {
   width: 2.6rem;
   height: 9.5rem;
-  flex-direction: column-reverse;
+  display: flex;
   align-items: center;
+  justify-content: center;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
 }
 
@@ -5111,48 +5120,15 @@
   transform: none;
 }
 
-.booster--launch-prep .booster__nose {
-  width: 70%;
-  height: 1.15rem;
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  border-radius: 0;
-  background: linear-gradient(180deg, var(--color-brand-grey-light) 0%, #8b95a3 100%);
-}
-
-.booster--launch-prep .booster__body {
-  width: 100%;
-  height: auto;
-  flex: 1;
-  min-height: 0;
-  flex-direction: column;
-  gap: 0.65rem;
-  border-radius: 2px;
-}
-
-.booster--launch-prep .booster__band {
-  width: 100%;
-  height: 3px;
-}
-
-.booster--launch-prep .booster__engine {
-  width: 100%;
-  height: 1.15rem;
-  flex-direction: row;
-  justify-content: center;
-  gap: 0.15rem;
-  border-radius: 0 0 3px 3px;
-  padding: 0.15rem 0;
-}
-
-.booster--launch-prep .booster__nozzle {
-  width: 0.45rem;
-  height: 0.7rem;
-  border-radius: 0 0 3px 3px;
-}
-
-.booster--launch-prep .booster__logo {
-  width: 1.15rem;
-  height: 1.15rem;
+.booster--launch-prep .booster__sprite {
+  /* Pre-rotation: length × diameter; after rotate(90deg) → tall pad rocket */
+  width: 9.5rem;
+  height: 2.6rem;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  object-position: center;
+  transform: rotate(90deg);
 }
 
 .booster--launch-prep .booster__ready-tag {
@@ -5349,115 +5325,139 @@
   bottom: 0.2rem;
 }
 
-/* Fuel farm + umbilicals â€” tanks on pad side, lines meet mated hull */
+/*
+ * Fuel farm + umbilicals — tanks side-by-side on the pad apron,
+ * hose runs extend right to the mated booster hull (~42% of pad).
+ * Footprint is 65% of the prior large size (−35%).
+ */
 .lp-umbilicals {
   position: absolute;
-  /* Span from fuel farm (left) to mated booster left face (~42% âˆ’ half width) */
-  left: calc(42% - 7.1rem);
-  bottom: 26%;
-  width: 6.35rem;
-  height: 4.4rem;
+  /*
+   * Farm → mated booster left face (~42%).
+   * left was 1.5%; shifted 30% of that gap toward the pad:
+   * 1.5% + 0.3 × (42% − 1.5%) ≈ 13.7%.
+   */
+  left: 13.7%;
+  right: calc(100% - 42% + 0.15rem);
+  bottom: 12%;
+  height: 5.35rem;
+  width: auto;
   z-index: 2;
   pointer-events: none;
 }
 
+/* Shared tank box (65% of previous 6.2×7.4 rem) */
 .lp-tank {
   position: absolute;
-  left: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.12rem;
-  width: 1.35rem;
+  bottom: 0;
+  width: 4.03rem;
+  height: 4.81rem;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5));
 }
 
+/* Side by side: LOX left, RP-1 immediately to its right */
 .lp-tank--lox {
-  top: 0.1rem;
+  left: 0;
 }
 
 .lp-tank--rp {
-  bottom: 0.05rem;
+  left: 4.26rem;
 }
 
-.lp-tank__body {
+/* PNG sprites (public/LaunchPrepTankLox.png / LaunchPrepTankRp1.png) */
+.lp-tank__sprite {
   display: block;
-  width: 1.2rem;
-  height: 1.55rem;
-  border-radius: 40% 40% 6px 6px;
-  border: 1px solid color-mix(in srgb, #fff 18%, transparent);
-  box-shadow:
-    inset 0 -6px 10px rgba(0, 0, 0, 0.28),
-    0 2px 4px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left bottom;
+  pointer-events: none;
+  user-select: none;
 }
 
-.lp-tank--lox .lp-tank__body {
-  background: linear-gradient(180deg, #8ec4ef 0%, #3a7eb8 45%, var(--color-brand-navy) 100%);
-}
-
-.lp-tank--rp .lp-tank__body {
-  background: linear-gradient(180deg, #e8c46a 0%, #c49218 45%, #8a6410 100%);
-}
-
+/* Crisp HTML label over the blank nameplate on each sprite */
 .lp-tank__label {
+  position: absolute;
+  left: 38%;
+  top: 58%;
+  transform: translate(-50%, -50%);
   font-family: var(--font-mono);
-  font-size: 0.52rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   line-height: 1;
-  color: var(--color-text-muted);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  color: #0a1018;
+  text-shadow:
+    0 0 3px rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .lp-tank--lox .lp-tank__label {
-  color: #8ec4ef;
+  color: #0a2840;
 }
 
 .lp-tank--rp .lp-tank__label {
-  color: var(--color-brand-gold);
+  color: #2a1800;
 }
 
+/*
+ * Hoses: origin at each tank's right-side outlet valve, grow toward
+ * vehicle ports on the right edge of this container (booster hull).
+ */
 .lp-umbilical {
   position: absolute;
-  left: 1.25rem;
-  height: 5px;
-  border-radius: 3px;
+  height: 6px;
+  border-radius: 4px;
   opacity: 0.28;
   transform-origin: left center;
   transition:
     opacity 0.3s ease,
     background 0.3s ease,
-    width 0.35s ease,
+    width 0.4s ease,
     box-shadow 0.3s ease;
-  /* Default: short, not yet mated to vehicle */
-  width: 42%;
+  /* Collapsed: short stub past the valve until Connect */
+  width: 12%;
+  max-width: 1.6rem;
 }
 
+/* LOX valve mid-right of left tank */
 .lp-umbilical--lox {
-  top: 0.95rem;
+  left: 3.09rem;
+  top: 38%;
   background: linear-gradient(90deg, var(--color-orbital-strong), #7ab8e8);
-  transform: rotate(-6deg);
+  transform: rotate(-4deg);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-orbital-strong) 35%, transparent);
 }
 
+/* RP-1 valve mid-right of right tank */
 .lp-umbilical--rp {
-  bottom: 1.05rem;
+  left: 7.35rem;
+  top: 48%;
   background: linear-gradient(90deg, #c49218, var(--color-brand-gold));
-  transform: rotate(7deg);
+  transform: rotate(5deg);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-amber) 35%, transparent);
 }
 
-/* Connected: line reaches vehicle port on booster hull */
-.lp-umbilicals--lox .lp-umbilical--lox,
+/* Connected: line reaches vehicle port on booster hull (right edge) */
+.lp-umbilicals--lox .lp-umbilical--lox {
+  opacity: 0.95;
+  width: calc(100% - 3.09rem - 0.45rem);
+  max-width: none;
+}
+
 .lp-umbilicals--rp .lp-umbilical--rp {
   opacity: 0.95;
-  width: calc(100% - 1.55rem);
+  width: calc(100% - 7.35rem - 0.45rem);
+  max-width: none;
 }
 
 .lp-umbilical__port {
   position: absolute;
   right: 0.05rem;
-  width: 0.42rem;
-  height: 0.42rem;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 2px;
   opacity: 0.2;
   border: 1px solid transparent;
@@ -5469,12 +5469,12 @@
 }
 
 .lp-umbilical__port--lox {
-  top: 0.72rem;
+  top: 34%;
   background: #3a6a90;
 }
 
 .lp-umbilical__port--rp {
-  bottom: 0.88rem;
+  top: 52%;
   background: #8a6410;
 }
 
@@ -5562,6 +5562,122 @@
   }
   50% {
     opacity: 1;
+  }
+}
+
+/*
+ * Launch-prep power buses: four status lights down the booster hull edge.
+ * Light up one-by-one with each sequential switch (As-is / Gemba), or all
+ * at once when To-be auto-power master ON arms every bus.
+ */
+.lp-power-lights {
+  position: absolute;
+  /* Centered on the upright booster hull */
+  left: 50%;
+  top: 22%;
+  bottom: 24%;
+  width: 0.32rem;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.lp-power-light {
+  position: relative;
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: radial-gradient(
+    circle at 35% 30%,
+    rgba(90, 100, 112, 0.95) 0%,
+    rgba(40, 46, 54, 0.9) 70%
+  );
+  border: 1px solid rgba(120, 130, 140, 0.45);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(0, 0, 0, 0.25);
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.28s ease,
+    transform 0.22s ease;
+}
+
+.lp-power-light--on {
+  background: radial-gradient(
+    circle at 35% 30%,
+    #e8f7ff 0%,
+    #5ec8ff 38%,
+    #0081c9 78%,
+    #005a8c 100%
+  );
+  border-color: rgba(168, 228, 255, 0.95);
+  transform: scale(1.06);
+  box-shadow:
+    0 0 2px 1px rgba(232, 247, 255, 0.95),
+    0 0 5px 1px rgba(94, 200, 255, 0.9),
+    0 0 10px 3px rgba(0, 129, 201, 0.7),
+    0 0 16px 5px rgba(0, 129, 201, 0.3),
+    inset 0 0 2px rgba(255, 255, 255, 0.55);
+  animation: lp-power-light-glow 1.7s ease-in-out infinite;
+  animation-delay: calc(var(--light-i, 0) * 0.18s);
+}
+
+/* Soft outer halo so the glow reads against the dark pad */
+.lp-power-light--on::after {
+  content: '';
+  position: absolute;
+  inset: -0.22rem;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(94, 200, 255, 0.5) 0%,
+    rgba(0, 129, 201, 0.18) 45%,
+    transparent 70%
+  );
+  z-index: -1;
+  animation: lp-power-light-halo 1.7s ease-in-out infinite;
+  animation-delay: calc(var(--light-i, 0) * 0.18s);
+  pointer-events: none;
+}
+
+@keyframes lp-power-light-glow {
+  0%,
+  100% {
+    filter: brightness(1);
+    box-shadow:
+      0 0 2px 1px rgba(232, 247, 255, 0.9),
+      0 0 5px 1px rgba(94, 200, 255, 0.85),
+      0 0 10px 3px rgba(0, 129, 201, 0.65),
+      0 0 16px 5px rgba(0, 129, 201, 0.28),
+      inset 0 0 2px rgba(255, 255, 255, 0.5);
+  }
+  50% {
+    filter: brightness(1.25);
+    box-shadow:
+      0 0 3px 1px rgba(255, 255, 255, 1),
+      0 0 7px 2px rgba(94, 200, 255, 1),
+      0 0 14px 4px rgba(0, 160, 230, 0.85),
+      0 0 22px 7px rgba(0, 129, 201, 0.4),
+      inset 0 0 3px rgba(255, 255, 255, 0.75);
+  }
+}
+
+@keyframes lp-power-light-halo {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
   }
 }
 
@@ -7502,12 +7618,65 @@
 
 @media (max-width: 700px) {
   .launch-prep-pad {
-    min-height: 12rem;
+    min-height: 13.5rem;
   }
 
   .booster--launch-prep {
     width: 2.1rem;
     height: 7.5rem;
+  }
+
+  .booster--launch-prep .booster__sprite {
+    width: 7.5rem;
+    height: 2.1rem;
+  }
+
+  .lp-power-lights {
+    left: 50%;
+    top: 20%;
+    bottom: 22%;
+    width: 0.26rem;
+    transform: translateX(-50%);
+  }
+
+  .lp-power-light {
+    width: 0.22rem;
+    height: 0.22rem;
+  }
+
+  /* Still side-by-side; same −35% scale as desktop relative to prior mobile size */
+  .lp-umbilicals {
+    height: 3.65rem;
+    bottom: 10%;
+  }
+
+  .lp-tank {
+    width: 2.67rem;
+    height: 3.19rem;
+  }
+
+  .lp-tank--rp {
+    left: 2.8rem;
+  }
+
+  .lp-tank__label {
+    font-size: 0.42rem;
+  }
+
+  .lp-umbilical--lox {
+    left: 2.05rem;
+  }
+
+  .lp-umbilical--rp {
+    left: 4.84rem;
+  }
+
+  .lp-umbilicals--lox .lp-umbilical--lox {
+    width: calc(100% - 2.05rem - 0.4rem);
+  }
+
+  .lp-umbilicals--rp .lp-umbilical--rp {
+    width: calc(100% - 4.84rem - 0.4rem);
   }
 
   .lp-fuel-grid {
@@ -7518,6 +7687,38 @@
   .lp-slider {
     grid-template-columns: 1fr;
     gap: var(--space-2);
+  }
+}
+
+/* Extra-narrow: keep farm readable without covering the rocket */
+@media (max-width: 520px) {
+  .lp-tank {
+    width: 2.21rem;
+    height: 2.63rem;
+  }
+
+  .lp-tank--rp {
+    left: 2.31rem;
+  }
+
+  .lp-umbilical--lox {
+    left: 1.69rem;
+  }
+
+  .lp-umbilical--rp {
+    left: 4rem;
+  }
+
+  .lp-umbilicals--lox .lp-umbilical--lox {
+    width: calc(100% - 1.69rem - 0.35rem);
+  }
+
+  .lp-umbilicals--rp .lp-umbilical--rp {
+    width: calc(100% - 4rem - 0.35rem);
+  }
+
+  .lp-tank__label {
+    font-size: 0.36rem;
   }
 }
 

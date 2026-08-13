@@ -58,6 +58,12 @@ const SWING_SWEET_MIN = 55
 const SWING_SWEET_MAX = 72
 const SWING_FILL_RATE_PER_MS = 0.05 // % per ms while holding
 
+const TOWER_MAST_SRC = `${import.meta.env.BASE_URL}LaunchPrepTowerMast.png?v=1`
+const TOWER_STRONGBACK_SRC = `${import.meta.env.BASE_URL}LaunchPrepStrongback.png?v=1`
+const TOWER_BASE_SRC = `${import.meta.env.BASE_URL}LaunchPrepTowerBase.png?v=1`
+const TANK_LOX_SRC = `${import.meta.env.BASE_URL}LaunchPrepTankLox.png?v=1`
+const TANK_RP1_SRC = `${import.meta.env.BASE_URL}LaunchPrepTankRp1.png?v=1`
+
 function resolveSceneTechs(
   process: ProcessVersion | null | undefined,
   techsProp: LaunchPrepTech[] | null | undefined,
@@ -214,7 +220,10 @@ export function LaunchPrepScene({
     if (done.has('mate-tower')) setMateDone(true)
     if (done.has('crane-payload')) setCraneDone(true)
     if (done.has('fuel-vehicle')) setFuelDone(true)
-    if (done.has('power-up')) setPowerDone(true)
+    if (done.has('power-up')) {
+      setPowerDone(true)
+      setPowerArmed(POWER_SWITCHES.map((s) => s.id))
+    }
   }, [run.completedMachineIds])
 
   const completeCurrent = useCallback(() => {
@@ -453,6 +462,10 @@ export function LaunchPrepScene({
   const payloadStacked = craneDone || actionIndex > 1
   const fueled = fuelDone || actionIndex > 2
   const powered = powerDone || actionIndex > 3 || locked
+  /** Hull edge lights: one per power bus; sequential arming or all-on for master ON / complete. */
+  const powerLightsLit = powered
+    ? POWER_SWITCHES.length
+    : powerArmed.length
 
   // Crane visual phase from completed clicks (0–4).
   const craneVisual = craneDone || actionIndex > 1 ? 4 : craneStep
@@ -517,13 +530,16 @@ export function LaunchPrepScene({
         <div className="launch-prep-pad__sky" />
         <div className="launch-prep-pad__ground" />
 
-        {/* Launch tower + strongback */}
+        {/* Launch tower + strongback (PNG sprites; strongback rotates via --mate) */}
         <div className={['lp-tower', mated ? 'lp-tower--mated' : ''].join(' ')}>
           <div className="lp-tower__mast">
-            <span className="lp-tower__cross" />
-            <span className="lp-tower__cross" />
-            <span className="lp-tower__cross" />
-            <span className="lp-tower__cross" />
+            <img
+              className="lp-tower__mast-img"
+              src={TOWER_MAST_SRC}
+              alt=""
+              draggable={false}
+              decoding="async"
+            />
           </div>
           <div
             className="lp-tower__strongback"
@@ -533,11 +549,23 @@ export function LaunchPrepScene({
                 : undefined
             }
           >
-            <span className="lp-tower__clamp" />
-            <span className="lp-tower__clamp lp-tower__clamp--mid" />
-            <span className="lp-tower__clamp lp-tower__clamp--low" />
+            <img
+              className="lp-tower__strongback-img"
+              src={TOWER_STRONGBACK_SRC}
+              alt=""
+              draggable={false}
+              decoding="async"
+            />
           </div>
-          <div className="lp-tower__base" />
+          <div className="lp-tower__base">
+            <img
+              className="lp-tower__base-img"
+              src={TOWER_BASE_SRC}
+              alt=""
+              draggable={false}
+              decoding="async"
+            />
+          </div>
         </div>
 
         {/* Booster: slides from pad side into tower when mating */}
@@ -556,9 +584,33 @@ export function LaunchPrepScene({
         >
           <Booster
             className="booster--launch-prep"
+            showNose={false}
             ready={stepComplete}
             label={mated ? 'Booster on strongback' : 'Booster staged at pad'}
           />
+          {/* Four bus-status lights along the hull — arm one-by-one, or all on master ON */}
+          <div
+            className="lp-power-lights"
+            aria-hidden="true"
+            data-lit={powerLightsLit}
+          >
+            {POWER_SWITCHES.map((sw, i) => {
+              const on = i < powerLightsLit
+              return (
+                <span
+                  key={sw.id}
+                  className={[
+                    'lp-power-light',
+                    on ? 'lp-power-light--on' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  style={{ ['--light-i' as string]: String(i) }}
+                  title={on ? `${sw.label} armed` : sw.label}
+                />
+              )
+            })}
+          </div>
           {payloadStacked && (
             <div className="lp-payload" title="Payload / fairing">
               <span className="lp-payload__fairing" />
@@ -636,11 +688,23 @@ export function LaunchPrepScene({
             .join(' ')}
         >
           <div className="lp-tank lp-tank--lox" title="LOX supply">
-            <span className="lp-tank__body" />
+            <img
+              className="lp-tank__sprite"
+              src={TANK_LOX_SRC}
+              alt=""
+              draggable={false}
+              decoding="async"
+            />
             <span className="lp-tank__label">LOX</span>
           </div>
           <div className="lp-tank lp-tank--rp" title="RP-1 supply">
-            <span className="lp-tank__body" />
+            <img
+              className="lp-tank__sprite"
+              src={TANK_RP1_SRC}
+              alt=""
+              draggable={false}
+              decoding="async"
+            />
             <span className="lp-tank__label">RP-1</span>
           </div>
           <span className="lp-umbilical lp-umbilical--lox" />

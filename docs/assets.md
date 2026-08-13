@@ -12,7 +12,12 @@ Product behaviour lives in [`CLAUDE.md`](../CLAUDE.md). Tree map:
 |------|---------|--------|
 | `AssemblyBG.jpg` | `ManufactureScene` | Top-down assembly floor photo behind machines/belt |
 | `AccessCodeMonitor.png` | `ManufactureScene` | Square HD monitor bezel (Orb-it logo + power LED); live code is HTML overlay |
-| `AssemblyBooster.png` | `Booster` when `showNose={false}` | Transparent bare white booster (payload mount left, engines right). Manufacture line, haul crawler, redesign preview |
+| `AssemblyBooster.png` | `Booster` when `showNose={false}` | Transparent bare white booster (payload mount left, engines right). Manufacture line, haul crawler, redesign preview, launch-prep (rotated 90°) |
+| `LaunchPrepTowerMast.png` | `LaunchPrepScene` `.lp-tower__mast` | Lattice service mast with red beacon (288×1244, true alpha) |
+| `LaunchPrepStrongback.png` | `LaunchPrepScene` `.lp-tower__strongback` | Strongback beam + amber clamps; CSS rotate via `--mate` (387×1007) |
+| `LaunchPrepTowerBase.png` | `LaunchPrepScene` `.lp-tower__base` | Concrete/steel foundation plinth (672×353) |
+| `LaunchPrepTankLox.png` | `LaunchPrepScene` `.lp-tank--lox` | Cryogenic LOX GSE tank (true alpha); side-by-side farm with RP-1; HTML “LOX” on nameplate. See `assets-launch-prep-tanks.md` |
+| `LaunchPrepTankRp1.png` | `LaunchPrepScene` `.lp-tank--rp` | Matching RP-1 tank; umbilicals grow from each valve to the booster |
 | `HaulOfficesTop.png` | `HaulRoadScene` | 3D isometric cutaway Offices annex (doors/apron south) |
 | `HaulAssemblyTop.png` | `HaulRoadScene` | 3D isometric cutaway Assembly plant (bay door south) |
 | `OrbitLogo.png` | Booster (with nose), haul Assembly badge, pad logo, orbit-complete, Customer Portal, Home, etc. | In-fiction Orb-it mark — never the PMI top banner |
@@ -54,9 +59,18 @@ Gender-matched profile photos for Starfeed posts/replies:
 | `favicon.svg` | Browser favicon |
 | `icons.svg` | Shared icon sheet if referenced |
 
+## Launch-prep detail notes
+
+| Doc | Covers |
+|-----|--------|
+| [`assets-launch-prep-tower.md`](./assets-launch-prep-tower.md) | Mast / strongback / base sprites, mate animation |
+| [`assets-launch-prep-tanks.md`](./assets-launch-prep-tanks.md) | LOX / RP-1 farm size, placement, umbilical behaviour |
+
 ## Conventions
 
-- Prefer **transparent PNG** for sprites overlaid on scenes (boosters, cutaway buildings, monitor bezel).
+- Prefer **transparent PNG** for sprites overlaid on scenes (boosters, cutaway buildings, monitor bezel, launch-prep tower/tanks).
+- Prefer **HTML labels** over baked-in image text when the copy must stay exact (tank nameplates, access-code digits).
 - Cache-bust query strings (`?v=N`) are optional on hot-reloaded assets after large art changes.
 - New scene art goes in **`public/`**, not under `src/`, unless it must be imported as a module.
-- After adding assets: document here + the relevant section of `CLAUDE.md` + `docs/project-structure.md` public/ row.
+- One-shot Imagine keying helpers may live under `scripts/` (not app runtime).
+- After adding assets: document here + the relevant section of `CLAUDE.md` + `docs/project-structure.md` where-to-change row.

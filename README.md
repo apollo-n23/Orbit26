@@ -42,7 +42,7 @@ Open [http://127.0.0.1:5173/](http://127.0.0.1:5173/). On Windows PowerShell, us
 |------|--------|------------|
 | 1 · Manufacture | `ManufactureScene` | Machines aligned to belt stops; floating access-code monitor (`AccessCodeMonitor.png`); bare booster sprite; sequence badges on lower-left of machine cards |
 | 2 · Haul road | `HaulRoadScene` | Same bare booster on crawler; isometric cutaway Offices/Assembly (`HaulOfficesTop.png` / `HaulAssemblyTop.png`); dirt service track + NPC vehicle/pedestrians |
-| 3 · Launch prep | `LaunchPrepScene` | Mate, payload (crane or drone), fuel, power — redesigned by launch-prep techs |
+| 3 · Launch prep | `LaunchPrepScene` | Shared booster sprite + PNG tower/tanks; sequential or master-ON power lights; mate / crane-or-drone / fuel umbilicals / power — redesigned by launch-prep techs |
 | 4 · Launch sequence | `LaunchSequenceScene` | GO poll, key arm, liftoff; optional Capcom removal → NO CAPCOM height |
 
 ## Documentation
@@ -52,6 +52,8 @@ Open [http://127.0.0.1:5173/](http://127.0.0.1:5173/). On Windows PowerShell, us
 | **[CLAUDE.md](./CLAUDE.md)** | Full product rules, routes, redesign costs, scene conventions (source of truth for agents) |
 | **[docs/project-structure.md](./docs/project-structure.md)** | Repository tree, routing table, where-to-change map |
 | **[docs/assets.md](./docs/assets.md)** | `public/` asset inventory |
+| **[docs/assets-launch-prep-tower.md](./docs/assets-launch-prep-tower.md)** | Launch-prep tower sprites + mate animation notes |
+| **[docs/assets-launch-prep-tanks.md](./docs/assets-launch-prep-tanks.md)** | LOX / RP-1 farm layout + umbilical behaviour |
 | **[docs/brand/brand-tokens.md](./docs/brand/brand-tokens.md)** | PMI brand palette ↔ CSS tokens |
 
 ## Stack

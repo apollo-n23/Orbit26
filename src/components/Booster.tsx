@@ -4,17 +4,15 @@ interface BoosterProps {
   worked?: boolean
   label?: string
   /**
-   * When false, omit the nosecone — assembly (step 1) has not fitted one yet,
-   * and haul road (step 2) hasn't either, since payload integration happens
-   * later at launch prep. Launch prep keeps the default (true).
+   * When false, render the bare AssemblyBooster.png sprite (no CSS nosecone).
+   * Used by manufacture, haul, and launch-prep — payload/fairing at prep is a
+   * separate `.lp-payload` overlay, not Booster's CSS nose.
    */
   showNose?: boolean
   /**
-   * Engine nozzle style. Defaults to mirroring `showNose` (single expanding
-   * bell when there's no nose, matching Assembly's still-being-built
-   * booster) — Haul road overrides this to keep the completed booster's
-   * multi-nozzle engine even though its nose isn't fitted yet.
-   * With the assembly sprite, multi-nozzle art is already baked into the PNG.
+   * Engine nozzle style for the CSS-art path only (`showNose` true). Defaults
+   * to mirroring `showNose`. With the assembly sprite, multi-nozzle art is
+   * already baked into the PNG.
    */
   multiNozzleEngine?: boolean
 }
@@ -38,8 +36,8 @@ export function Booster({
   const isAssembly = !showNose
   const singleBellEngine = !multiNozzleEngine
 
-  // Bare booster (no fairing): use the HD sprite on the production line, haul
-  // crawler, and redesign preview. Launch-prep still uses CSS art with a nose.
+  // Bare booster (no fairing): HD sprite on manufacture, haul, redesign
+  // preview, and launch-prep (fairing is a separate stack overlay there).
   if (isAssembly) {
     return (
       <div

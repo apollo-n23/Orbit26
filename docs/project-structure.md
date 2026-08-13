@@ -113,8 +113,10 @@ Every page renders its own:
 | Nav / stages | `types/round.ts` (`AppStage`, hash helpers) + `App.tsx` + `StageNav` / `SiteBrand` |
 | Invoice 5S module | `CreateInvoicesView`, `historicLaunches`, `invoiceLevers`, `types/invoice.ts` (standalone; no round budget) |
 | Manufacture layout / monitor / machine badges | `ManufactureScene.tsx` + `App.css` (`.manufacture-*`, `.factory-machine*`) + `public/AccessCodeMonitor.png` |
-| Bare booster art | `Booster.tsx` + `public/AssemblyBooster.png` + `.booster__sprite` / `.booster--haul-sprite` in `App.css` |
+| Bare booster art | `Booster.tsx` + `public/AssemblyBooster.png` + `.booster__sprite` / `.booster--haul-sprite` / `.booster--launch-prep` in `App.css` |
 | Haul buildings / NPC ambient / dirt track | `HaulRoadScene.tsx` + `public/HaulOfficesTop.png` / `HaulAssemblyTop.png` + `.haul-npc-*` in `App.css` |
+| Launch-prep pad visuals | `LaunchPrepScene.tsx` + tower PNGs + tank PNGs + `.lp-tower*` / `.lp-tank*` / `.lp-umbilical*` / `.lp-power-light*` in `App.css` — see `docs/assets-launch-prep-tower.md` + `docs/assets-launch-prep-tanks.md` |
+| Imagine chroma-key helper (optional) | `scripts/key-launch-prep-tower.cjs` (not runtime) |
 
 ## Deploy & remotes
 
