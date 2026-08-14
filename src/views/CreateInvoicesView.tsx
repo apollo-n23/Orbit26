@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { InvoiceLeverImpactPreview } from '../components/InvoiceLeverImpactPreview'
 import { SiteBrand } from '../components/SiteBrand'
 import { StageNav } from '../components/StageNav'
 import type { AppStage } from '../types/round'
@@ -9,39 +10,19 @@ import {
   type InvoiceLeverId,
   type SentInvoice,
 } from '../types/invoice'
+import {
+  FIELD_META,
+  formatSlipFieldValue,
+  parseAmountDueUsd,
+  SCRAMBLED_FIELD_ORDER,
+  SET_IN_ORDER_FIELD_ORDER,
+  SOURCE_SLIP_FIELD_ORDER,
+} from '../data/invoiceForm'
 import { HISTORIC_LAUNCHES } from '../data/historicLaunches'
 import { INVOICE_LEVERS } from '../data/invoiceLevers'
 
 type InvoiceSubView = 'process' | 'redesign'
 type DraftStage = 'editing' | 'review'
-
-/** Baseline field order — deliberately not the order billing actually happens in. */
-const SCRAMBLED_FIELD_ORDER: (keyof InvoiceDraft)[] = [
-  'amountDueUsd',
-  'missionName',
-  'reference',
-  'customerCompany',
-  'launchDate',
-  'customerName',
-]
-/** "Set in Order" field order — reference, who, what, when, how much. */
-const SET_IN_ORDER_FIELD_ORDER: (keyof InvoiceDraft)[] = [
-  'reference',
-  'customerName',
-  'customerCompany',
-  'missionName',
-  'launchDate',
-  'amountDueUsd',
-]
-
-const FIELD_META: Record<keyof InvoiceDraft, { label: string; example: string }> = {
-  customerName: { label: 'Customer contact name', example: 'e.g. Priya Anand' },
-  customerCompany: { label: 'Customer company', example: 'e.g. NimbusLink' },
-  missionName: { label: 'Mission name', example: 'e.g. NimbusLink Relay-7' },
-  launchDate: { label: 'Launch date', example: 'e.g. 2026-01-12' },
-  reference: { label: 'Invoice reference', example: 'e.g. ORB-1042' },
-  amountDueUsd: { label: 'Amount due (USD)', example: 'e.g. 186400' },
-}
 
 interface CreateInvoicesViewProps {
   activeStage: AppStage
@@ -84,8 +65,27 @@ export function CreateInvoicesView({
   function toggleLever(id: InvoiceLeverId) {
     setEnabledLevers((prev) => {
       const next = new Set(prev)
+      if (id === 'sustain') {
+        if (next.has('sustain')) {
+          next.delete('sustain')
+        } else {
+          // Sustain = keep the full 5S system in place.
+          next.add('sustain')
+          next.add('sort')
+          next.add('set-in-order')
+          next.add('shine')
+          next.add('standardize')
+        }
+        return next
+      }
+
       if (next.has(id)) next.delete(id)
       else next.add(id)
+
+      // Dropping any of the other four breaks Sustain.
+      if (!next.has(id) && next.has('sustain')) {
+        next.delete('sustain')
+      }
       return next
     })
   }
@@ -119,9 +119,11 @@ export function CreateInvoicesView({
       setFormError('Fill in every field before creating the invoice.')
       return
     }
-    const amount = Number(draft.amountDueUsd)
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setFormError('Amount due must be a positive number.')
+    const amount = parseAmountDueUsd(draft.amountDueUsd)
+    if (amount === null) {
+      setFormError(
+        'Amount due must be a positive number (e.g. 186400 or $186,400).',
+      )
       return
     }
     setFormError(null)
@@ -334,30 +336,12 @@ function InvoiceDraftPanel({
           Launch record — read from here
         </p>
         <dl className="invoice-draft__source-fields">
-          <div>
-            <dt>Mission</dt>
-            <dd>{launch.missionName}</dd>
-          </div>
-          <div>
-            <dt>Customer</dt>
-            <dd>{launch.customerName}</dd>
-          </div>
-          <div>
-            <dt>Company</dt>
-            <dd>{launch.customerCompany}</dd>
-          </div>
-          <div>
-            <dt>Launch date</dt>
-            <dd>{launch.launchDate}</dd>
-          </div>
-          <div>
-            <dt>Reference</dt>
-            <dd>{launch.reference}</dd>
-          </div>
-          <div>
-            <dt>Amount due</dt>
-            <dd>${launch.amountDueUsd.toLocaleString()}</dd>
-          </div>
+          {SOURCE_SLIP_FIELD_ORDER.map((key) => (
+            <div key={key}>
+              <dt>{FIELD_META[key].label}</dt>
+              <dd>{formatSlipFieldValue(launch, key)}</dd>
+            </div>
+          ))}
         </dl>
         {!sortEnabled && (
           <p className="invoice-draft__source-note">
@@ -409,30 +393,21 @@ function InvoiceDraftPanel({
         <div className="invoice-draft__review">
           <p className="invoice-draft__form-title">Review before sending</p>
           <dl className="invoice-draft__source-fields">
-            <div>
-              <dt>Reference</dt>
-              <dd>{draft.reference}</dd>
-            </div>
-            <div>
-              <dt>Customer</dt>
-              <dd>{draft.customerName}</dd>
-            </div>
-            <div>
-              <dt>Company</dt>
-              <dd>{draft.customerCompany}</dd>
-            </div>
-            <div>
-              <dt>Mission</dt>
-              <dd>{draft.missionName}</dd>
-            </div>
-            <div>
-              <dt>Launch date</dt>
-              <dd>{draft.launchDate}</dd>
-            </div>
-            <div>
-              <dt>Amount due</dt>
-              <dd>${draft.amountDueUsd}</dd>
-            </div>
+            {SOURCE_SLIP_FIELD_ORDER.map((key) => (
+              <div key={key}>
+                <dt>{FIELD_META[key].label}</dt>
+                <dd>
+                  {key === 'amountDueUsd'
+                    ? (() => {
+                        const parsed = parseAmountDueUsd(draft.amountDueUsd)
+                        return parsed === null
+                          ? draft.amountDueUsd
+                          : `$${parsed.toLocaleString()}`
+                      })()
+                    : draft[key]}
+                </dd>
+              </div>
+            ))}
           </dl>
           <div className="invoice-draft__actions">
             <button
@@ -459,40 +434,77 @@ function InvoiceRedesignPanel({
   enabledLevers: Set<InvoiceLeverId>
   onToggleLever: (id: InvoiceLeverId) => void
 }) {
+  const [previewedLever, setPreviewedLever] = useState<InvoiceLeverId | null>(
+    null,
+  )
+
   return (
     <div className="invoice-redesign">
       <p className="invoice-redesign__note">
         <strong>No cost, no budget.</strong> These 5S improvements are
-        separate from the rocket launch redesign and its change budget —
-        toggle any combination on to see how they change the Process tab.
+        separate from the rocket launch redesign and its change budget.
+        Hover a card to preview its effect on the invoice process; toggle
+        it on to apply the change on the Process tab.
       </p>
-      <div className="invoice-lever-grid">
-        {INVOICE_LEVERS.map((lever) => {
-          const selected = enabledLevers.has(lever.id)
-          return (
-            <button
-              key={lever.id}
-              type="button"
-              className={[
-                'invoice-lever-card',
-                selected ? 'invoice-lever-card--selected' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => onToggleLever(lever.id)}
-              aria-pressed={selected}
-            >
-              <span className="invoice-lever-card__term">{lever.term}</span>
-              <span className="invoice-lever-card__title">{lever.title}</span>
-              <span className="invoice-lever-card__desc">
-                {lever.description}
-              </span>
-              <span className="invoice-lever-card__status">
-                {selected ? 'On' : 'Off'}
-              </span>
-            </button>
-          )
-        })}
+      <div
+        className="invoice-redesign__workspace"
+        onMouseLeave={() => setPreviewedLever(null)}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+            setPreviewedLever(null)
+          }
+        }}
+      >
+        <div className="invoice-lever-grid">
+          {INVOICE_LEVERS.map((lever) => {
+            const selected = enabledLevers.has(lever.id)
+            const previewing = previewedLever === lever.id
+            return (
+              <button
+                key={lever.id}
+                type="button"
+                data-lever-id={lever.id}
+                className={[
+                  'invoice-lever-card',
+                  selected ? 'invoice-lever-card--selected' : '',
+                  previewing ? 'invoice-lever-card--previewing' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => onToggleLever(lever.id)}
+                onMouseEnter={() => setPreviewedLever(lever.id)}
+                onFocus={() => setPreviewedLever(lever.id)}
+                aria-pressed={selected}
+              >
+                <img
+                  className="invoice-lever-card__hero"
+                  src={`${import.meta.env.BASE_URL}${lever.icon}`}
+                  alt=""
+                  draggable={false}
+                />
+                <span className="invoice-lever-card__body">
+                  <span className="invoice-lever-card__term">{lever.term}</span>
+                  <span className="invoice-lever-card__title">
+                    {lever.title}
+                  </span>
+                  <span className="invoice-lever-card__desc">
+                    {lever.description}
+                  </span>
+                  <span className="invoice-lever-card__footer">
+                    <span className="invoice-lever-card__hint">
+                      <span className="invoice-hover-copy">Hover to preview</span>
+                      <span className="invoice-touch-copy">Tap to preview</span>
+                    </span>
+                    <span className="invoice-lever-card__status">
+                      {selected ? 'On' : 'Off'}
+                    </span>
+                  </span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <InvoiceLeverImpactPreview leverId={previewedLever} />
       </div>
     </div>
   )

@@ -52,6 +52,25 @@ Gender-matched profile photos for Starfeed posts/replies:
 - `F Profile 2.png`, `F Profile 4.png`, `F Profile 6.png`, `F Profile 8.png`, `F Profile 9.png`, `F Profile 12.png`, `F Profile 15.png`
 - `M Profile 1.png`, `M Profile 3.png`, `M Profile 5.png`, `M Profile 7.png`, `M Profile 10.png`, `M profile 11.png`, `M Profile 13.png`, `M Profile 14.png`
 
+## Invoice 5S redesign
+
+Generated training icons and hover-preview illustrations for
+`CreateInvoicesView` / `InvoiceLeverImpactPreview`. No baked-in copy —
+field labels in the preview miniature are HTML.
+
+| File | Used by |
+|------|---------|
+| `Invoice5sSortIcon.jpg` | Sort lever card hero |
+| `Invoice5sSetInOrderIcon.jpg` | Set in Order lever card hero |
+| `Invoice5sShineIcon.jpg` | Shine lever card hero |
+| `Invoice5sStandardizeIcon.jpg` | Standardize lever card hero |
+| `Invoice5sSustainIcon.jpg` | Sustain lever card hero |
+| `Invoice5sSortPreview.jpg` | Sort hover impact scene |
+| `Invoice5sSetInOrderPreview.jpg` | Set in Order hover impact scene |
+| `Invoice5sShinePreview.jpg` | Shine hover impact scene |
+| `Invoice5sStandardizePreview.jpg` | Standardize hover impact scene |
+| `Invoice5sSustainPreview.jpg` | Sustain hover impact scene |
+
 ## Chrome / misc
 
 | File | Notes |

@@ -68,39 +68,58 @@ don't compete for the same lesson.
   billing fields (customer, company, mission, launch date, reference, amount
   due) **plus** one deliberately irrelevant `internalNote` field — the 5S
   "Sort" pain point made concrete.
-- **Process tab:** pick an unbilled launch → read its record card → type the
-  matching fields into a blank invoice form (nothing is pre-filled — the
-  point is the manual transcription, same as a real billing clerk) →
-  **Create invoice** (validates all fields non-empty + a positive numeric
-  amount) → a review screen of the assembled invoice → **Send invoice**
-  marks it sent (`sentInvoices` map, `SentInvoice.sentAt`) and returns to the
+- **Process tab:** pick an unbilled launch → read its **launch-record slip**
+  (same field labels as the form, order fixed by
+  `SOURCE_SLIP_FIELD_ORDER` in `data/invoiceForm.ts`: mission → customer →
+  company → date → reference → amount) → type the matching fields into a
+  blank invoice form (nothing is pre-filled — the point is the manual
+  transcription) → **Create invoice** (all fields non-empty + a positive
+  amount via `parseAmountDueUsd`, which accepts `$186,400` or `186400`) →
+  review screen (same slip field order + labels) → **Send invoice** marks
+  it sent (`sentInvoices` map, `SentInvoice.sentAt`) and returns to the
   list, where that launch now shows an **✓ Invoiced** pill instead of the
   action button. `Invoices sent: n/N` tracks progress.
+- **Field-order contract (settled):** one shared source order
+  (`SOURCE_SLIP_FIELD_ORDER` === `SET_IN_ORDER_FIELD_ORDER`) drives the
+  launch-record slip, the form when Set in Order is on, the review screen,
+  and the Set in Order hover preview. As-is form uses
+  `SCRAMBLED_FIELD_ORDER` (deliberately different) so the learner hunts.
+  With all 5S levers on, form and slip match top-to-bottom.
 - **Redesign tab — 5S levers (`data/invoiceLevers.ts`, `InvoiceLever[]`):**
   five toggleable cards (`InvoiceLeverId`: `sort` / `set-in-order` / `shine`
   / `standardize` / `sustain`), styled in the redesign workshop's tech-card
   shape but in green (`--color-brand-green`) rather than gold/orbital, to
-  read as visually distinct from the cost-tracked rocket redesign. An
+  read as visually distinct from the cost-tracked rocket redesign. Each
+  card carries a generated hero illustration (`Invoice5s*Icon.jpg`). An
   explicit **"No cost, no budget"** note heads the tab. Toggling is
   immediate/live — there is no lock-in ceremony here (unlike the rocket
   To-be workshop's Confirm step) since 5S is framed as continuous small
-  improvement, not a single locked-in redesign event:
+  improvement, not a single locked-in redesign event.
+- **Hover impact preview (`InvoiceLeverImpactPreview.tsx`):** hovering or
+  focusing a lever card (tap on touch) updates a sticky preview pane
+  beside the grid. The pane is visual, not a text tooltip: a cinematic
+  before/after illustration (`Invoice5s*Preview.jpg`) plus a miniature of
+  the actual invoice UI showing As-is vs that single 5S applied. Isolated
+  to the hovered lever — enabling still happens on click and is what the
+  Process tab reads. Field-order/placeholder copy in the miniature is HTML
+  (not baked into the PNGs) so labels stay exact.
   - **Sort** — hides each launch's `internalNote` from both the list and the
-    record card.
-  - **Set in Order** — switches the invoice form from a deliberately
-    scrambled baseline field order to the order billing actually happens in
-    (reference → customer → company → mission → date → amount).
+    record slip.
+  - **Set in Order** — switches the invoice form from
+    `SCRAMBLED_FIELD_ORDER` to `SOURCE_SLIP_FIELD_ORDER` so the form matches
+    the launch-record slip (mission → customer → company → date →
+    reference → amount).
   - **Shine** — a visually cleaner launch list (`.invoice-launch-list--shine`,
     more breathing room between records).
   - **Standardize** — fills each field's placeholder with an example value
     instead of leaving it blank with no format hint.
-  - **Sustain** — intentionally has no visual effect of its own; its card
-    copy explains that it's the discipline of keeping the other four in
-    place, not a mechanic to switch on.
+  - **Sustain** — turning it on enables Sort, Set in Order, Shine, and
+    Standardize together (the discipline of keeping the full 5S system in
+    place). Turning any of those four off also drops Sustain.
 - **Out of scope for this pass** (candidates for the next iteration, not
-  gaps to silently fill in): an As-is/To-be-style before/after comparison for
-  the invoice process, persistence across stage hops or reloads, and any
-  numeric time/error scoring for the invoicing task itself.
+  gaps to silently fill in): a scored As-is/To-be comparison of the invoicing
+  *task* itself (the Redesign-tab hover preview is in), persistence across
+  stage hops or reloads, and any numeric time/error scoring.
 
 ---
 
@@ -346,7 +365,7 @@ Resolve via `resolveLaunchPrepTechs(process)` (returns `LaunchPrepTech[]`). Scen
 | `views/CustomerPortalView.tsx` | Customer Portal — see below |
 | `views/RegulationView.tsx` | Regulation library (NSLA) — see above |
 | `views/HomeView.tsx`, `views/TrainingView.tsx`, `views/AnnualReportView.tsx`, `views/CreateInvoicesView.tsx` | Home intranet page + its three destinations — see "Home & intranet pages" above |
-| `data/historicLaunches.ts`, `data/invoiceLevers.ts`, `types/invoice.ts` | Supporting data/types for `CreateInvoicesView`'s 5S module — see "Invoice process" above (fully standalone; not part of the `RoundSession`/redesign-budget graph) |
+| `data/historicLaunches.ts`, `data/invoiceLevers.ts`, `data/invoiceForm.ts`, `types/invoice.ts`, `InvoiceLeverImpactPreview.tsx` | Supporting data/types + hover impact preview for `CreateInvoicesView`'s 5S module — see "Invoice process" above (fully standalone; not part of the `RoundSession`/redesign-budget graph) |
 | `RedesignWorkshop.tsx` | To-be pre-play redesign |
 | `StepIcon.tsx` | Shared per-step-kind glyph — Gemba's stepper and the Redesign workshop's tab stepper both use it so they read as the same visual language |
 | `processEdit.ts`, `roadGrid.ts` | Apply/resolve redesign fields |
@@ -497,7 +516,7 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 
 ## Technical Preferences
 - TypeScript + React (Vite). Dev: `npm run dev -- --host 127.0.0.1 --port 5173`.
-- Key modules: `baselineProcess.ts`, `rounds.ts`, `round.ts`, `RoundSession.tsx`, `RedesignWorkshop.tsx`, `SiteBrand.tsx`, `StepIcon.tsx`, `processEdit.ts`, `roadGrid.ts`, `simulation.ts`, `pathGeometry.ts`, `lib/redesignCost.ts`, `lib/redesignSummary.ts`, `lib/saveFile.ts`, `lib/fileDownload.ts`, scene components, `Booster.tsx`, `SimulationView` / `DataView` / `OrbitCompleteScene`, invoice module (`CreateInvoicesView`, `historicLaunches`, `invoiceLevers`).
+- Key modules: `baselineProcess.ts`, `rounds.ts`, `round.ts`, `RoundSession.tsx`, `RedesignWorkshop.tsx`, `SiteBrand.tsx`, `StepIcon.tsx`, `processEdit.ts`, `roadGrid.ts`, `simulation.ts`, `pathGeometry.ts`, `lib/redesignCost.ts`, `lib/redesignSummary.ts`, `lib/saveFile.ts`, `lib/fileDownload.ts`, scene components, `Booster.tsx`, `SimulationView` / `DataView` / `OrbitCompleteScene`, invoice module (`CreateInvoicesView`, `InvoiceLeverImpactPreview`, `historicLaunches`, `invoiceLevers`, `invoiceForm`).
 - Repository map (tree + “where to change what”): **`docs/project-structure.md`**. Brand tokens: **`docs/brand/brand-tokens.md`**. Static asset inventory: **`docs/assets.md`**.
 - Assets: **`public/`** for logos, photos, video, scene sprites, and static SVGs. Key recent sprites: `AccessCodeMonitor.png` (manufacture access-code TV), `AssemblyBooster.png` (bare booster on line + haul), `HaulOfficesTop.png` / `HaulAssemblyTop.png` (isometric cutaway buildings), launch-prep tower/tank sprites `LaunchPrepTower*.png` / `LaunchPrepTankLox.png` / `LaunchPrepTankRp1.png`. Also `OrbitLogo.png`, `AssemblyBG.jpg`, `Orbit26 Teaser.mp4`, Gemba step images `AssemblyStep.png` / `PadStep.png` / `PrepStep.png` / `MissContStep.png`, launch-prep `UpdateIcon*` / `UpgradeIconPump.jpg`. Full list in `docs/assets.md`.
 - No heavy game engines.
@@ -510,7 +529,7 @@ Hands-on floor/field simulation. Prefer spatial scenes and direct manipulation.
 - Comparison tab (removed; use Data board for As-is vs To-be averages)
 - Cross-round cloud persistence (localStorage As-is average → To-be Data is in scope)
 - Unmuted / user-controlled training video (teaser is muted autoplay loop by design)
-- Invoice process: before/after comparison, cross-session persistence, and scoring (see "Invoice process" above — deliberately barebones for now)
+- Invoice process: scored As-is/To-be comparison of the invoicing task, cross-session persistence, and numeric time/error scoring (Redesign hover preview + Process field-order alignment are in; see "Invoice process" above)
 
 ## Working Style
 - Small incremental working steps; keep app runnable.

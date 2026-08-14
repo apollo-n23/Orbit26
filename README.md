@@ -73,7 +73,7 @@ Open [http://127.0.0.1:5173/](http://127.0.0.1:5173/). On Windows PowerShell, us
 | Shared booster art | `src/components/Booster.tsx` |
 | Simulation + Data views | `src/views/SimulationView.tsx`, `DataView.tsx` |
 | Intranet + side stages | `src/views/HomeView.tsx`, `GembaWalkthrough.tsx`, `CustomerPortalView.tsx`, `RegulationView.tsx`, … |
-| 5S invoice module | `src/views/CreateInvoicesView.tsx` + `src/data/historicLaunches.ts` / `invoiceLevers.ts` |
+| 5S invoice module | `src/views/CreateInvoicesView.tsx`, `src/components/InvoiceLeverImpactPreview.tsx`, `src/data/historicLaunches.ts` / `invoiceLevers.ts` / `invoiceForm.ts` |
 | Types / baseline / rounds | `src/types/`, `src/data/` |
 | Simulation & redesign libs | `src/lib/` |
 | Static assets | `public/` (see [docs/assets.md](./docs/assets.md)) |

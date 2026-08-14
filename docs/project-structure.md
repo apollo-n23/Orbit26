@@ -36,6 +36,7 @@ src/
     gembaContext.ts        Gemba step explainers
     historicLaunches.ts    Static invoice billing dataset
     invoiceLevers.ts       5S redesign levers
+    invoiceForm.ts         Invoice field order + labels (Process + hover preview)
   lib/
     simulation.ts          Run transitions, pause/resume, lead-time entries
     processEdit.ts         apply*/resolve* redesign fields
@@ -62,6 +63,7 @@ src/
     LaunchSequenceScene.tsx Step 4
     Booster.tsx            Shared booster art (sprite when bare; CSS when nosed)
     RoundLeadTimeCompare.tsx As-is vs To-be visual compare
+    InvoiceLeverImpactPreview.tsx 5S hover before/after of the invoice UI
   views/
     HomeView.tsx           Default landing `#/home`
     TrainingView.tsx       Teaser video + employee instructions
@@ -111,7 +113,7 @@ Every page renders its own:
 | Lead-time / Data board | `simulation.ts` (`LeadTimeEntry`), `DataView`, `csvExport`, `saveFile`, `roundMetrics` |
 | Brand colour | `src/index.css` + `docs/brand/brand-tokens.md` |
 | Nav / stages | `types/round.ts` (`AppStage`, hash helpers) + `App.tsx` + `StageNav` / `SiteBrand` |
-| Invoice 5S module | `CreateInvoicesView`, `historicLaunches`, `invoiceLevers`, `types/invoice.ts` (standalone; no round budget) |
+| Invoice 5S module | `CreateInvoicesView`, `InvoiceLeverImpactPreview`, `historicLaunches`, `invoiceLevers`, `invoiceForm`, `types/invoice.ts` (standalone; no round budget) |
 | Manufacture layout / monitor / machine badges | `ManufactureScene.tsx` + `App.css` (`.manufacture-*`, `.factory-machine*`) + `public/AccessCodeMonitor.png` |
 | Bare booster art | `Booster.tsx` + `public/AssemblyBooster.png` + `.booster__sprite` / `.booster--haul-sprite` / `.booster--launch-prep` in `App.css` |
 | Haul buildings / NPC ambient / dirt track | `HaulRoadScene.tsx` + `public/HaulOfficesTop.png` / `HaulAssemblyTop.png` + `.haul-npc-*` in `App.css` |

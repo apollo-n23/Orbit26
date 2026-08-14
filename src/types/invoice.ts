@@ -62,4 +62,8 @@ export interface InvoiceLever {
   term: string
   title: string
   description: string
+  /** Card hero illustration in `public/` (no baked-in copy). */
+  icon: string
+  /** Wide hover-preview illustration in `public/` (no baked-in copy). */
+  preview: string
 }
