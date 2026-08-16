@@ -18,9 +18,17 @@ Product behaviour lives in [`CLAUDE.md`](../CLAUDE.md). Tree map:
 | `LaunchPrepTowerBase.png` | `LaunchPrepScene` `.lp-tower__base` | Concrete/steel foundation plinth (672×353) |
 | `LaunchPrepTankLox.png` | `LaunchPrepScene` `.lp-tank--lox` | Cryogenic LOX GSE tank (true alpha); side-by-side farm with RP-1; HTML “LOX” on nameplate. See `assets-launch-prep-tanks.md` |
 | `LaunchPrepTankRp1.png` | `LaunchPrepScene` `.lp-tank--rp` | Matching RP-1 tank; umbilicals grow from each valve to the booster |
-| `HaulOfficesTop.png` | `HaulRoadScene` | 3D isometric cutaway Offices annex (doors/apron south) |
-| `HaulAssemblyTop.png` | `HaulRoadScene` | 3D isometric cutaway Assembly plant (bay door south) |
-| `OrbitLogo.png` | Booster (with nose), haul Assembly badge, pad logo, orbit-complete, Customer Portal, Home, etc. | In-fiction Orb-it mark — never the PMI top banner |
+| `HaulOfficesTop.png` | `HaulRoadScene` | High-angle aerial Offices annex (entrance south) |
+| `HaulAssemblyTop.png` | `HaulRoadScene` | High-angle aerial Assembly hangar (bay door south) |
+| `HaulGrassField.jpg` | `HaulRoadScene` + redesign haul grid | Full-field grassland plate (1600×960) with gentle mounds and mixed turf. One image, not a repeating tile. |
+| `HaulPadDeck.jpg` | `HaulRoadScene` | Square blast-deck concrete under the pad logo/circles (1024²). |
+| `HaulErectorArm.png` | `HaulRoadScene` | Strongback lattice arm (hinge collar on the right). Used in the pad-mount erect animation. |
+| `HaulErectorBase.png` | `HaulRoadScene` | Yellow hydraulic hinge base at the south pad pivot. |
+| `HaulRunwayTile.jpg` | `HaulRoadScene` + redesign haul grid | 2:1 taxiway/runway segment (black asphalt, yellow edges, white technical marks). Stamped along each path segment; rotated on the paint grid. |
+| `HaulRunwayCorner.jpg` | `HaulRoadScene` + redesign haul grid | Square crop of a 90° taxiway bend; rotated to match connected neighbors. |
+| `HaulCoastStrip.jpg` | `HaulRoadScene` + redesign haul map | Vertical beach→water aerial covering the non-interactive right strip. |
+| `HaulTreeA.png` / `HaulTreeB.png` / `HaulTreeC.png` | `HaulRoadScene` + redesign tree cells | Keyed upright live-oak sprites (wide / tall / classic). No lean; map instances are unrotated (some flipped). |
+| `OrbitLogo.png` | Booster (with nose), haul map corner badge + pad logo, orbit-complete, Customer Portal, Home, etc. | In-fiction Orb-it mark — never the PMI top banner |
 | `PMI Logo.svg` | `SiteBrand` | PMI lockup in the site chrome banner |
 | `UpgradeIconPump.jpg` | Redesign launch-prep tech card | Faster pumps |
 | `UpdateIconPowerup.jpg` | Redesign launch-prep tech card | Auto power |
@@ -87,7 +95,7 @@ field labels in the preview miniature are HTML.
 
 ## Conventions
 
-- Prefer **transparent PNG** for sprites overlaid on scenes (boosters, cutaway buildings, monitor bezel, launch-prep tower/tanks).
+- Prefer **transparent PNG** for sprites overlaid on scenes (boosters, haul buildings, monitor bezel, launch-prep tower/tanks).
 - Prefer **HTML labels** over baked-in image text when the copy must stay exact (tank nameplates, access-code digits).
 - Cache-bust query strings (`?v=N`) are optional on hot-reloaded assets after large art changes.
 - New scene art goes in **`public/`**, not under `src/`, unless it must be imported as a module.

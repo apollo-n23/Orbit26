@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Booster } from './Booster'
 import {
   BOOSTER_LENGTH,
@@ -7,6 +7,7 @@ import {
   HAUL_START,
   LAUNCH_PAD,
   PAD_SEATED,
+  PATH_HALF,
   PATH_WIDTH,
   SCENE_HEIGHT,
   SCENE_WIDTH,
@@ -19,17 +20,37 @@ import {
 import type { RunState } from '../types/process'
 
 /** Isometric cutaway building sprites for the haul map (public/). */
-const HAUL_OFFICES_SRC = `${import.meta.env.BASE_URL}HaulOfficesTop.png?v=2`
-const HAUL_ASSEMBLY_SRC = `${import.meta.env.BASE_URL}HaulAssemblyTop.png?v=2`
+const HAUL_OFFICES_SRC = `${import.meta.env.BASE_URL}HaulOfficesTop.png?v=3`
+const HAUL_ASSEMBLY_SRC = `${import.meta.env.BASE_URL}HaulAssemblyTop.png?v=3`
+
+/** Full-field grassland plate — shared with the redesign paint grid. */
+export const HAUL_GRASS_SRC = `${import.meta.env.BASE_URL}HaulGrassField.jpg?v=1`
+export const HAUL_PAD_SRC = `${import.meta.env.BASE_URL}HaulPadDeck.jpg?v=2`
+export const HAUL_RUNWAY_SRC = `${import.meta.env.BASE_URL}HaulRunwayTile.jpg?v=1`
+export const HAUL_RUNWAY_CORNER_SRC = `${import.meta.env.BASE_URL}HaulRunwayCorner.jpg?v=1`
+export const HAUL_COAST_SRC = `${import.meta.env.BASE_URL}HaulCoastStrip.jpg?v=1`
+export const HAUL_ERECTOR_ARM_SRC = `${import.meta.env.BASE_URL}HaulErectorArm.png?v=1`
+export const HAUL_ERECTOR_BASE_SRC = `${import.meta.env.BASE_URL}HaulErectorBase.png?v=1`
+export const HAUL_TREE_SRCS = [
+  `${import.meta.env.BASE_URL}HaulTreeA.png?v=2`,
+  `${import.meta.env.BASE_URL}HaulTreeB.png?v=2`,
+  `${import.meta.env.BASE_URL}HaulTreeC.png?v=2`,
+] as const
+/** Runway tile is 2:1, so travel repeat = 2× path width. */
+export const HAUL_RUNWAY_TILE_LEN = PATH_WIDTH * 2
 
 /**
- * Building placement on the haul map. Logical footprints stay clear of the
- * gameplay road (Offices left of Assembly; Assembly right edge at x=128 for
- * the HAUL_START exit apron). Visuals are slightly larger so the 3D cutaways
- * read clearly without changing road geometry.
+ * Visual-only campus. Grown 2× from the previous aerial boxes, then shifted
+ * north/west so south doors still meet the HAUL_START apron. Does not change
+ * road tiles, HAUL_PATH, or safe-zone geometry.
  */
-const OFFICES_BUILDING = { x: 4, y: 158, width: 52, height: 148 }
-const ASSEMBLY_BUILDING = { x: 48, y: 152, width: 88, height: 154 }
+const OFFICES_BUILDING = { x: -6, y: 96, width: 108, height: 132 }
+const ASSEMBLY_BUILDING = { x: 52, y: 16, width: 168, height: 228 }
+const SITE_LOGO_SIZE = 36
+const SITE_LOGO_RADIUS = 22
+const SITE_LOGO_CX = 26
+const SITE_LOGO_CY = 26
+const ORBIT_LOGO_SRC = `${import.meta.env.BASE_URL}OrbitLogo.png`
 
 interface HaulRoadSceneProps {
   run: RunState
@@ -57,6 +78,43 @@ const MOVE_SPEED = 160
 
 /** How long the explosion plays before reset (ms). Keep in sync with App.css. */
 const EXPLODE_MS = 550
+
+/** Strongback slide + erect + settle. Step does not advance until this finishes. */
+const MOUNT_MS = 2400
+const MOUNT_HOLD_MS = 380
+
+/** South-side pad hinge — engine end of the seated booster. */
+const ERECTOR_HINGE = {
+  x: PAD_SEATED.x,
+  y: PAD_SEATED.y + BOOSTER_LENGTH / 2,
+}
+const ERECTOR_ARM_LEN = BOOSTER_LENGTH * 1.18
+const ERECTOR_ARM_HINGE_PCT = 79
+const ERECTOR_BASE_SIZE = 26
+
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t
+}
+
+function lerpAngle(from: number, to: number, t: number): number {
+  const d = ((to - from + 540) % 360) - 180
+  return from + d * t
+}
+
+function erectPose(t: number): HaulPose {
+  const ang = t * PAD_SEATED.rotation
+  const rad = (ang * Math.PI) / 180
+  const half = BOOSTER_LENGTH / 2
+  return {
+    x: ERECTOR_HINGE.x - half * Math.cos(rad),
+    y: ERECTOR_HINGE.y - half * Math.sin(rad),
+    rotation: ang,
+  }
+}
 
 const ARROW_CODES = new Set([
   'ArrowUp',
@@ -99,6 +157,54 @@ const NO_FLY_MARKERS: Point[] = [
   },
 ]
 
+const HAUL_TREES: {
+  cx: number
+  cy: number
+  w: number
+  h: number
+  src: 0 | 1 | 2
+  flip: boolean
+}[] = [
+  { cx: 338, cy: 246, w: 58, h: 72, src: 2, flip: false },
+  { cx: 294, cy: 254, w: 52, h: 76, src: 1, flip: false },
+  { cx: 306, cy: 300, w: 70, h: 74, src: 0, flip: true },
+  { cx: 346, cy: 292, w: 54, h: 70, src: 2, flip: true },
+  { cx: 314, cy: 338, w: 60, h: 72, src: 0, flip: false },
+  { cx: 352, cy: 334, w: 50, h: 74, src: 1, flip: true },
+]
+
+interface RunwaySegment {
+  x: number
+  y: number
+  angle: number
+  len: number
+  startTrim: number
+  drawLen: number
+}
+
+function runwaySegments(path: Point[]): RunwaySegment[] {
+  const segs: RunwaySegment[] = []
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i]
+    const b = path[i + 1]
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const len = Math.hypot(dx, dy)
+    if (len < 0.5) continue
+    const startTrim = i === 0 ? 0 : 8
+    const endTrim = i === path.length - 2 ? 0 : 8
+    segs.push({
+      x: a.x,
+      y: a.y,
+      angle: (Math.atan2(dy, dx) * 180) / Math.PI,
+      len,
+      startTrim,
+      drawLen: Math.max(0, len - startTrim - endTrim),
+    })
+  }
+  return segs
+}
+
 function startPose(): HaulPose {
   return {
     x: HAUL_START.x,
@@ -116,6 +222,8 @@ export function HaulRoadScene({
   paused = false,
   onBlockedInteraction,
 }: HaulRoadSceneProps) {
+  const texUid = useId().replace(/:/g, '')
+  const padClipId = `haul-pad-clip-${texUid}`
   const sceneRef = useRef<HTMLDivElement>(null)
   const pausedRef = useRef(paused)
   pausedRef.current = paused
@@ -123,6 +231,8 @@ export function HaulRoadScene({
   const [dragging, setDragging] = useState(false)
   const [exploding, setExploding] = useState(false)
   const [seated, setSeated] = useState(false)
+  const [mounting, setMounting] = useState(false)
+  const [erectorAngle, setErectorAngle] = useState(0)
   /** Explosions this turn at this step — reset per haul epoch, alongside pose. */
   const [rudCount, setRudCount] = useState(0)
   const dragOffset = useRef<Point>({ x: 0, y: 0 })
@@ -131,6 +241,8 @@ export function HaulRoadScene({
   const keysRef = useRef<Set<string>>(new Set())
   const explodingRef = useRef(false)
   const explodeTimerRef = useRef<number | null>(null)
+  const mountRafRef = useRef<number | null>(null)
+  const mountFromRef = useRef<HaulPose | null>(null)
   const canMoveRef = useRef(false)
   /** Only reset local haul state when (re)entering this step, not every render. */
   const haulEpochRef = useRef<string | null>(null)
@@ -146,14 +258,23 @@ export function HaulRoadScene({
     run.status === 'awaiting_reorient' ||
     run.status === 'complete' ||
     run.status === 'step_complete'
-  const canMove = run.status === 'running' && !seated && !exploding && !paused
+  const canMove =
+    run.status === 'running' && !seated && !exploding && !paused && !mounting
   canMoveRef.current = canMove
-  const showMountToPad = run.status === 'awaiting_reorient' && !seated
+  const showMountToPad =
+    run.status === 'awaiting_reorient' && !seated && !mounting
 
   const clearExplodeTimer = useCallback(() => {
     if (explodeTimerRef.current != null) {
       window.clearTimeout(explodeTimerRef.current)
       explodeTimerRef.current = null
+    }
+  }, [])
+
+  const clearMountRaf = useCallback(() => {
+    if (mountRafRef.current != null) {
+      window.cancelAnimationFrame(mountRafRef.current)
+      mountRafRef.current = null
     }
   }, [])
 
@@ -171,10 +292,13 @@ export function HaulRoadScene({
     haulEpochRef.current = epoch
 
     clearExplodeTimer()
+    clearMountRaf()
     explodingRef.current = false
     setExploding(false)
     applyPose(startPose())
     setSeated(false)
+    setMounting(false)
+    setErectorAngle(0)
     setDragging(false)
     setRudCount(0)
     keysRef.current.clear()
@@ -184,9 +308,22 @@ export function HaulRoadScene({
     window.requestAnimationFrame(() => {
       sceneRef.current?.focus({ preventScroll: true })
     })
-  }, [run.status, run.currentStepIndex, run.completedRuns, clearExplodeTimer, applyPose])
+  }, [
+    run.status,
+    run.currentStepIndex,
+    run.completedRuns,
+    clearExplodeTimer,
+    clearMountRaf,
+    applyPose,
+  ])
 
-  useEffect(() => () => clearExplodeTimer(), [clearExplodeTimer])
+  useEffect(
+    () => () => {
+      clearExplodeTimer()
+      clearMountRaf()
+    },
+    [clearExplodeTimer, clearMountRaf],
+  )
 
   const clientToScene = useCallback((clientX: number, clientY: number): Point => {
     const el = sceneRef.current
@@ -403,19 +540,55 @@ export function HaulRoadScene({
       onBlockedInteraction?.()
       return
     }
-    setSeated(true)
-    applyPose({
-      x: PAD_SEATED.x,
-      y: PAD_SEATED.y,
-      rotation: PAD_SEATED.rotation,
-    })
-    onMountToPad()
+    if (mounting || seated) return
+
+    clearMountRaf()
+    mountFromRef.current = { ...poseRef.current }
+    setMounting(true)
+    setErectorAngle(0)
+    const startedAt = performance.now()
+    const liftStart = erectPose(0)
+
+    const tick = (now: number) => {
+      const raw = Math.min(1, (now - startedAt) / MOUNT_MS)
+      const e = easeInOutCubic(raw)
+      const from = mountFromRef.current ?? liftStart
+      if (e < 0.28) {
+        const t = e / 0.28
+        applyPose({
+          x: lerp(from.x, liftStart.x, t),
+          y: lerp(from.y, liftStart.y, t),
+          rotation: lerpAngle(from.rotation, liftStart.rotation, t),
+        })
+        setErectorAngle(lerpAngle(from.rotation, 0, t))
+      } else {
+        const t = Math.min(1, (e - 0.28) / 0.72)
+        const next = erectPose(t)
+        applyPose(next)
+        setErectorAngle(next.rotation)
+      }
+      if (raw < 1) {
+        mountRafRef.current = window.requestAnimationFrame(tick)
+        return
+      }
+      applyPose({
+        x: PAD_SEATED.x,
+        y: PAD_SEATED.y,
+        rotation: PAD_SEATED.rotation,
+      })
+      setErectorAngle(PAD_SEATED.rotation)
+      setSeated(true)
+      setMounting(false)
+      window.setTimeout(() => onMountToPad(), MOUNT_HOLD_MS)
+    }
+    mountRafRef.current = window.requestAnimationFrame(tick)
   }
 
   // Discrete nudge for on-screen pad (and reliability when keys are captured).
   const NUDGE = 12
 
   const pathPoints = pathPolylinePoints(activePath)
+  const taxiwaySegs = runwaySegments(activePath)
 
   return (
     <div className="haul-scene">
@@ -500,6 +673,11 @@ export function HaulRoadScene({
             Mount to launch pad
           </button>
         )}
+        {mounting && (
+          <p className="haul-mount-status" aria-live="polite">
+            Strongback erecting booster…
+          </p>
+        )}
       </div>
 
       <div
@@ -508,6 +686,7 @@ export function HaulRoadScene({
           'haul-map',
           exploding ? 'haul-map--exploding' : '',
           seated ? 'haul-map--seated' : '',
+          mounting ? 'haul-map--mounting' : '',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -553,121 +732,43 @@ export function HaulRoadScene({
           aria-hidden="true"
         >
           <defs>
-            <linearGradient id="haul-grass" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3d7a35" />
-              <stop offset="45%" stopColor="#2f6a2a" />
-              <stop offset="100%" stopColor="#255522" />
-            </linearGradient>
-            <pattern
-              id="haul-grass-texture"
-              width="28"
-              height="28"
-              patternUnits="userSpaceOnUse"
-            >
-              <rect width="28" height="28" fill="transparent" />
-              <path
-                d="M4 22 Q6 12 5 6 M12 26 Q14 14 13 5 M20 24 Q22 13 21 7 M8 18 Q9 10 8 4"
-                fill="none"
-                stroke="rgba(20, 70, 18, 0.28)"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-              />
-            </pattern>
             <radialGradient id="haul-field-vignette" cx="50%" cy="50%" r="70%">
               <stop offset="50%" stopColor="rgba(0,0,0,0)" />
               <stop offset="100%" stopColor="rgba(10, 28, 8, 0.35)" />
             </radialGradient>
-            <linearGradient id="haul-road" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#4a4f56" />
-              <stop offset="50%" stopColor="#3d4249" />
-              <stop offset="100%" stopColor="#353a41" />
-            </linearGradient>
-            <linearGradient id="haul-sand" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#c9a866" />
-              <stop offset="100%" stopColor="#ddc383" />
-            </linearGradient>
-            <pattern
-              id="haul-sand-texture"
-              width="10"
-              height="10"
-              patternUnits="userSpaceOnUse"
-            >
-              <rect width="10" height="10" fill="transparent" />
-              <circle cx="2" cy="3" r="0.6" fill="rgba(110, 82, 34, 0.35)" />
-              <circle cx="7" cy="7" r="0.5" fill="rgba(110, 82, 34, 0.3)" />
-              <circle cx="5" cy="2" r="0.4" fill="rgba(255, 255, 255, 0.18)" />
-            </pattern>
-            {/* Sea gradient stops match the brand palette (brand-indigo / brand-navy — see index.css). */}
-            <linearGradient id="haul-sea" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#1e345d" />
-              <stop offset="45%" stopColor="#00538a" />
-              <stop offset="100%" stopColor="#1e345d" />
-            </linearGradient>
-            <pattern
-              id="haul-sea-texture"
-              width="34"
-              height="24"
-              patternUnits="userSpaceOnUse"
-            >
-              <rect width="34" height="24" fill="transparent" />
-              <path
-                d="M0 14 Q8 8 16 14 T34 14"
-                stroke="rgba(255, 255, 255, 0.2)"
-                strokeWidth="1.4"
-                fill="none"
+            <clipPath id={padClipId}>
+              <rect
+                x={LAUNCH_PAD.x}
+                y={LAUNCH_PAD.y}
+                width={LAUNCH_PAD.width}
+                height={LAUNCH_PAD.height}
+                rx="6"
               />
-              <path
-                d="M-4 20 Q6 15 16 20 T36 20"
-                stroke="rgba(255, 255, 255, 0.12)"
-                strokeWidth="1.2"
-                fill="none"
-              />
-            </pattern>
+            </clipPath>
           </defs>
 
-          <rect width={SCENE_WIDTH} height={SCENE_HEIGHT} fill="url(#haul-grass)" />
-          <rect
+          <rect width={SCENE_WIDTH} height={SCENE_HEIGHT} fill="#3a4a32" />
+          <image
+            href={HAUL_GRASS_SRC}
+            xlinkHref={HAUL_GRASS_SRC}
+            x={0}
+            y={0}
             width={SCENE_WIDTH}
             height={SCENE_HEIGHT}
-            fill="url(#haul-grass-texture)"
+            preserveAspectRatio="xMidYMid slice"
           />
 
-          <g className="haul-coast" aria-hidden="true">
-            <rect
-              x={SAND_X}
-              y="0"
-              width={SAND_WIDTH}
-              height={SCENE_HEIGHT}
-              fill="url(#haul-sand)"
-            />
-            <rect
-              x={SAND_X}
-              y="0"
-              width={SAND_WIDTH}
-              height={SCENE_HEIGHT}
-              fill="url(#haul-sand-texture)"
-            />
-            <rect
-              x={SEA_X}
-              y="0"
-              width={SCENE_WIDTH - SEA_X}
-              height={SCENE_HEIGHT}
-              fill="url(#haul-sea)"
-            />
-            <rect
-              x={SEA_X}
-              y="0"
-              width={SCENE_WIDTH - SEA_X}
-              height={SCENE_HEIGHT}
-              fill="url(#haul-sea-texture)"
-            />
-            <path
-              d="M 762 0 Q 750 40 762 80 Q 772 120 758 160 Q 748 200 764 240 Q 774 280 756 320 Q 748 360 766 400 Q 774 440 760 480"
-              stroke="rgba(255, 255, 255, 0.4)"
-              strokeWidth="2"
-              fill="none"
-            />
-          </g>
+          <image
+            className="haul-coast"
+            href={HAUL_COAST_SRC}
+            xlinkHref={HAUL_COAST_SRC}
+            x={SAND_X}
+            y={0}
+            width={SCENE_WIDTH - SAND_X}
+            height={SCENE_HEIGHT}
+            preserveAspectRatio="xMidYMid slice"
+            aria-hidden="true"
+          />
 
           <rect
             width={SCENE_WIDTH}
@@ -678,20 +779,43 @@ export function HaulRoadScene({
           <polyline
             points={pathPoints}
             fill="none"
-            stroke="url(#haul-road)"
-            strokeWidth={PATH_WIDTH}
+            stroke="rgba(12, 14, 16, 0.92)"
+            strokeWidth={PATH_WIDTH + 14}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <polyline
-            points={pathPoints}
-            fill="none"
-            stroke="rgba(255, 220, 90, 0.55)"
-            strokeWidth={2}
-            strokeDasharray="12 10"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {taxiwaySegs.map((seg, i) => {
+            if (seg.drawLen <= 1) return null
+            const tiles = Math.max(1, Math.ceil(seg.len / HAUL_RUNWAY_TILE_LEN) + 1)
+            return (
+              <g
+                key={`seg-${i}`}
+                transform={`translate(${seg.x} ${seg.y}) rotate(${seg.angle})`}
+              >
+                <svg
+                  x={seg.startTrim}
+                  y={-PATH_HALF}
+                  width={seg.drawLen}
+                  height={PATH_WIDTH}
+                  overflow="hidden"
+                >
+                  {Array.from({ length: tiles }, (_, t) => (
+                    <image
+                      key={t}
+                      href={HAUL_RUNWAY_SRC}
+                      xlinkHref={HAUL_RUNWAY_SRC}
+                      x={t * HAUL_RUNWAY_TILE_LEN - seg.startTrim}
+                      y={0}
+                      width={HAUL_RUNWAY_TILE_LEN}
+                      height={PATH_WIDTH}
+                      preserveAspectRatio="none"
+                    />
+                  ))}
+                </svg>
+              </g>
+            )
+          })}
+
 
           <g className="haul-trees" aria-hidden="true">
             {/*
@@ -708,87 +832,26 @@ export function HaulRoadScene({
               Redesign grid cell trees are styled separately in App.css and
               remain larger for map readability.
             */}
-            {[
-              { cx: 340, cy: 250, r: 18 },
-              { cx: 298, cy: 258, r: 21 },
-              { cx: 302, cy: 300, r: 22 },
-              { cx: 343, cy: 293, r: 18 },
-              { cx: 316, cy: 336, r: 20 },
-              { cx: 350, cy: 330, r: 17 },
-            ].map((tree, i) => (
-              <g key={i} transform={`translate(${tree.cx}, ${tree.cy})`}>
-                {/* Ground shadow */}
+            {HAUL_TREES.map((tree, i) => (
+              <g
+                key={i}
+                transform={`translate(${tree.cx}, ${tree.cy})${tree.flip ? ' scale(-1 1)' : ''}`}
+              >
                 <ellipse
                   cx="0"
-                  cy={tree.r * 1.05}
-                  rx={tree.r * 1.15}
-                  ry={tree.r * 0.28}
+                  cy={tree.h * 0.08}
+                  rx={tree.w * 0.38}
+                  ry={tree.h * 0.1}
                   fill="rgba(4, 12, 3, 0.45)"
                 />
-                {/* Trunk */}
-                <rect
-                  x={-tree.r * 0.16}
-                  y={tree.r * 0.15}
-                  width={tree.r * 0.32}
-                  height={tree.r * 0.95}
-                  rx={tree.r * 0.06}
-                  fill="#5b3a22"
-                  stroke="#2e1c10"
-                  strokeWidth="1.5"
-                />
-                <rect
-                  x={-tree.r * 0.06}
-                  y={tree.r * 0.2}
-                  width={tree.r * 0.08}
-                  height={tree.r * 0.7}
-                  rx={tree.r * 0.02}
-                  fill="#7a5230"
-                  opacity="0.55"
-                />
-                {/* Foliage mass — layered for a fuller canopy */}
-                <circle
-                  cy={-tree.r * 0.05}
-                  r={tree.r * 1.12}
-                  fill="#0f2b12"
-                  opacity="0.5"
-                />
-                <circle
-                  cy={-tree.r * 0.12}
-                  r={tree.r * 1.02}
-                  fill="#1f5a20"
-                  stroke="#123714"
-                  strokeWidth="2"
-                />
-                <circle
-                  cx={-tree.r * 0.38}
-                  cy={-tree.r * 0.22}
-                  r={tree.r * 0.62}
-                  fill="#2c6b2c"
-                />
-                <circle
-                  cx={tree.r * 0.36}
-                  cy={-tree.r * 0.18}
-                  r={tree.r * 0.58}
-                  fill="#2f7330"
-                />
-                <circle
-                  cy={-tree.r * 0.48}
-                  r={tree.r * 0.7}
-                  fill="#3c8a3a"
-                />
-                <circle
-                  cx={-tree.r * 0.18}
-                  cy={-tree.r * 0.55}
-                  r={tree.r * 0.42}
-                  fill="#57b054"
-                  opacity="0.9"
-                />
-                <circle
-                  cx={tree.r * 0.22}
-                  cy={-tree.r * 0.42}
-                  r={tree.r * 0.36}
-                  fill="#6bc468"
-                  opacity="0.75"
+                <image
+                  href={HAUL_TREE_SRCS[tree.src]}
+                  xlinkHref={HAUL_TREE_SRCS[tree.src]}
+                  x={-tree.w / 2}
+                  y={-tree.h * 0.9}
+                  width={tree.w}
+                  height={tree.h}
+                  preserveAspectRatio="xMidYMax meet"
                 />
               </g>
             ))}
@@ -801,19 +864,18 @@ export function HaulRoadScene({
             Never read by isBoosterSafe / isPointSafe.
           */}
           {/*
-            Curved dirt track: Offices door → yard → Assembly door (and
-            reverse for the NPC car along the horizontal stretch).
-            Offices door ~ (28, 296); Assembly door ~ (92, 296).
+            Curved dirt track: Offices door → yard → Assembly door.
+            Offices door ~ (48, 228); Assembly door ~ (136, 244).
           */}
           <g className="haul-npc-dirt-road" aria-hidden="true">
             <path
               className="haul-npc-dirt-road__bed"
-              d="M 28 296
-                 L 28 316
-                 Q 28 327 40 327
-                 L 80 327
-                 Q 92 327 92 316
-                 L 92 296"
+              d="M 48 228
+                 L 48 258
+                 Q 48 270 60 270
+                 L 124 270
+                 Q 136 270 136 258
+                 L 136 244"
               fill="none"
               stroke="#6b5a3e"
               strokeWidth="11"
@@ -823,12 +885,12 @@ export function HaulRoadScene({
             />
             <path
               className="haul-npc-dirt-road__highlight"
-              d="M 28 296
-                 L 28 316
-                 Q 28 327 40 327
-                 L 80 327
-                 Q 92 327 92 316
-                 L 92 296"
+              d="M 48 228
+                 L 48 258
+                 Q 48 270 60 270
+                 L 124 270
+                 Q 136 270 136 258
+                 L 136 244"
               fill="none"
               stroke="#8a7550"
               strokeWidth="4.5"
@@ -837,7 +899,7 @@ export function HaulRoadScene({
               opacity="0.5"
             />
             <path
-              d="M 30 300 L 30 316 Q 30 325 42 325 L 78 325 Q 90 325 90 316 L 90 300"
+              d="M 50 232 L 50 256 Q 50 268 62 268 L 122 268 Q 134 268 134 256 L 134 246"
               fill="none"
               stroke="#5a4a32"
               strokeWidth="0.7"
@@ -845,7 +907,7 @@ export function HaulRoadScene({
               opacity="0.4"
             />
             <path
-              d="M 34 318 Q 50 329 70 326 T 96 318"
+              d="M 54 260 Q 80 276 110 272 T 140 258"
               fill="none"
               stroke="#9a8460"
               strokeWidth="0.55"
@@ -858,8 +920,8 @@ export function HaulRoadScene({
           <g className="haul-npc-people" aria-hidden="true">
             <circle
               className="haul-npc-person haul-npc-person--1"
-              cx="28"
-              cy="314"
+              cx="48"
+              cy="252"
               r="2.3"
               fill="#cbd5df"
               stroke="#5a6672"
@@ -867,8 +929,8 @@ export function HaulRoadScene({
             />
             <circle
               className="haul-npc-person haul-npc-person--2"
-              cx="34"
-              cy="316"
+              cx="54"
+              cy="254"
               r="2.2"
               fill="#d8c9a3"
               stroke="#6b5d42"
@@ -876,8 +938,8 @@ export function HaulRoadScene({
             />
             <circle
               className="haul-npc-person haul-npc-person--3"
-              cx="88"
-              cy="315"
+              cx="136"
+              cy="256"
               r="2.3"
               fill="#c9a8c0"
               stroke="#6a4f63"
@@ -886,10 +948,9 @@ export function HaulRoadScene({
           </g>
 
           {/*
-            3D isometric cutaway building sprites (public/HaulOfficesTop.png,
-            public/HaulAssemblyTop.png). Drawn after people so walkers vanish
-            under the buildings at doorways. href + xlinkHref for SVG image
-            compatibility; preserveAspectRatio keeps the 3D cutaway readable.
+            High-angle aerial building sprites. Drawn after people so walkers
+            vanish under the façades at doorways. preserveAspectRatio xMidYMax
+            keeps each south door on the apron.
           */}
           <g className="haul-building haul-building--offices" aria-hidden="true">
             <image
@@ -903,11 +964,11 @@ export function HaulRoadScene({
               style={{ filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))' }}
             />
             <text
-              x={OFFICES_BUILDING.x + OFFICES_BUILDING.width / 2}
-              y={OFFICES_BUILDING.y + 14}
+              x={28}
+              y={OFFICES_BUILDING.y + 16}
               textAnchor="middle"
               fill="#e8f0e4"
-              fontSize="11"
+              fontSize="10"
               fontFamily="Segoe UI, system-ui, sans-serif"
               fontWeight="700"
               letterSpacing="0.5"
@@ -928,21 +989,12 @@ export function HaulRoadScene({
               preserveAspectRatio="xMidYMax meet"
               style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.55))' }}
             />
-            <image
-              href={`${import.meta.env.BASE_URL}OrbitLogo.png`}
-              xlinkHref={`${import.meta.env.BASE_URL}OrbitLogo.png`}
-              x={ASSEMBLY_BUILDING.x + ASSEMBLY_BUILDING.width / 2 - 11}
-              y={ASSEMBLY_BUILDING.y + 4}
-              width="22"
-              height="22"
-              opacity="0.95"
-            />
             <text
               x={ASSEMBLY_BUILDING.x + ASSEMBLY_BUILDING.width / 2}
-              y={ASSEMBLY_BUILDING.y - 6}
+              y={ASSEMBLY_BUILDING.y + 28}
               textAnchor="middle"
               fill="#e8f0e4"
-              fontSize="13"
+              fontSize="11"
               fontFamily="Segoe UI, system-ui, sans-serif"
               fontWeight="700"
               style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.75)', strokeWidth: 2.5 }}
@@ -951,11 +1003,28 @@ export function HaulRoadScene({
             </text>
           </g>
 
+          <g className="haul-site-logo" aria-hidden="true">
+            <circle
+              cx={SITE_LOGO_CX}
+              cy={SITE_LOGO_CY}
+              r={SITE_LOGO_RADIUS}
+              fill="#ffffff"
+            />
+            <image
+              href={ORBIT_LOGO_SRC}
+              xlinkHref={ORBIT_LOGO_SRC}
+              x={SITE_LOGO_CX - SITE_LOGO_SIZE / 2}
+              y={SITE_LOGO_CY - SITE_LOGO_SIZE / 2}
+              width={SITE_LOGO_SIZE}
+              height={SITE_LOGO_SIZE}
+            />
+          </g>
+
           <g className="haul-npc-traffic" aria-hidden="true">
             <rect
               className="haul-npc-vehicle"
               x="34"
-              y="322.5"
+              y="266.5"
               width="12"
               height="7"
               rx="1.5"
@@ -966,17 +1035,33 @@ export function HaulRoadScene({
           </g>
 
           <g className="haul-pad">
+            <g clipPath={`url(#${padClipId})`}>
+              <image
+                href={HAUL_PAD_SRC}
+                xlinkHref={HAUL_PAD_SRC}
+                x={LAUNCH_PAD.x}
+                y={LAUNCH_PAD.y}
+                width={LAUNCH_PAD.width}
+                height={LAUNCH_PAD.height}
+                preserveAspectRatio="xMidYMid slice"
+              />
+              {(locked || seated) && (
+                <rect
+                  x={LAUNCH_PAD.x}
+                  y={LAUNCH_PAD.y}
+                  width={LAUNCH_PAD.width}
+                  height={LAUNCH_PAD.height}
+                  fill="rgba(59, 130, 196, 0.28)"
+                />
+              )}
+            </g>
             <rect
               x={LAUNCH_PAD.x}
               y={LAUNCH_PAD.y}
               width={LAUNCH_PAD.width}
               height={LAUNCH_PAD.height}
               rx="6"
-              fill={
-                locked || seated
-                  ? 'rgba(59, 130, 196, 0.35)'
-                  : 'rgba(55, 60, 68, 0.95)'
-              }
+              fill="none"
               stroke={locked || seated ? '#5ba3e0' : '#8a929c'}
               strokeWidth="2"
             />
@@ -1157,12 +1242,40 @@ export function HaulRoadScene({
           </g>
         </svg>
 
+        {(mounting || seated) && (
+          <div className="haul-erector" aria-hidden="true">
+            <img
+              className="haul-erector__base"
+              src={HAUL_ERECTOR_BASE_SRC}
+              alt=""
+              style={{
+                left: `${(ERECTOR_HINGE.x / SCENE_WIDTH) * 100}%`,
+                top: `${(ERECTOR_HINGE.y / SCENE_HEIGHT) * 100}%`,
+                width: `${(ERECTOR_BASE_SIZE / SCENE_WIDTH) * 100}%`,
+              }}
+            />
+            <img
+              className="haul-erector__arm"
+              src={HAUL_ERECTOR_ARM_SRC}
+              alt=""
+              style={{
+                left: `${(ERECTOR_HINGE.x / SCENE_WIDTH) * 100}%`,
+                top: `${(ERECTOR_HINGE.y / SCENE_HEIGHT) * 100}%`,
+                width: `${(ERECTOR_ARM_LEN / SCENE_WIDTH) * 100}%`,
+                transform: `translate(-${ERECTOR_ARM_HINGE_PCT}%, -50%) rotate(${erectorAngle}deg)`,
+                transformOrigin: `${ERECTOR_ARM_HINGE_PCT}% 50%`,
+              }}
+            />
+          </div>
+        )}
+
         <div
           className={[
             'haul-booster',
             dragging ? 'haul-booster--dragging' : '',
             canMove ? 'haul-booster--draggable' : '',
             seated ? 'haul-booster--seated' : '',
+            mounting ? 'haul-booster--mounting' : '',
             exploding ? 'haul-booster--exploding' : '',
           ]
             .filter(Boolean)
@@ -1179,7 +1292,9 @@ export function HaulRoadScene({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
-          {!exploding && <div className="haul-crawler" aria-hidden="true" />}
+          {!exploding && !mounting && !seated && (
+            <div className="haul-crawler" aria-hidden="true" />
+          )}
           {!exploding && (
             /* Same bare-booster HD sprite as manufacture (showNose=false → AssemblyBooster.png). */
             <Booster

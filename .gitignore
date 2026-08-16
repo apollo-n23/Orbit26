@@ -59,3 +59,4 @@ Desktop.ini
 
 # Local headless browser / screenshot scratch (never commit)
 .tmp-screenshots/
+scripts/_tile_review/

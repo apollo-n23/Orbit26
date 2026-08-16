@@ -36,7 +36,14 @@ import {
   remainingBudget as computeRemainingBudget,
 } from '../lib/redesignCost'
 import { Booster } from './Booster'
-import { HaulRoadScene } from './HaulRoadScene'
+import {
+  HaulRoadScene,
+  HAUL_COAST_SRC,
+  HAUL_GRASS_SRC,
+  HAUL_RUNWAY_CORNER_SRC,
+  HAUL_RUNWAY_SRC,
+  HAUL_TREE_SRCS,
+} from './HaulRoadScene'
 import { LaunchSequenceScene } from './LaunchSequenceScene'
 import { StepIcon } from './StepIcon'
 import type { LaunchPrepTech, RunState } from '../types/process'
@@ -52,10 +59,12 @@ import {
   ROAD_COST_PER_TILE,
   TREE_CLUSTER_CELLS,
   cellKey,
+  neighborMask,
   pathFromRoadTiles,
   rasterizePath,
   requiredEndpointCells,
   roadCostFromTiles,
+  runwayCellOrient,
   type CellKey,
 } from '../lib/roadGrid'
 import { HAUL_PATH, SCENE_HEIGHT, SCENE_WIDTH } from '../lib/pathGeometry'
@@ -1400,7 +1409,12 @@ export function RedesignWorkshop({
             )}
             <div
               className="redesign-haul__map"
-              style={{ aspectRatio: `${SCENE_WIDTH} / ${SCENE_HEIGHT}` }}
+              style={{
+                aspectRatio: `${SCENE_WIDTH} / ${SCENE_HEIGHT}`,
+                backgroundImage: `url(${HAUL_GRASS_SRC})`,
+                backgroundSize: '100% 100%',
+                backgroundRepeat: 'no-repeat',
+              }}
             >
               <div
                 className="redesign-haul__grid"
@@ -1421,14 +1435,38 @@ export function RedesignWorkshop({
                       !on &&
                       !isBaseline &&
                       ROAD_COST_PER_TILE > remainingBudget
+                    const showRoad = on || isStart || isEnd
+                    const orient = showRoad
+                      ? runwayCellOrient(neighborMask(col, row, roadTiles))
+                      : null
+                    const treeIndex = isTree ? TREE_CLUSTER_CELLS.indexOf(key) : -1
+                    const cellFill: Record<string, string> | undefined =
+                      showRoad && orient
+                        ? {
+                            '--runway-image': `url(${
+                              orient.kind === 'corner'
+                                ? HAUL_RUNWAY_CORNER_SRC
+                                : HAUL_RUNWAY_SRC
+                            })`,
+                            '--runway-rot': `${orient.rotate}deg`,
+                            '--runway-size':
+                              orient.kind === 'corner' ? 'cover' : '220% 100%',
+                          }
+                        : isTree && treeIndex >= 0
+                          ? {
+                              '--tree-image': `url(${HAUL_TREE_SRCS[treeIndex % HAUL_TREE_SRCS.length]})`,
+                            }
+                          : undefined
                     return (
                       <button
                         key={key}
                         type="button"
                         className={[
                           'redesign-haul__cell',
-                          on ? 'redesign-haul__cell--road' : '',
-                          on && !isBaseline ? 'redesign-haul__cell--road-new' : '',
+                          showRoad ? 'redesign-haul__cell--road' : '',
+                          on && !isBaseline && !isStart && !isEnd
+                            ? 'redesign-haul__cell--road-new'
+                            : '',
                           isStart ? 'redesign-haul__cell--start' : '',
                           isEnd ? 'redesign-haul__cell--end' : '',
                           isTree ? 'redesign-haul__cell--tree' : '',
@@ -1436,6 +1474,7 @@ export function RedesignWorkshop({
                         ]
                           .filter(Boolean)
                           .join(' ')}
+                        style={cellFill}
                         onClick={() => toggleTile(col, row)}
                         aria-label={
                           isStart
@@ -1460,6 +1499,12 @@ export function RedesignWorkshop({
                   }),
                 )}
               </div>
+              <img
+                className="redesign-haul__coast"
+                src={HAUL_COAST_SRC}
+                alt=""
+                aria-hidden="true"
+              />
               <span className="redesign-haul__label redesign-haul__label--asm">
                 Assembly
               </span>

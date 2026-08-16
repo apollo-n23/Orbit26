@@ -58,7 +58,7 @@ src/
     StepIcon.tsx           Shared step-kind glyphs (Gemba + Redesign steppers)
     GembaContextPanel.tsx  Gemba-only context rail
     ManufactureScene.tsx   Step 1 — belt, machines, access-code monitor, booster sprite
-    HaulRoadScene.tsx      Step 2 — map, cutaway buildings, crawler, NPC ambient life
+    HaulRoadScene.tsx      Step 2 — map, aerial buildings, taxiway, erector, crawler, NPC ambient
     LaunchPrepScene.tsx    Step 3
     LaunchSequenceScene.tsx Step 4
     Booster.tsx            Shared booster art (sprite when bare; CSS when nosed)
@@ -117,6 +117,7 @@ Every page renders its own:
 | Manufacture layout / monitor / machine badges | `ManufactureScene.tsx` + `App.css` (`.manufacture-*`, `.factory-machine*`) + `public/AccessCodeMonitor.png` |
 | Bare booster art | `Booster.tsx` + `public/AssemblyBooster.png` + `.booster__sprite` / `.booster--haul-sprite` / `.booster--launch-prep` in `App.css` |
 | Haul buildings / NPC ambient / dirt track | `HaulRoadScene.tsx` + `public/HaulOfficesTop.png` / `HaulAssemblyTop.png` + `.haul-npc-*` in `App.css` |
+| Haul grass / runway / coast / trees / erector | `public/HaulGrassField.jpg`, `HaulPadDeck.jpg`, `HaulRunwayTile.jpg`, `HaulRunwayCorner.jpg`, `HaulCoastStrip.jpg`, `HaulTreeA-C.png`, `HaulErectorArm.png`, `HaulErectorBase.png` + `HaulRoadScene.tsx` + redesign paint-grid (`scripts/process_haul_overhaul.py`, `scripts/key_buildings.py`) |
 | Launch-prep pad visuals | `LaunchPrepScene.tsx` + tower PNGs + tank PNGs + `.lp-tower*` / `.lp-tank*` / `.lp-umbilical*` / `.lp-power-light*` in `App.css` — see `docs/assets-launch-prep-tower.md` + `docs/assets-launch-prep-tanks.md` |
 | Imagine chroma-key helper (optional) | `scripts/key-launch-prep-tower.cjs` (not runtime) |
 

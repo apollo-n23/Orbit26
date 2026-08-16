@@ -77,11 +77,15 @@ export const LAUNCH_PAD: Rect = {
   height: 130,
 }
 
-/** Final seated pose after mounting to the launch pad. */
+/**
+ * Final seated pose after mounting to the launch pad.
+ * AssemblyBooster.png is horizontal (payload mount left, engines right).
+ * CSS rotate(+90deg) stands it nose-north / engines-south — pointing up.
+ */
 export const PAD_SEATED = {
   x: LAUNCH_PAD.x + LAUNCH_PAD.width / 2,
   y: LAUNCH_PAD.y + LAUNCH_PAD.height / 2,
-  rotation: -90,
+  rotation: 90,
 }
 
 export function clampRotation(deg: number): number {

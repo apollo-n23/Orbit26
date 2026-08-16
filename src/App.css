@@ -1801,7 +1801,7 @@
   border: 1px solid color-mix(in srgb, #4a7a3a 45%, var(--color-border));
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: linear-gradient(180deg, #356b2e 0%, #1f4a1c 100%);
+  background-color: #3a4632;
 }
 
 .redesign-haul__grid {
@@ -1812,7 +1812,20 @@
   isolation: isolate;
 }
 
+.redesign-haul__coast {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  width: 6.75%;
+  height: 100%;
+  object-fit: cover;
+  object-position: left center;
+  pointer-events: none;
+}
+
 .redesign-haul__cell {
+  position: relative;
   border: 1px solid rgba(0, 0, 0, 0.12);
   background: transparent;
   padding: 0;
@@ -1821,39 +1834,75 @@
 }
 
 .redesign-haul__cell:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 999px rgba(255, 255, 255, 0.08);
 }
 
 .redesign-haul__cell--road {
-  background: #3d4249;
-  box-shadow: inset 0 0 0 1px rgba(255, 220, 90, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(255, 220, 90, 0.22);
+  overflow: hidden;
 }
 
-/* New road tile beyond the free existing road â€” costs points, so flag it. */
+.redesign-haul__cell--road::before {
+  content: '';
+  position: absolute;
+  inset: -35%;
+  z-index: 0;
+  background-image: var(--runway-image);
+  background-size: var(--runway-size, 220% 100%);
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: rotate(var(--runway-rot, 0deg));
+  pointer-events: none;
+}
+
+.redesign-haul__cell--road::after,
+.redesign-haul__cell--start::after,
+.redesign-haul__cell--end::after,
+.redesign-haul__cell--over-budget::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* New road tile beyond the free existing road — costs points, so flag it. */
 .redesign-haul__cell--road-new {
-  background: color-mix(in srgb, var(--color-amber) 30%, #3d4249);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-amber) 55%, transparent);
+}
+
+.redesign-haul__cell--road-new::after {
+  background: color-mix(in srgb, var(--color-amber) 28%, transparent);
 }
 
 /* Grass tile that would cost more than the remaining budget. */
 .redesign-haul__cell--over-budget {
   cursor: not-allowed;
-  background: rgba(196, 92, 92, 0.14);
   box-shadow: inset 0 0 0 1px rgba(196, 92, 92, 0.35);
 }
 
+.redesign-haul__cell--over-budget::after {
+  background: rgba(196, 92, 92, 0.16);
+}
+
 .redesign-haul__cell--over-budget:hover {
-  background: rgba(196, 92, 92, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(196, 92, 92, 0.35);
 }
 
 .redesign-haul__cell--start {
-  background: color-mix(in srgb, var(--color-orbital) 55%, #3d4249);
   cursor: default;
 }
 
+.redesign-haul__cell--start::after {
+  background: color-mix(in srgb, var(--color-orbital) 42%, transparent);
+}
+
 .redesign-haul__cell--end {
-  background: color-mix(in srgb, var(--color-amber) 45%, #3d4249);
   cursor: default;
+}
+
+.redesign-haul__cell--end::after {
+  background: color-mix(in srgb, var(--color-amber) 38%, transparent);
 }
 
 /*
@@ -1866,56 +1915,16 @@
   z-index: 1;
   overflow: visible;
   background:
-    radial-gradient(ellipse 80% 60% at 50% 70%, rgba(8, 24, 6, 0.35), transparent 70%),
-    color-mix(in srgb, #2f6a2a 55%, #1f4a1c);
+    radial-gradient(ellipse 70% 40% at 50% 88%, rgba(4, 12, 3, 0.4), transparent 70%),
+    var(--tree-image) center 8% / 118% auto no-repeat;
   cursor: default;
   box-shadow: none;
 }
 
-/* Trunk */
-.redesign-haul__cell--tree::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: 6%;
-  z-index: 1;
-  width: 22%;
-  min-width: 0.28rem;
-  height: 38%;
-  transform: translateX(-50%);
-  border-radius: 2px 2px 1px 1px;
-  background: linear-gradient(90deg, #3d2614 0%, #7a4f2a 45%, #4a2e18 100%);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-  pointer-events: none;
-}
-
-/* Canopy — layered rounded crown, larger than the cell for presence */
-.redesign-haul__cell--tree::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: -18%;
-  z-index: 2;
-  width: 118%;
-  height: 88%;
-  transform: translateX(-50%);
-  border-radius: 48% 48% 42% 42%;
-  background:
-    radial-gradient(circle at 32% 38%, #6bc468 0%, transparent 42%),
-    radial-gradient(circle at 68% 32%, #4a9e46 0%, transparent 48%),
-    radial-gradient(circle at 50% 55%, #2f7a2c 0%, #1a4f18 72%, #0f3210 100%);
-  box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.4),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.25),
-    inset 0 2px 4px rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(12, 40, 10, 0.55);
-  pointer-events: none;
-}
-
 .redesign-haul__cell--tree:hover:not(:disabled) {
   background:
-    radial-gradient(ellipse 80% 60% at 50% 70%, rgba(8, 24, 6, 0.35), transparent 70%),
-    color-mix(in srgb, #2f6a2a 55%, #1f4a1c);
+    radial-gradient(ellipse 70% 40% at 50% 88%, rgba(4, 12, 3, 0.4), transparent 70%),
+    var(--tree-image) center 8% / 118% auto no-repeat;
 }
 
 .redesign-haul__label {
@@ -4374,10 +4383,7 @@
   height: auto;
   border: 1px solid color-mix(in srgb, #4a7a3a 45%, var(--color-border));
   border-radius: var(--radius-md);
-  background:
-    radial-gradient(ellipse at 20% 30%, rgba(90, 150, 55, 0.35) 0%, transparent 45%),
-    radial-gradient(ellipse at 80% 70%, rgba(50, 100, 40, 0.4) 0%, transparent 50%),
-    linear-gradient(180deg, #356b2e 0%, #2a5a25 45%, #1f4a1c 100%);
+  background-color: #3a4632;
   overflow: hidden;
   touch-action: none;
   user-select: none;
@@ -4530,7 +4536,7 @@
   animation-delay: -3s;
 }
 
-/* Base person at (28, 314) → Offices door (~28, 282) */
+/* Base person at (34, 256) → Offices door */
 @keyframes haul-npc-enter-offices {
   0%,
   12% {
@@ -4571,7 +4577,7 @@
   }
 }
 
-/* Base person at (88, 315) → Assembly door (~92, 282) */
+/* Base person at (100, 258) → Assembly door */
 @keyframes haul-npc-enter-assembly {
   0%,
   14% {
@@ -4611,9 +4617,45 @@
   filter: brightness(1.08);
 }
 
-.haul-booster--seated {
+.haul-booster--seated,
+.haul-booster--mounting {
   cursor: default;
   pointer-events: none;
+}
+
+.haul-mount-status {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--color-amber);
+}
+
+.haul-erector {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.haul-erector__base,
+.haul-erector__arm {
+  position: absolute;
+  display: block;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+.haul-erector__base {
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
+}
+
+.haul-erector__arm {
+  z-index: 2;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
 }
 
 .haul-booster--exploding {

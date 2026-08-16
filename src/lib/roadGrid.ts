@@ -35,6 +35,60 @@ export const TREE_CLUSTER_CELLS: CellKey[] = [
   cellKey(8, 8),
 ]
 
+/** Cardinal bits for a painted road cell: N=1, E=2, S=4, W=8. */
+export const ROAD_N = 1
+export const ROAD_E = 2
+export const ROAD_S = 4
+export const ROAD_W = 8
+
+export function neighborMask(
+  col: number,
+  row: number,
+  tiles: Set<CellKey>,
+): number {
+  let mask = 0
+  if (row > 0 && tiles.has(cellKey(col, row - 1))) mask |= ROAD_N
+  if (col < ROAD_COLS - 1 && tiles.has(cellKey(col + 1, row))) mask |= ROAD_E
+  if (row < ROAD_ROWS - 1 && tiles.has(cellKey(col, row + 1))) mask |= ROAD_S
+  if (col > 0 && tiles.has(cellKey(col - 1, row))) mask |= ROAD_W
+  return mask
+}
+
+export type RunwayCellKind = 'ew' | 'ns' | 'corner' | 'tee' | 'cross' | 'end'
+
+/**
+ * How to paint a taxiway cell so markings follow the connected neighbors.
+ * Corner art (HaulRunwayCorner) is authored as a West↔South bend at rotate 0.
+ */
+export function runwayCellOrient(mask: number): {
+  kind: RunwayCellKind
+  rotate: number
+} {
+  const n = (mask & ROAD_N) !== 0
+  const e = (mask & ROAD_E) !== 0
+  const s = (mask & ROAD_S) !== 0
+  const w = (mask & ROAD_W) !== 0
+  const count = Number(n) + Number(e) + Number(s) + Number(w)
+
+  if (count >= 4) return { kind: 'cross', rotate: 0 }
+  if (count === 3) {
+    if (!n) return { kind: 'tee', rotate: 0 }
+    if (!e) return { kind: 'tee', rotate: 90 }
+    if (!s) return { kind: 'tee', rotate: 180 }
+    return { kind: 'tee', rotate: 270 }
+  }
+  if (count === 2) {
+    if (n && s) return { kind: 'ns', rotate: 90 }
+    if (e && w) return { kind: 'ew', rotate: 0 }
+    if (w && s) return { kind: 'corner', rotate: 0 }
+    if (n && w) return { kind: 'corner', rotate: 90 }
+    if (n && e) return { kind: 'corner', rotate: 180 }
+    return { kind: 'corner', rotate: 270 }
+  }
+  if (n || s) return { kind: 'end', rotate: 90 }
+  return { kind: 'end', rotate: 0 }
+}
+
 export function parseCellKey(key: string): { col: number; row: number } {
   const [c, r] = key.split(',').map(Number)
   return { col: c, row: r }
