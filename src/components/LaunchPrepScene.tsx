@@ -63,6 +63,49 @@ const TOWER_STRONGBACK_SRC = `${import.meta.env.BASE_URL}LaunchPrepStrongback.pn
 const TOWER_BASE_SRC = `${import.meta.env.BASE_URL}LaunchPrepTowerBase.png?v=1`
 const TANK_LOX_SRC = `${import.meta.env.BASE_URL}LaunchPrepTankLox.png?v=1`
 const TANK_RP1_SRC = `${import.meta.env.BASE_URL}LaunchPrepTankRp1.png?v=1`
+const NIGHT_SKY_SRC = `${import.meta.env.BASE_URL}LaunchPrepNightSky.jpg?v=1`
+const SKY_CLOUD_A_SRC = `${import.meta.env.BASE_URL}LaunchPrepCloudA.png?v=1`
+const SKY_CLOUD_B_SRC = `${import.meta.env.BASE_URL}LaunchPrepCloudB.png?v=1`
+const SKY_CLOUD_C_SRC = `${import.meta.env.BASE_URL}LaunchPrepCloudC.png?v=1`
+const SKY_SPARKLE_SRC = `${import.meta.env.BASE_URL}LaunchPrepStarSparkle.png?v=1`
+const CRANE_BASE_SRC = `${import.meta.env.BASE_URL}LaunchPrepCraneBase.png?v=1`
+const CRANE_CAB_SRC = `${import.meta.env.BASE_URL}LaunchPrepCraneCab.png?v=1`
+const CRANE_BOOM_SRC = `${import.meta.env.BASE_URL}LaunchPrepCraneBoom.png?v=1`
+const CRANE_JIB_SRC = `${import.meta.env.BASE_URL}LaunchPrepCraneJib.png?v=1`
+const CRANE_HOOK_SRC = `${import.meta.env.BASE_URL}LaunchPrepCraneHook.png?v=1`
+const FAIRING_SRC = `${import.meta.env.BASE_URL}LaunchPrepFairing.png?v=1`
+const DRONE_SRC = `${import.meta.env.BASE_URL}LaunchPrepDrone.png?v=1`
+
+/** Fixed decorative twinkles — CSS animation only; no timers. */
+const LAUNCH_PREP_SKY_STARS: {
+  top: string
+  left: string
+  size: number
+  delay: string
+  duration: string
+}[] = [
+  { top: '8%', left: '7%', size: 2, delay: '0s', duration: '3.2s' },
+  { top: '22%', left: '18%', size: 3, delay: '0.7s', duration: '2.6s' },
+  { top: '11%', left: '34%', size: 2, delay: '1.4s', duration: '3.6s' },
+  { top: '28%', left: '46%', size: 2, delay: '0.3s', duration: '2.9s' },
+  { top: '6%', left: '61%', size: 3, delay: '1.9s', duration: '3.4s' },
+  { top: '19%', left: '74%', size: 2, delay: '0.9s', duration: '2.4s' },
+  { top: '14%', left: '88%', size: 2, delay: '1.6s', duration: '3.1s' },
+  { top: '32%', left: '81%', size: 2, delay: '2.2s', duration: '2.7s' },
+]
+
+/** Brighter four-point sparkles — slower fade than the CSS dots. */
+const LAUNCH_PREP_SKY_SPARKLES: {
+  top: string
+  left: string
+  size: string
+  delay: string
+  duration: string
+}[] = [
+  { top: '12%', left: '24%', size: '0.62rem', delay: '0.4s', duration: '5.4s' },
+  { top: '9%', left: '58%', size: '0.78rem', delay: '2.1s', duration: '6.8s' },
+  { top: '24%', left: '83%', size: '0.55rem', delay: '3.6s', duration: '5.9s' },
+]
 
 function resolveSceneTechs(
   process: ProcessVersion | null | undefined,
@@ -527,7 +570,70 @@ export function LaunchPrepScene({
       </div>
 
       <div className="launch-prep-pad" aria-hidden="true">
-        <div className="launch-prep-pad__sky" />
+        <div className="launch-prep-pad__sky">
+          <img
+            className="launch-prep-pad__sky-plate"
+            src={NIGHT_SKY_SRC}
+            alt=""
+            draggable={false}
+            decoding="async"
+          />
+          <div className="launch-prep-pad__sky-fx">
+            {LAUNCH_PREP_SKY_STARS.map((star, i) => (
+              <span
+                key={`lp-star-${i}`}
+                className="launch-prep-pad__star"
+                style={{
+                  top: star.top,
+                  left: star.left,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  animationDelay: star.delay,
+                  animationDuration: star.duration,
+                }}
+              />
+            ))}
+            {LAUNCH_PREP_SKY_SPARKLES.map((sparkle, i) => (
+              <img
+                key={`lp-sparkle-${i}`}
+                className="launch-prep-pad__sparkle"
+                src={SKY_SPARKLE_SRC}
+                alt=""
+                draggable={false}
+                decoding="async"
+                style={{
+                  top: sparkle.top,
+                  left: sparkle.left,
+                  width: sparkle.size,
+                  height: sparkle.size,
+                  animationDelay: sparkle.delay,
+                  animationDuration: sparkle.duration,
+                }}
+              />
+            ))}
+            <img
+              className="launch-prep-pad__cloud launch-prep-pad__cloud--a"
+              src={SKY_CLOUD_A_SRC}
+              alt=""
+              draggable={false}
+              decoding="async"
+            />
+            <img
+              className="launch-prep-pad__cloud launch-prep-pad__cloud--b"
+              src={SKY_CLOUD_B_SRC}
+              alt=""
+              draggable={false}
+              decoding="async"
+            />
+            <img
+              className="launch-prep-pad__cloud launch-prep-pad__cloud--c"
+              src={SKY_CLOUD_C_SRC}
+              alt=""
+              draggable={false}
+              decoding="async"
+            />
+          </div>
+        </div>
         <div className="launch-prep-pad__ground" />
 
         {/* Launch tower + strongback (PNG sprites; strongback rotates via --mate) */}
@@ -613,8 +719,13 @@ export function LaunchPrepScene({
           </div>
           {payloadStacked && (
             <div className="lp-payload" title="Payload / fairing">
-              <span className="lp-payload__fairing" />
-              <span className="lp-payload__band" />
+              <img
+                className="lp-payload__fairing"
+                src={FAIRING_SRC}
+                alt=""
+                draggable={false}
+                decoding="async"
+              />
             </div>
           )}
         </div>
@@ -631,14 +742,24 @@ export function LaunchPrepScene({
               .join(' ')}
           >
             <div className="lp-drone__body">
-              <span className="lp-drone__rotor" />
-              <span className="lp-drone__rotor lp-drone__rotor--r" />
-              <span className="lp-drone__core" />
+              <img
+                className="lp-drone__sprite"
+                src={DRONE_SRC}
+                alt=""
+                draggable={false}
+                decoding="async"
+              />
             </div>
             <div className="lp-drone__cable" />
             {!payloadStacked && (
               <div className="lp-drone__load">
-                <span className="lp-payload__fairing lp-payload__fairing--hook" />
+                <img
+                  className="lp-payload__fairing lp-payload__fairing--hook"
+                  src={FAIRING_SRC}
+                  alt=""
+                  draggable={false}
+                  decoding="async"
+                />
               </div>
             )}
           </div>
@@ -650,21 +771,70 @@ export function LaunchPrepScene({
               payloadStacked ? 'lp-crane--clear' : '',
             ].join(' ')}
           >
-            <div className="lp-crane__base" />
-            <div className="lp-crane__cab" />
+            <div className="lp-crane__base">
+              <img
+                className="lp-crane__base-img"
+                src={CRANE_BASE_SRC}
+                alt=""
+                draggable={false}
+                decoding="async"
+              />
+            </div>
+            <div className="lp-crane__cab">
+              <img
+                className="lp-crane__cab-img"
+                src={CRANE_CAB_SRC}
+                alt=""
+                draggable={false}
+                decoding="async"
+              />
+            </div>
             <div className="lp-crane__boom">
+              <img
+                className="lp-crane__boom-img"
+                src={CRANE_BOOM_SRC}
+                alt=""
+                draggable={false}
+                decoding="async"
+              />
               <div className="lp-crane__jib">
+                <img
+                  className="lp-crane__jib-img"
+                  src={CRANE_JIB_SRC}
+                  alt=""
+                  draggable={false}
+                  decoding="async"
+                />
                 <div className="lp-crane__cable" />
+                <img
+                  className="lp-crane__hook-img"
+                  src={CRANE_HOOK_SRC}
+                  alt=""
+                  draggable={false}
+                  decoding="async"
+                />
                 {!payloadStacked && craneVisual >= 2 && (
                   <div className="lp-crane__hook-load">
-                    <span className="lp-payload__fairing lp-payload__fairing--hook" />
+                    <img
+                      className="lp-payload__fairing lp-payload__fairing--hook"
+                      src={FAIRING_SRC}
+                      alt=""
+                      draggable={false}
+                      decoding="async"
+                    />
                   </div>
                 )}
               </div>
             </div>
             {craneVisual < 2 && !payloadStacked && (
               <div className="lp-crane__ground-load">
-                <span className="lp-payload__fairing" />
+                <img
+                  className="lp-payload__fairing"
+                  src={FAIRING_SRC}
+                  alt=""
+                  draggable={false}
+                  decoding="async"
+                />
               </div>
             )}
           </div>
@@ -707,8 +877,12 @@ export function LaunchPrepScene({
             />
             <span className="lp-tank__label">RP-1</span>
           </div>
-          <span className="lp-umbilical lp-umbilical--lox" />
-          <span className="lp-umbilical lp-umbilical--rp" />
+          <span className="lp-umbilical lp-umbilical--lox">
+            <span className="lp-umbilical__flow" aria-hidden="true" />
+          </span>
+          <span className="lp-umbilical lp-umbilical--rp">
+            <span className="lp-umbilical__flow" aria-hidden="true" />
+          </span>
           <span
             className="lp-umbilical__port lp-umbilical__port--lox"
             title="LOX vehicle port"

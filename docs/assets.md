@@ -18,6 +18,17 @@ Product behaviour lives in [`CLAUDE.md`](../CLAUDE.md). Tree map:
 | `LaunchPrepTowerBase.png` | `LaunchPrepScene` `.lp-tower__base` | Concrete/steel foundation plinth (672×353) |
 | `LaunchPrepTankLox.png` | `LaunchPrepScene` `.lp-tank--lox` | Cryogenic LOX GSE tank (true alpha); side-by-side farm with RP-1; HTML “LOX” on nameplate. See `assets-launch-prep-tanks.md` |
 | `LaunchPrepTankRp1.png` | `LaunchPrepScene` `.lp-tank--rp` | Matching RP-1 tank; umbilicals grow from each valve to the booster |
+| `LaunchPrepNightSky.jpg` | `LaunchPrepScene` `.launch-prep-pad__sky` | 16:9 illustrated starry night plate (milky way + baked cirrus). Sky background only. See `assets-launch-prep-overhaul.md` |
+| `LaunchPrepCloudA.png` / `LaunchPrepCloudB.png` / `LaunchPrepCloudC.png` | `LaunchPrepScene` `.launch-prep-pad__cloud` | Isolated grey cirrus sprites (true alpha); CSS-only night-wind drift |
+| `LaunchPrepStarSparkle.png` | `LaunchPrepScene` `.launch-prep-pad__sparkle` | Four-point sparkle for brighter twinkle overlays |
+| `LaunchPrepCraneBase.png` | `LaunchPrepScene` `.lp-crane__base` | Outrigger platform (grey steel, gold hazard, cyan bolts). 1156×466 |
+| `LaunchPrepCraneCab.png` | `LaunchPrepScene` `.lp-crane__cab` | Gold cab, navy glass, cyan roof beacon (side view). 743×740 |
+| `LaunchPrepCraneBoom.png` | `LaunchPrepScene` `.lp-crane__boom` | Vertical grey lattice; CSS rotates around bottom center. 243×1235 |
+| `LaunchPrepCraneJib.png` | `LaunchPrepScene` `.lp-crane__jib` | Horizontal lattice; pivot collar on the **left**. 1219×342 |
+| `LaunchPrepCraneHook.png` | `LaunchPrepScene` `.lp-crane__hook-img` | Gold/grey hook block at the jib/cable tip. 299×611 |
+| `LaunchPrepFairing.png` | `LaunchPrepScene` `.lp-payload` / hook-load / ground-load / drone load | White ogive + cyan band; seated on booster and carried by crane/drone. 402×1093 |
+| `LaunchPrepDrone.png` | `LaunchPrepScene` `.lp-drone` | Navy/gold coaxial payload drone (To-be `payload-drone`). 841×658 |
+| `LaunchPrepFuelSlugLox.png` / `LaunchPrepFuelSlugRp.png` | *(available, unused)* | Optional LOX/RP-1 hose slugs. Live fill is CSS chevrons + highlight slug; these PNGs are not wired. See `assets-launch-prep-overhaul.md` |
 | `HaulOfficesTop.png` | `HaulRoadScene` | High-angle aerial Offices annex (entrance south) |
 | `HaulAssemblyTop.png` | `HaulRoadScene` | High-angle aerial Assembly hangar (bay door south) |
 | `HaulGrassField.jpg` | `HaulRoadScene` + redesign haul grid | Full-field grassland plate (1600×960) with gentle mounds and mixed turf. One image, not a repeating tile. |
@@ -92,6 +103,7 @@ field labels in the preview miniature are HTML.
 |-----|--------|
 | [`assets-launch-prep-tower.md`](./assets-launch-prep-tower.md) | Mast / strongback / base sprites, mate animation |
 | [`assets-launch-prep-tanks.md`](./assets-launch-prep-tanks.md) | LOX / RP-1 farm size, placement, umbilical behaviour |
+| [`assets-launch-prep-overhaul.md`](./assets-launch-prep-overhaul.md) | Night-sky plate, crane/fairing/drone sprites, CSS-only fuel flow (slug PNGs unused) |
 
 ## Conventions
 
@@ -101,3 +113,4 @@ field labels in the preview miniature are HTML.
 - New scene art goes in **`public/`**, not under `src/`, unless it must be imported as a module.
 - One-shot Imagine keying helpers may live under `scripts/` (not app runtime).
 - After adding assets: document here + the relevant section of `CLAUDE.md` + `docs/project-structure.md` where-to-change row.
+- Do **not** add superseded haul experiments (`HaulGrassTile.jpg`, `HaulRoadTile.jpg`, `HaulRunwayFill.jpg`, `scripts/make_haul_tiles.py`). Live haul art is `HaulGrassField.jpg` + `HaulRunwayTile.jpg` / `HaulRunwayCorner.jpg`.

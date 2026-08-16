@@ -26,10 +26,12 @@ Imagine-generated plates and keyed PNG sprites for the Prepare for launch scene 
 
 ## Fuel flow
 
+Live fill is **CSS-only** (chevron packets on `.lp-umbilical__flow` + a `::after` highlight slug, `lp-umbilical-flow` / `lp-umbilical-slug`). Direction is tank → vehicle. The slug PNGs below are in `public/` for a later pass but are **not wired**.
+
 | File | Role |
 |------|------|
-| `public/LaunchPrepFuelSlugLox.png` | Icy cyan slug for LOX hose travel |
-| `public/LaunchPrepFuelSlugRp.png` | Amber-gold slug for RP-1 hose travel |
+| `public/LaunchPrepFuelSlugLox.png` | Icy cyan slug for LOX hose travel — available, unused |
+| `public/LaunchPrepFuelSlugRp.png` | Amber-gold slug for RP-1 hose travel — available, unused |
 
 ## URL pattern
 
