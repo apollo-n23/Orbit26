@@ -59,7 +59,7 @@ src/
     GembaContextPanel.tsx  Gemba-only context rail
     ManufactureScene.tsx   Step 1 — belt, machines, access-code monitor, booster sprite
     HaulRoadScene.tsx      Step 2 — map, aerial buildings, taxiway, erector, crawler, NPC ambient
-    LaunchPrepScene.tsx    Step 3 — night sky, PNG crane/fairing/drone, tower, tanks, CSS fuel flow
+    LaunchPrepScene.tsx    Step 3 — night sky, blast pad, PNG crane/fairing/drone, tower, tanks, CSS fuel flow
     LaunchSequenceScene.tsx Step 4
     Booster.tsx            Shared booster art (sprite when bare; CSS when nosed)
     RoundLeadTimeCompare.tsx As-is vs To-be visual compare
@@ -118,7 +118,7 @@ Every page renders its own:
 | Bare booster art | `Booster.tsx` + `public/AssemblyBooster.png` + `.booster__sprite` / `.booster--haul-sprite` / `.booster--launch-prep` in `App.css` |
 | Haul buildings / NPC ambient / dirt track | `HaulRoadScene.tsx` + `public/HaulOfficesTop.png` / `HaulAssemblyTop.png` + `.haul-npc-*` in `App.css` |
 | Haul grass / runway / coast / trees / erector | `public/HaulGrassField.jpg`, `HaulPadDeck.jpg`, `HaulRunwayTile.jpg`, `HaulRunwayCorner.jpg`, `HaulCoastStrip.jpg`, `HaulTreeA-C.png`, `HaulErectorArm.png`, `HaulErectorBase.png` + `HaulRoadScene.tsx` + redesign paint-grid (`scripts/process_haul_overhaul.py`, `scripts/key_buildings.py`) |
-| Launch-prep pad visuals | `LaunchPrepScene.tsx` + tower / tank / sky / crane / fairing / drone PNGs + `.lp-tower*` / `.lp-tank*` / `.lp-umbilical*` / `.lp-crane*` / `.launch-prep-pad__sky*` in `App.css` — see `docs/assets-launch-prep-tower.md`, `docs/assets-launch-prep-tanks.md`, `docs/assets-launch-prep-overhaul.md` |
+| Launch-prep pad visuals | `LaunchPrepScene.tsx` + tower / tank / sky / blast-pad / crane / fairing / drone PNGs + `.lp-tower*` / `.lp-blast-pad` / `.lp-tank*` / `.lp-umbilical*` / `.lp-crane*` / `.launch-prep-pad__sky*` in `App.css` — see `docs/assets-launch-prep-tower.md`, `docs/assets-launch-prep-tanks.md`, `docs/assets-launch-prep-overhaul.md` |
 | Imagine chroma-key helper (optional) | `scripts/key-launch-prep-tower.cjs`, `scripts/key_launch_prep_overhaul.py`, `scripts/process_haul_overhaul.py` (not runtime) |
 
 ## Deploy & remotes

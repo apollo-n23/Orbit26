@@ -7,6 +7,8 @@ Imagine-generated plates and keyed PNG sprites for the Prepare for launch scene 
 | File | Role |
 |------|------|
 | `public/LaunchPrepNightSky.jpg` | Full 16:9 illustrated starry night plate (milky way + baked thin grey cirrus). Background only — no pad/rocket. |
+| `public/LaunchPrepPadDeck.jpg` | Thin receding night apron under the scene (not a steep ledge). |
+| `public/LaunchPrepBlastPad.png` | Raised octagonal blast deck the vehicle stands on. |
 | `public/LaunchPrepCloudA.png` | Long wispy grey cirrus, true alpha |
 | `public/LaunchPrepCloudB.png` | Softer elongated grey veil, true alpha |
 | `public/LaunchPrepCloudC.png` | Compact distant grey puff, true alpha |
@@ -24,6 +26,8 @@ Imagine-generated plates and keyed PNG sprites for the Prepare for launch scene 
 | `public/LaunchPrepFairing.png` | White ogive fairing, cyan `#00B2E2` band, silver tip |
 | `public/LaunchPrepDrone.png` | Navy/gold coaxial payload drone (To-be `payload-drone` path) |
 
+After the crane seats the fairing, `.lp-crane--clear` translates the crane off the **right** edge and fades it to opacity 0 (~1.2s). The drone path uses its own `.lp-drone--clear` and is unchanged.
+
 ## Fuel flow
 
 Live fill is **CSS-only** (chevron packets on `.lp-umbilical__flow` + a `::after` highlight slug, `lp-umbilical-flow` / `lp-umbilical-slug`). Direction is tank → vehicle. The slug PNGs below are in `public/` for a later pass but are **not wired**.
@@ -40,3 +44,5 @@ Live fill is **CSS-only** (chevron packets on `.lp-umbilical__flow` + a `::after
 ```
 
 HTML labels stay HTML (never bake copy into sprites). Brand colours: navy `#00538A`, gold `#FFC627`, cyan `#00B2E2`, grey `#777779` / `#C9C8C7`.
+
+Tower / strongback live sizes and mate animation: `docs/assets-launch-prep-tower.md`.

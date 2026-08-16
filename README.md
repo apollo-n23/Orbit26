@@ -42,7 +42,7 @@ Open [http://127.0.0.1:5173/](http://127.0.0.1:5173/). On Windows PowerShell, us
 |------|--------|------------|
 | 1 · Manufacture | `ManufactureScene` | Machines aligned to belt stops; floating access-code monitor (`AccessCodeMonitor.png`); bare booster sprite; sequence badges on lower-left of machine cards |
 | 2 · Haul road | `HaulRoadScene` | Grassland plate + taxiway stamps; high-angle aerial Offices/Assembly; coastal strip; pad erector (nose-north); dirt service track + NPC ambient |
-| 3 · Launch prep | `LaunchPrepScene` | Night-sky plate + PNG crane/fairing/drone; PNG tower/tanks; CSS fuel-flow chevrons; sequential or master-ON power lights — redesigned by launch-prep techs |
+| 3 · Launch prep | `LaunchPrepScene` | Night-sky plate + raised blast pad; PNG crane/fairing/drone (crane exits right after stack); improved tower + slim strongback; PNG tanks; CSS fuel-flow chevrons; sequential or master-ON power lights — redesigned by launch-prep techs |
 | 4 · Launch sequence | `LaunchSequenceScene` | GO poll, key arm, liftoff; optional Capcom removal → NO CAPCOM height |
 
 ## Documentation
@@ -54,7 +54,7 @@ Open [http://127.0.0.1:5173/](http://127.0.0.1:5173/). On Windows PowerShell, us
 | **[docs/assets.md](./docs/assets.md)** | `public/` asset inventory |
 | **[docs/assets-launch-prep-tower.md](./docs/assets-launch-prep-tower.md)** | Launch-prep tower sprites + mate animation notes |
 | **[docs/assets-launch-prep-tanks.md](./docs/assets-launch-prep-tanks.md)** | LOX / RP-1 farm layout + umbilical behaviour |
-| **[docs/assets-launch-prep-overhaul.md](./docs/assets-launch-prep-overhaul.md)** | Night-sky plate, crane/fairing/drone sprites, CSS-only fuel flow |
+| **[docs/assets-launch-prep-overhaul.md](./docs/assets-launch-prep-overhaul.md)** | Night-sky, blast pad, crane/fairing/drone sprites, CSS-only fuel flow |
 | **[docs/brand/brand-tokens.md](./docs/brand/brand-tokens.md)** | PMI brand palette ↔ CSS tokens |
 
 ## Stack

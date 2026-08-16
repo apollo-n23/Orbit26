@@ -13,12 +13,14 @@ Product behaviour lives in [`CLAUDE.md`](../CLAUDE.md). Tree map:
 | `AssemblyBG.jpg` | `ManufactureScene` | Top-down assembly floor photo behind machines/belt |
 | `AccessCodeMonitor.png` | `ManufactureScene` | Square HD monitor bezel (Orb-it logo + power LED); live code is HTML overlay |
 | `AssemblyBooster.png` | `Booster` when `showNose={false}` | Transparent bare white booster (payload mount left, engines right). Manufacture line, haul crawler, redesign preview, launch-prep (rotated 90°) |
-| `LaunchPrepTowerMast.png` | `LaunchPrepScene` `.lp-tower__mast` | Lattice service mast with red beacon (288×1244, true alpha) |
-| `LaunchPrepStrongback.png` | `LaunchPrepScene` `.lp-tower__strongback` | Strongback beam + amber clamps; CSS rotate via `--mate` (387×1007) |
+| `LaunchPrepTowerMast.png` | `LaunchPrepScene` `.lp-tower__mast` | Improved lattice service mast with red beacon (479×2097, true alpha). Cache `?v=2` |
+| `LaunchPrepStrongback.png` | `LaunchPrepScene` `.lp-tower__strongback` | Slim vertical beam + three amber clamps facing right (262×1454). CSS rotate via `--mate`. Cache `?v=2` |
 | `LaunchPrepTowerBase.png` | `LaunchPrepScene` `.lp-tower__base` | Concrete/steel foundation plinth (672×353) |
 | `LaunchPrepTankLox.png` | `LaunchPrepScene` `.lp-tank--lox` | Cryogenic LOX GSE tank (true alpha); side-by-side farm with RP-1; HTML “LOX” on nameplate. See `assets-launch-prep-tanks.md` |
 | `LaunchPrepTankRp1.png` | `LaunchPrepScene` `.lp-tank--rp` | Matching RP-1 tank; umbilicals grow from each valve to the booster |
 | `LaunchPrepNightSky.jpg` | `LaunchPrepScene` `.launch-prep-pad__sky` | 16:9 illustrated starry night plate (milky way + baked cirrus). Sky background only. See `assets-launch-prep-overhaul.md` |
+| `LaunchPrepPadDeck.jpg` | `LaunchPrepScene` `.launch-prep-pad__ground` | Thin receding night apron (not a steep ledge). |
+| `LaunchPrepBlastPad.png` | `LaunchPrepScene` `.lp-blast-pad` | Raised octagonal blast deck under the vehicle |
 | `LaunchPrepCloudA.png` / `LaunchPrepCloudB.png` / `LaunchPrepCloudC.png` | `LaunchPrepScene` `.launch-prep-pad__cloud` | Isolated grey cirrus sprites (true alpha); CSS-only night-wind drift |
 | `LaunchPrepStarSparkle.png` | `LaunchPrepScene` `.launch-prep-pad__sparkle` | Four-point sparkle for brighter twinkle overlays |
 | `LaunchPrepCraneBase.png` | `LaunchPrepScene` `.lp-crane__base` | Outrigger platform (grey steel, gold hazard, cyan bolts). 1156×466 |

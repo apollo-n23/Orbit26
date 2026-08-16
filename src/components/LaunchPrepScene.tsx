@@ -58,12 +58,14 @@ const SWING_SWEET_MIN = 55
 const SWING_SWEET_MAX = 72
 const SWING_FILL_RATE_PER_MS = 0.05 // % per ms while holding
 
-const TOWER_MAST_SRC = `${import.meta.env.BASE_URL}LaunchPrepTowerMast.png?v=1`
-const TOWER_STRONGBACK_SRC = `${import.meta.env.BASE_URL}LaunchPrepStrongback.png?v=1`
+const TOWER_MAST_SRC = `${import.meta.env.BASE_URL}LaunchPrepTowerMast.png?v=2`
+const TOWER_STRONGBACK_SRC = `${import.meta.env.BASE_URL}LaunchPrepStrongback.png?v=2`
 const TOWER_BASE_SRC = `${import.meta.env.BASE_URL}LaunchPrepTowerBase.png?v=1`
 const TANK_LOX_SRC = `${import.meta.env.BASE_URL}LaunchPrepTankLox.png?v=1`
 const TANK_RP1_SRC = `${import.meta.env.BASE_URL}LaunchPrepTankRp1.png?v=1`
 const NIGHT_SKY_SRC = `${import.meta.env.BASE_URL}LaunchPrepNightSky.jpg?v=1`
+const PAD_DECK_SRC = `${import.meta.env.BASE_URL}LaunchPrepPadDeck.jpg?v=2`
+const BLAST_PAD_SRC = `${import.meta.env.BASE_URL}LaunchPrepBlastPad.png?v=2`
 const SKY_CLOUD_A_SRC = `${import.meta.env.BASE_URL}LaunchPrepCloudA.png?v=1`
 const SKY_CLOUD_B_SRC = `${import.meta.env.BASE_URL}LaunchPrepCloudB.png?v=1`
 const SKY_CLOUD_C_SRC = `${import.meta.env.BASE_URL}LaunchPrepCloudC.png?v=1`
@@ -634,7 +636,24 @@ export function LaunchPrepScene({
             />
           </div>
         </div>
-        <div className="launch-prep-pad__ground" />
+        <div className="launch-prep-pad__ground">
+          <img
+            className="launch-prep-pad__ground-plate"
+            src={PAD_DECK_SRC}
+            alt=""
+            draggable={false}
+            decoding="async"
+          />
+        </div>
+        <div className="lp-blast-pad" title="Launch pad">
+          <img
+            className="lp-blast-pad__img"
+            src={BLAST_PAD_SRC}
+            alt=""
+            draggable={false}
+            decoding="async"
+          />
+        </div>
 
         {/* Launch tower + strongback (PNG sprites; strongback rotates via --mate) */}
         <div className={['lp-tower', mated ? 'lp-tower--mated' : ''].join(' ')}>
