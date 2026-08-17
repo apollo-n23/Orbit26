@@ -46,3 +46,4 @@ Live fill is **CSS-only** (chevron packets on `.lp-umbilical__flow` + a `::after
 HTML labels stay HTML (never bake copy into sprites). Brand colours: navy `#00538A`, gold `#FFC627`, cyan `#00B2E2`, grey `#777779` / `#C9C8C7`.
 
 Tower / strongback live sizes and mate animation: `docs/assets-launch-prep-tower.md`.
+Power-up terminal sprites (covers, toggles, bus icons): `docs/assets-launch-prep-power.md`.

@@ -90,7 +90,7 @@ export interface ProcessStep {
  * To-be launch-prep technology investments. Not mutually exclusive — the
  * learner can select as many as the redesign budget allows.
  * - faster-pumps: LOX/RP-1 fill almost instantly
- * - auto-power: single master ON instead of sequential switches
+ * - auto-power: single master ON instead of cover → switch → charge per bus
  * - payload-drone: one-step drone stack replaces multi-step crane
  * - strongback-redesign: mate slider only needs to travel half as far
  */

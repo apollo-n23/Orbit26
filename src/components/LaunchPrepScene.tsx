@@ -36,12 +36,44 @@ const CRANE_STEPS = [
   { id: 'lower', label: '4 · Lower & attach' },
 ] as const
 
+const POWER_ASSET = (file: string) => `${import.meta.env.BASE_URL}${file}?v=1`
+
 const POWER_SWITCHES = [
-  { id: 'avionics', label: 'Avionics bus' },
-  { id: 'flight', label: 'Flight computers' },
-  { id: 'telemetry', label: 'Telemetry' },
-  { id: 'range', label: 'Range safety arm' },
+  {
+    id: 'avionics',
+    label: 'Avionics bus',
+    short: 'AVIONICS',
+    icon: POWER_ASSET('LaunchPrepPowerIconAvionics.png'),
+  },
+  {
+    id: 'flight',
+    label: 'Flight computers',
+    short: 'FLIGHT COMP',
+    icon: POWER_ASSET('LaunchPrepPowerIconFlight.png'),
+  },
+  {
+    id: 'telemetry',
+    label: 'Telemetry',
+    short: 'TELEMETRY',
+    icon: POWER_ASSET('LaunchPrepPowerIconTelemetry.png'),
+  },
+  {
+    id: 'range',
+    label: 'Range safety arm',
+    short: 'RANGE SAFETY',
+    icon: POWER_ASSET('LaunchPrepPowerIconRange.png'),
+  },
 ] as const
+
+const POWER_COVER_SRC = POWER_ASSET('LaunchPrepPowerCover.png')
+const POWER_TOGGLE_OFF_SRC = POWER_ASSET('LaunchPrepPowerToggleOff.png')
+const POWER_TOGGLE_ON_SRC = POWER_ASSET('LaunchPrepPowerToggleOn.png')
+const POWER_TERMINAL_SRC = POWER_ASSET('LaunchPrepPowerTerminal.png')
+
+/** Baseline bus charge after the switch is thrown (~1.4s). */
+const POWER_FILL_RATE_PER_MS = 0.072
+/** Auto-power master ON — all four buses charge together, much faster. */
+const POWER_FILL_RATE_AUTO_PER_MS = 0.42
 
 /** Index of the power-up sub-task in LAUNCH_PREP_ACTIONS (mate/crane/fuel/power). */
 const POWER_ACTION_INDEX = 3
@@ -183,9 +215,18 @@ export function LaunchPrepScene({
   const fillRafRef = useRef<number | null>(null)
   const fillLastRef = useRef(0)
 
-  // —— Sub-task 4: power ——
+  // —— Sub-task 4: power (cover → switch → charge bar, in order) ——
+  const [powerCoverOpen, setPowerCoverOpen] = useState<string[]>([])
+  const [powerSwitched, setPowerSwitched] = useState<string[]>([])
+  const [powerFill, setPowerFill] = useState<Record<string, number>>({})
   const [powerArmed, setPowerArmed] = useState<string[]>([])
   const [powerDone, setPowerDone] = useState(false)
+  const powerFillRafRef = useRef<number | null>(null)
+  const powerFillLastRef = useRef(0)
+  const powerSwitchedRef = useRef<string[]>([])
+  const powerArmedRef = useRef<string[]>([])
+  const powerFillRef = useRef<Record<string, number>>({})
+  const powerDoneRef = useRef(false)
 
   // Re-read redesign techs whenever this step (re)starts for a unit.
   useEffect(() => {
@@ -230,8 +271,19 @@ export function LaunchPrepScene({
       setLoxFill(0)
       setRpFill(0)
       setFuelDone(false)
+      setPowerCoverOpen([])
+      setPowerSwitched([])
+      setPowerFill({})
       setPowerArmed([])
       setPowerDone(false)
+      powerSwitchedRef.current = []
+      powerArmedRef.current = []
+      powerFillRef.current = {}
+      powerDoneRef.current = false
+      if (powerFillRafRef.current != null) {
+        cancelAnimationFrame(powerFillRafRef.current)
+        powerFillRafRef.current = null
+      }
       fillTargetRef.current = null
       if (fillRafRef.current != null) {
         cancelAnimationFrame(fillRafRef.current)
@@ -249,6 +301,7 @@ export function LaunchPrepScene({
     () => () => {
       if (fillRafRef.current != null) cancelAnimationFrame(fillRafRef.current)
       if (swingRafRef.current != null) cancelAnimationFrame(swingRafRef.current)
+      if (powerFillRafRef.current != null) cancelAnimationFrame(powerFillRafRef.current)
       if (extendFeedbackTimerRef.current != null) {
         window.clearTimeout(extendFeedbackTimerRef.current)
       }
@@ -266,8 +319,17 @@ export function LaunchPrepScene({
     if (done.has('crane-payload')) setCraneDone(true)
     if (done.has('fuel-vehicle')) setFuelDone(true)
     if (done.has('power-up')) {
+      const ids = POWER_SWITCHES.map((s) => s.id)
+      const full = Object.fromEntries(ids.map((id) => [id, 100]))
       setPowerDone(true)
-      setPowerArmed(POWER_SWITCHES.map((s) => s.id))
+      setPowerCoverOpen(ids)
+      setPowerSwitched(ids)
+      setPowerArmed(ids)
+      setPowerFill(full)
+      powerDoneRef.current = true
+      powerSwitchedRef.current = ids
+      powerArmedRef.current = ids
+      powerFillRef.current = full
     }
   }, [run.completedMachineIds])
 
@@ -414,6 +476,95 @@ export function LaunchPrepScene({
     completeCurrent()
   }
 
+  function stopPowerFill() {
+    if (powerFillRafRef.current != null) {
+      cancelAnimationFrame(powerFillRafRef.current)
+      powerFillRafRef.current = null
+    }
+  }
+
+  const commitPowerComplete = useCallback(() => {
+    if (powerDoneRef.current) return
+    finishGuardRef.current = false
+    const committed = completeCurrent()
+    if (!committed) return
+    powerDoneRef.current = true
+    setPowerDone(true)
+  }, [completeCurrent])
+
+  const tickPowerFill = useCallback(() => {
+    if (powerDoneRef.current) {
+      stopPowerFill()
+      return
+    }
+    const now = performance.now()
+    const dt = Math.min(50, now - powerFillLastRef.current)
+    powerFillLastRef.current = now
+    const rate = autoPower ? POWER_FILL_RATE_AUTO_PER_MS : POWER_FILL_RATE_PER_MS
+    const switched = powerSwitchedRef.current
+    const nextFill = { ...powerFillRef.current }
+    let changed = false
+    const newlyArmed: string[] = []
+    for (const sw of POWER_SWITCHES) {
+      if (!switched.includes(sw.id)) continue
+      if ((nextFill[sw.id] ?? 0) >= 100) continue
+      const v = Math.min(100, (nextFill[sw.id] ?? 0) + rate * dt)
+      nextFill[sw.id] = v
+      changed = true
+      if (v >= 100 && !powerArmedRef.current.includes(sw.id)) {
+        newlyArmed.push(sw.id)
+      }
+    }
+    if (changed) {
+      powerFillRef.current = nextFill
+      setPowerFill(nextFill)
+    }
+    if (newlyArmed.length) {
+      const armed = [...powerArmedRef.current, ...newlyArmed]
+      powerArmedRef.current = armed
+      setPowerArmed(armed)
+      if (armed.length >= POWER_SWITCHES.length) {
+        stopPowerFill()
+        commitPowerComplete()
+        return
+      }
+    }
+    const stillFilling = POWER_SWITCHES.some(
+      (sw) => switched.includes(sw.id) && (nextFill[sw.id] ?? 0) < 100,
+    )
+    if (stillFilling) {
+      powerFillRafRef.current = requestAnimationFrame(tickPowerFill)
+    } else {
+      powerFillRafRef.current = null
+    }
+  }, [autoPower, commitPowerComplete])
+
+  function ensurePowerFillTicking() {
+    if (powerFillRafRef.current != null || powerDoneRef.current) return
+    powerFillLastRef.current = performance.now()
+    powerFillRafRef.current = requestAnimationFrame(tickPowerFill)
+  }
+
+  function handlePowerCover(id: string, index: number) {
+    if (!canInteract || actionIndex !== POWER_ACTION_INDEX || powerDone) return
+    if (autoPower) return
+    if (powerArmed.length !== index) return
+    if (powerCoverOpen.includes(id)) return
+    setPowerCoverOpen((prev) => [...prev, id])
+  }
+
+  function handlePowerSwitch(id: string, index: number) {
+    if (!canInteract || actionIndex !== POWER_ACTION_INDEX || powerDone) return
+    if (autoPower) return
+    if (powerArmed.length !== index) return
+    if (!powerCoverOpen.includes(id)) return
+    if (powerSwitched.includes(id)) return
+    const next = [...powerSwitched, id]
+    powerSwitchedRef.current = next
+    setPowerSwitched(next)
+    ensurePowerFillTicking()
+  }
+
   function handleMasterPowerOn() {
     if (
       !canInteract ||
@@ -423,12 +574,13 @@ export function LaunchPrepScene({
     ) {
       return
     }
-    // Clear stale guard from fuel complete so a single master ON always finishes power-up.
+    // Clear stale guard from fuel complete so a single master ON always starts.
     finishGuardRef.current = false
-    const committed = completeCurrent()
-    if (!committed) return
-    setPowerArmed(POWER_SWITCHES.map((s) => s.id))
-    setPowerDone(true)
+    const ids = POWER_SWITCHES.map((s) => s.id)
+    setPowerCoverOpen(ids)
+    powerSwitchedRef.current = ids
+    setPowerSwitched(ids)
+    ensurePowerFillTicking()
   }
 
   // —— Fuel: connect umbilicals, hold-to-fill ——
@@ -485,22 +637,21 @@ export function LaunchPrepScene({
     }
   }, [loxFill, rpFill, canInteract, actionIndex, fuelDone, completeCurrent])
 
-  // —— Power: arm switches in order (baseline; auto-power uses master ON instead) ——
-  function handlePowerSwitch(id: string, index: number) {
-    if (!canInteract || actionIndex !== POWER_ACTION_INDEX || powerDone) return
-    // Auto-power UI must never accept sequential switches.
-    if (autoPower) return
-    if (powerArmed.length !== index) return
-    if (powerArmed.includes(id)) return
-    const next = [...powerArmed, id]
-    setPowerArmed(next)
-    if (next.length >= POWER_SWITCHES.length) {
-      finishGuardRef.current = false
-      const committed = completeCurrent()
-      if (!committed) return
-      setPowerDone(true)
+  // Pause mid-charge: freeze the bar; resume continues from the same percent.
+  useEffect(() => {
+    if (paused) {
+      stopPowerFill()
+      return
     }
-  }
+    const filling = powerSwitchedRef.current.some(
+      (id) =>
+        (powerFillRef.current[id] ?? 0) < 100 &&
+        !powerArmedRef.current.includes(id),
+    )
+    if (filling) ensurePowerFillTicking()
+    // ensurePowerFillTicking reads the latest tickPowerFill via the render that set paused.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paused])
 
   const stepComplete = locked || powerDone
   const mated = mateDone || mateProgress >= mateTarget || actionIndex > 0
@@ -539,6 +690,48 @@ export function LaunchPrepScene({
     if (i === 3 && autoPower) label = 'Power up for launch (master ON)'
     return { action, done, active, index: i, label }
   })
+
+  function powerFillOf(id: string): number {
+    if (powerArmed.includes(id) || powered) return 100
+    return powerFill[id] ?? 0
+  }
+
+  function powerBayState(
+    id: string,
+    index: number,
+  ): 'locked' | 'ready' | 'open' | 'charging' | 'online' {
+    if (powerArmed.includes(id) || powered) return 'online'
+    if (powerSwitched.includes(id)) return 'charging'
+    if (powerCoverOpen.includes(id)) return 'open'
+    if (powerArmed.length === index) return 'ready'
+    return 'locked'
+  }
+
+  function powerStatusLine(): string {
+    if (powered || powerArmed.length >= POWER_SWITCHES.length) {
+      return 'ALL BUSES ONLINE · VEHICLE POWER NOMINAL'
+    }
+    if (autoPower && powerSwitched.length === 0) {
+      return 'MASTER ARM READY · PRESS ON TO SEQUENCE ALL BUSES'
+    }
+    if (autoPower) {
+      const pct = Math.round(
+        POWER_SWITCHES.reduce((sum, sw) => sum + powerFillOf(sw.id), 0) /
+          POWER_SWITCHES.length,
+      )
+      return `AUTO SEQUENCE · CHARGING ALL BUSES · ${pct}%`
+    }
+    const i = powerArmed.length
+    const sw = POWER_SWITCHES[i]
+    const fill = powerFillOf(sw.id)
+    if (powerSwitched.includes(sw.id)) {
+      return `CHARGING BUS 0${i + 1} · ${sw.short} · ${Math.round(fill)}%`
+    }
+    if (powerCoverOpen.includes(sw.id)) {
+      return `THROW SWITCH · BUS 0${i + 1} ${sw.short}`
+    }
+    return `LIFT COVER · BUS 0${i + 1} ${sw.short} · INTERLOCK RELEASED`
+  }
 
   return (
     <div
@@ -1238,67 +1431,203 @@ export function LaunchPrepScene({
         )}
 
         {canInteract && actionIndex === POWER_ACTION_INDEX && (
-          <div className="lp-panel" data-lp-tech={autoPower ? 'auto-power' : 'none'}>
+          <div
+            className="lp-panel lp-panel--power"
+            data-lp-tech={autoPower ? 'auto-power' : 'none'}
+          >
             <p className="lp-panel__title">
               {autoPower
                 ? '4 · Power up for launch (master ON)'
                 : '4 · Power up for launch'}
             </p>
-            {autoPower ? (
-              <>
-                <p className="lp-panel__hint">
-                  Automatic power-up sequence installed — arm all buses with one
-                  master control.
-                </p>
-                <button
-                  type="button"
-                  className="btn btn--primary lp-master-on"
-                  onClick={handleMasterPowerOn}
-                  aria-label="Master power ON"
-                  data-lp-action="master-power-on"
-                >
-                  ON
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="lp-panel__hint">
-                  Arm launch systems in order — only the next switch is enabled.
-                </p>
+            <p className="lp-panel__hint">
+              {autoPower
+                ? 'Automatic power-up sequence installed — arm every bus from the master control.'
+                : 'Open the red cover, throw the switch, and wait for that bus to charge to 100% before the next interlock releases.'}
+            </p>
+            <div
+              className={[
+                'lp-power-term',
+                autoPower ? 'lp-power-term--master' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              data-lp-action={autoPower ? 'master-power-on' : 'power-switches'}
+            >
+              <img
+                className="lp-power-term__bezel"
+                src={POWER_TERMINAL_SRC}
+                alt=""
+                draggable={false}
+                decoding="async"
+              />
+              <div className="lp-power-term__screen">
+                <header className="lp-power-term__hdr">
+                  <span className="lp-power-term__live">
+                    <span className="lp-power-term__live-dot" aria-hidden="true" />
+                    LIVE
+                  </span>
+                  <span className="lp-power-term__title">VEHICLE POWER BUS</span>
+                  <span className="lp-power-term__sys">
+                    SYS 04 · {autoPower ? 'AUTO SEQ' : 'INTERLOCK'}
+                  </span>
+                </header>
+
                 <div
-                  className="lp-power-row"
+                  className="lp-power-term__bays"
                   role="group"
-                  aria-label="Power checklist"
-                  data-lp-action="power-switches"
+                  aria-label="Vehicle power buses"
                 >
                   {POWER_SWITCHES.map((sw, i) => {
-                    const isArmed = powerArmed.includes(sw.id)
-                    const isNext = powerArmed.length === i
+                    const state = powerBayState(sw.id, i)
+                    const fill = powerFillOf(sw.id)
+                    const coverOpen = powerCoverOpen.includes(sw.id) || autoPower
+                    const switched = powerSwitched.includes(sw.id) || state === 'online'
+                    const stateLabel =
+                      state === 'online'
+                        ? 'ONLINE'
+                        : state === 'charging'
+                          ? `CHARGING ${Math.round(fill)}%`
+                          : state === 'open'
+                            ? 'SWITCH READY'
+                            : state === 'ready'
+                              ? 'LIFT COVER'
+                              : 'INTERLOCK'
                     return (
-                      <button
+                      <div
                         key={sw.id}
-                        type="button"
                         className={[
-                          'lp-switch',
-                          isArmed ? 'lp-switch--on' : '',
-                          isNext ? 'lp-switch--next' : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                        disabled={!isNext}
-                        onClick={() => handlePowerSwitch(sw.id, i)}
-                        aria-pressed={isArmed}
+                          'lp-pwr-bay',
+                          `lp-pwr-bay--${state}`,
+                        ].join(' ')}
+                        data-bus={sw.id}
+                        data-bus-state={state}
                       >
-                        <span className="lp-switch__toggle" aria-hidden="true" />
-                        <span className="lp-switch__label">
-                          {i + 1}. {sw.label}
-                        </span>
-                      </button>
+                        <div className="lp-pwr-bay__top">
+                          <span className="lp-pwr-bay__id">BUS 0{i + 1}</span>
+                          <span
+                            className={[
+                              'lp-pwr-bay__led',
+                              state === 'online' ? 'lp-pwr-bay__led--on' : '',
+                              state === 'charging' ? 'lp-pwr-bay__led--chg' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                            aria-hidden="true"
+                          />
+                        </div>
+                        <img
+                          className="lp-pwr-bay__icon"
+                          src={sw.icon}
+                          alt=""
+                          draggable={false}
+                          decoding="async"
+                        />
+                        <p className="lp-pwr-bay__name">{sw.label}</p>
+                        {autoPower ? (
+                          <div className="lp-pwr-bay__auto-slot" aria-hidden="true">
+                            <img
+                              className="lp-pwr-bay__toggle-img"
+                              src={
+                                switched
+                                  ? POWER_TOGGLE_ON_SRC
+                                  : POWER_TOGGLE_OFF_SRC
+                              }
+                              alt=""
+                              draggable={false}
+                              decoding="async"
+                            />
+                          </div>
+                        ) : (
+                          <div className="lp-pwr-well">
+                            <button
+                              type="button"
+                              className={[
+                                'lp-pwr-toggle',
+                                switched ? 'lp-pwr-toggle--on' : '',
+                              ]
+                                .filter(Boolean)
+                                .join(' ')}
+                              disabled={state !== 'open'}
+                              onClick={() => handlePowerSwitch(sw.id, i)}
+                              aria-pressed={switched}
+                              aria-label={`Activate ${sw.label}`}
+                            >
+                              <img
+                                src={
+                                  switched
+                                    ? POWER_TOGGLE_ON_SRC
+                                    : POWER_TOGGLE_OFF_SRC
+                                }
+                                alt=""
+                                draggable={false}
+                                decoding="async"
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              className={[
+                                'lp-pwr-cover',
+                                coverOpen ? 'lp-pwr-cover--open' : '',
+                                state === 'ready' ? 'lp-pwr-cover--ready' : '',
+                              ]
+                                .filter(Boolean)
+                                .join(' ')}
+                              disabled={state !== 'ready'}
+                              onClick={() => handlePowerCover(sw.id, i)}
+                              aria-expanded={coverOpen}
+                              aria-label={`Open protective cover, ${sw.label}`}
+                            >
+                              <img
+                                src={POWER_COVER_SRC}
+                                alt=""
+                                draggable={false}
+                                decoding="async"
+                              />
+                            </button>
+                          </div>
+                        )}
+                        <div
+                          className="lp-pwr-bar"
+                          role="progressbar"
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={Math.round(fill)}
+                          aria-label={`${sw.label} charge`}
+                        >
+                          <div
+                            className="lp-pwr-bar__fill"
+                            style={{ transform: `scaleX(${fill / 100})` }}
+                          />
+                          <span className="lp-pwr-bar__readout">
+                            {Math.round(fill)}%
+                          </span>
+                        </div>
+                        <p className="lp-pwr-bay__state">{stateLabel}</p>
+                      </div>
                     )
                   })}
                 </div>
-              </>
-            )}
+
+                {autoPower && (
+                  <div className="lp-power-term__master">
+                    <button
+                      type="button"
+                      className="btn btn--primary lp-master-on"
+                      onClick={handleMasterPowerOn}
+                      disabled={powerSwitched.length > 0}
+                      aria-label="Master power ON"
+                    >
+                      ON
+                    </button>
+                  </div>
+                )}
+
+                <p className="lp-power-term__status" aria-live="polite">
+                  {powerStatusLine()}
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

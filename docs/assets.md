@@ -31,6 +31,10 @@ Product behaviour lives in [`CLAUDE.md`](../CLAUDE.md). Tree map:
 | `LaunchPrepFairing.png` | `LaunchPrepScene` `.lp-payload` / hook-load / ground-load / drone load | White ogive + cyan band; seated on booster and carried by crane/drone. 402×1093 |
 | `LaunchPrepDrone.png` | `LaunchPrepScene` `.lp-drone` | Navy/gold coaxial payload drone (To-be `payload-drone`). 841×658 |
 | `LaunchPrepFuelSlugLox.png` / `LaunchPrepFuelSlugRp.png` | *(available, unused)* | Optional LOX/RP-1 hose slugs. Live fill is CSS chevrons + highlight slug; these PNGs are not wired. See `assets-launch-prep-overhaul.md` |
+| `LaunchPrepPowerTerminal.png` | `LaunchPrepScene` power terminal bezel | Brushed-steel CRT bezel, empty glass, cyan LED. HTML overlays the well. See `assets-launch-prep-power.md` |
+| `LaunchPrepPowerCover.png` | `LaunchPrepScene` `.lp-pwr-cover` | Isolated red hinged safety cover (true alpha). CSS `rotateX` flips it open. |
+| `LaunchPrepPowerToggleOff.png` / `LaunchPrepPowerToggleOn.png` | `LaunchPrepScene` `.lp-pwr-toggle` | Aircraft bat-handle toggle, off (handle down, lamp dark) and on (handle up, cyan lamp). |
+| `LaunchPrepPowerIconAvionics.png` / `Flight.png` / `Telemetry.png` / `Range.png` | `LaunchPrepScene` power-bus bays | Matching HUD pictograms (cyan/gold on navy tile). Labels are HTML. |
 | `HaulOfficesTop.png` | `HaulRoadScene` | High-angle aerial Offices annex (entrance south) |
 | `HaulAssemblyTop.png` | `HaulRoadScene` | High-angle aerial Assembly hangar (bay door south) |
 | `HaulGrassField.jpg` | `HaulRoadScene` + redesign haul grid | Full-field grassland plate (1600×960) with gentle mounds and mixed turf. One image, not a repeating tile. |
